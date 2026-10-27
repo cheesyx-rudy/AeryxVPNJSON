@@ -43,7 +43,7 @@ def node(code: str, country: str, i: int, status="proxy_ok_high", scheme="vless"
     }
 
 
-class CountryJSONBuilderTests(unittest.TestCase):
+class UnifiedJSONBuilderTests(unittest.TestCase):
     def _fixture(self, root: Path):
         input_file = root / "parsed_proxies.json"
         records = [
@@ -57,114 +57,117 @@ class CountryJSONBuilderTests(unittest.TestCase):
         input_file.write_text(json.dumps(records, ensure_ascii=False), encoding="utf-8")
         cfg_path = root / "settings.yaml"
         cfg = Path(__file__).resolve().parents[1] / "config" / "settings.yaml"
-        text = cfg.read_text(encoding="utf-8")
-        text = text.replace("minimum_total_configs: 5", "minimum_total_configs: 5")
-        cfg_path.write_text(text, encoding="utf-8")
+        cfg_path.write_text(cfg.read_text(encoding="utf-8"), encoding="utf-8")
         return input_file, cfg_path
 
-    def test_builds_separate_country_configs_and_metadata_index(self):
+    def _build(self, root: Path):
+        source, config = self._fixture(root)
+        out = root / "publish"
+        report = build_country_outputs(
+            source, out, config, "cheesyx-rudy/aeryx-json-parser", "main",
+            datetime(2026, 10, 27, 12, 0, tzinfo=timezone.utc),
+        )
+        return out, report
+
+    def test_builds_one_complete_subscription_and_metadata_sidecar(self):
         with tempfile.TemporaryDirectory() as td:
-            root = Path(td)
-            source, config = self._fixture(root)
-            out = root / "publish"
-            report = build_country_outputs(
-                source, out, config, "cheesyx-rudy/aeryx-json-parser", "main",
-                datetime(2026, 10, 27, 12, 0, tzinfo=timezone.utc),
-            )
+            out, report = self._build(Path(td))
             self.assertEqual(report["status"], "built")
-            self.assertEqual(report["sing_box_config_count"], 5)
+            self.assertEqual(report["published_config_count"], 5)
             self.assertEqual(report["country_count"], 2)
-            self.assertTrue((out / "countries" / "DE.json").is_file())
-            self.assertTrue((out / "countries" / "US.json").is_file())
-            self.assertTrue((out / "country-metadata" / "DE.json").is_file())
-            self.assertTrue((out / "xray" / "DE.json").is_file())
-            index = json.loads((out / "index.json").read_text(encoding="utf-8"))
-            self.assertEqual(index["metadata"]["country_count"], 2)
-            self.assertEqual(index["metadata"]["validated_sing_box_config_count"], 5)
-            self.assertIn("https://raw.githubusercontent.com/cheesyx-rudy/aeryx-json-parser/main/countries/DE.json",
-                          index["countries"][0]["files"]["sing_box"]["url"])
+            self.assertTrue((out / "AeryxVPN.json").is_file())
+            self.assertTrue((out / "AeryxVPN.metadata.json").is_file())
+            self.assertFalse((out / "index.json").exists())
+            self.assertFalse((out / "countries").exists())
+            self.assertFalse((out / "xray").exists())
+            metadata = json.loads((out / "AeryxVPN.metadata.json").read_text(encoding="utf-8"))["metadata"]
+            self.assertEqual(metadata["validated_config_count"], 5)
+            self.assertEqual(metadata["country_count"], 2)
+            self.assertEqual(metadata["generated_at"], "2026-10-27T12:00:00Z")
+            self.assertIn("https://raw.githubusercontent.com/cheesyx-rudy/aeryx-json-parser/main/AeryxVPN.json",
+                          metadata["subscription_url"])
 
-    def test_singbox_urltest_is_final_outbound_and_references_only_country_nodes(self):
+    def test_one_profile_contains_country_urltests_and_one_country_selector(self):
         with tempfile.TemporaryDirectory() as td:
-            root = Path(td)
-            source, config = self._fixture(root)
-            out = root / "publish"
-            build_country_outputs(source, out, config, "owner/repo", "main")
-            cfg = json.loads((out / "countries" / "DE.json").read_text(encoding="utf-8"))
+            out, _ = self._build(Path(td))
+            cfg = json.loads((out / "AeryxVPN.json").read_text(encoding="utf-8"))
             by_tag = {item["tag"]: item for item in cfg["outbounds"]}
-            auto = by_tag[cfg["route"]["final"]]
-            self.assertEqual(auto["type"], "urltest")
-            self.assertEqual(len(auto["outbounds"]), 3)
-            self.assertTrue(all(by_tag[tag]["type"] in {"vless", "hysteria2"} for tag in auto["outbounds"]))
-            self.assertEqual(auto["url"], "https://www.gstatic.com/generate_204")
+            self.assertEqual(cfg["route"]["final"], "🌍 Выбор страны · AeryxVPN")
+            selector = by_tag[cfg["route"]["final"]]
+            self.assertEqual(cfg["experimental"]["clash_api"]["external_controller"], "127.0.0.1:9090")
+            self.assertEqual(selector["type"], "selector")
+            self.assertEqual(len(selector["outbounds"]), 2)
+            self.assertIn(selector["default"], selector["outbounds"])
+            de_auto = by_tag["🇩🇪 Germany · Автовыбор"]
+            us_auto = by_tag["🇺🇸 United States · Автовыбор"]
+            self.assertEqual(de_auto["type"], "urltest")
+            self.assertEqual(us_auto["type"], "urltest")
+            self.assertEqual(len(de_auto["outbounds"]), 3)
+            self.assertEqual(len(us_auto["outbounds"]), 2)
+            self.assertTrue(all(by_tag[tag]["type"] in {"vless", "hysteria2"} for tag in de_auto["outbounds"]))
+            self.assertEqual(de_auto["url"], "https://www.gstatic.com/generate_204")
 
-    def test_xray_least_ping_has_observatory_and_country_selector(self):
+    def test_each_node_has_unique_tag_and_all_groups_resolve(self):
         with tempfile.TemporaryDirectory() as td:
-            root = Path(td)
-            source, config = self._fixture(root)
-            out = root / "publish"
-            build_country_outputs(source, out, config, "owner/repo", "main")
-            cfg = json.loads((out / "xray" / "DE.json").read_text(encoding="utf-8"))
-            balancer = cfg["routing"]["balancers"][0]
-            self.assertEqual(balancer["strategy"]["type"], "leastPing")
-            self.assertTrue(cfg["observatory"]["subjectSelector"])
-            prefix = balancer["selector"][0]
-            selected_tags = [item["tag"] for item in cfg["outbounds"] if item["tag"].startswith(prefix)]
-            self.assertEqual(len(selected_tags), 2)  # Hysteria2 is sing-box-only
-            self.assertEqual(cfg["routing"]["rules"][0]["balancerTag"], balancer["tag"])
+            out, _ = self._build(Path(td))
+            cfg = json.loads((out / "AeryxVPN.json").read_text(encoding="utf-8"))
+            tags = [item["tag"] for item in cfg["outbounds"]]
+            self.assertEqual(len(tags), len(set(tags)))
+            by_tag = {item["tag"]: item for item in cfg["outbounds"]}
+            for outbound in cfg["outbounds"]:
+                if outbound["type"] in {"urltest", "selector"}:
+                    self.assertTrue(outbound["outbounds"])
+                    self.assertTrue(all(tag in by_tag for tag in outbound["outbounds"]))
 
-    def test_unchecked_nodes_do_not_enter_published_json(self):
+    def test_unchecked_nodes_do_not_enter_single_subscription(self):
         with tempfile.TemporaryDirectory() as td:
-            root = Path(td)
-            source, config = self._fixture(root)
-            out = root / "publish"
-            build_country_outputs(source, out, config, "owner/repo", "main")
-            for path in (out / "countries").glob("*.json"):
-                cfg = json.loads(path.read_text(encoding="utf-8"))
-                nodes = [v for v in cfg["outbounds"] if v.get("type") not in {"urltest", "direct"}]
-                self.assertEqual(sum("AeryxVPN 001" in v.get("tag", "") for v in nodes), 1)
+            out, _ = self._build(Path(td))
+            cfg = json.loads((out / "AeryxVPN.json").read_text(encoding="utf-8"))
+            nodes = [v for v in cfg["outbounds"] if v.get("type") not in {"urltest", "selector", "direct"}]
+            self.assertEqual(len(nodes), 5)
             report = json.loads((out / "build-report.json").read_text(encoding="utf-8"))
             self.assertEqual(report["rejected_counts"]["not_tunnel_validated"], 1)
 
-    def test_json_diagnostics_do_not_expose_proxy_uris(self):
+    def test_diagnostics_do_not_expose_proxy_uris_or_passwords(self):
         with tempfile.TemporaryDirectory() as td:
-            root = Path(td)
-            source, config = self._fixture(root)
-            out = root / "publish"
-            build_country_outputs(source, out, config, "owner/repo", "main")
+            out, _ = self._build(Path(td))
             report = (out / "build-report.json").read_text(encoding="utf-8")
+            metadata = (out / "AeryxVPN.metadata.json").read_text(encoding="utf-8")
             self.assertNotIn("vless://", report)
             self.assertNotIn("password-3", report)
+            self.assertNotIn("vless://", metadata)
+            self.assertNotIn("password-3", metadata)
 
-    def test_safety_stop_happens_before_existing_outputs_are_touched(self):
+    def test_safety_stop_preserves_existing_previous_subscription(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             input_file = root / "parsed_proxies.json"
             input_file.write_text("[]", encoding="utf-8")
             out = root / "publish"
             out.mkdir()
-            (out / "index.json").write_text('{"existing": true}', encoding="utf-8")
+            previous = out / "AeryxVPN.json"
+            previous.write_text('{"existing": true}', encoding="utf-8")
             config = Path(__file__).resolve().parents[1] / "config" / "settings.yaml"
             with self.assertRaisesRegex(ValueError, "Safety stop"):
                 build_country_outputs(input_file, out, config)
-            self.assertEqual((out / "index.json").read_text(encoding="utf-8"), '{"existing": true}')
+            self.assertEqual(previous.read_text(encoding="utf-8"), '{"existing": true}')
 
-    def test_failed_late_build_preserves_the_previous_complete_output(self):
+    def test_failed_late_build_preserves_previous_complete_output(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             source, config = self._fixture(root)
             out = root / "publish"
             out.mkdir()
-            previous = out / "index.json"
+            previous = out / "AeryxVPN.json"
             previous.write_text('{"previous": true}', encoding="utf-8")
             original_writer = json_builder._write_json
 
-            def fail_index(path, value):
-                if Path(path).name == "index.json":
+            def fail_metadata(path, value):
+                if Path(path).name == "AeryxVPN.metadata.json":
                     raise RuntimeError("simulated late write failure")
                 return original_writer(path, value)
 
-            with patch.object(json_builder, "_write_json", side_effect=fail_index):
+            with patch.object(json_builder, "_write_json", side_effect=fail_metadata):
                 with self.assertRaisesRegex(RuntimeError, "simulated late write failure"):
                     build_country_outputs(source, out, config, "owner/repo", "main")
             self.assertEqual(previous.read_text(encoding="utf-8"), '{"previous": true}')

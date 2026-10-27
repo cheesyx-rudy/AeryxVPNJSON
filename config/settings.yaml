@@ -82,7 +82,7 @@ outputs:
   rejected_file: rejected_proxies.txt
 
 json_subscription:
-  title: AeryxVPN JSON
+  title: AeryxVPN
   support_url: https://t.me/cheesyx
   website_url: https://t.me/AeryxVPN
   update_interval_hours: 6
@@ -95,17 +95,11 @@ json_subscription:
     tolerance_ms: 80
     socks_listen_port: 2080
     http_listen_port: 2081
-  # Xray leastPing requires observatory results; only URI schemes Xray can represent are included.
-  xray:
-    enabled: true
-    probe_url: https://www.gstatic.com/generate_204
-    probe_interval: 30s
-    socks_listen_port: 10808
-    http_listen_port: 10809
+    country_selector_tag: "🌍 Выбор страны · AeryxVPN"
+    clash_api_port: 9090
+    interrupt_exist_connections: false
   minimum_total_configs: 5
   minimum_country_configs: 1
   output:
-    index_file: index.json
-    countries_directory: countries
-    xray_directory: xray
-    country_metadata_directory: country-metadata
+    subscription_file: AeryxVPN.json
+    metadata_file: AeryxVPN.metadata.json

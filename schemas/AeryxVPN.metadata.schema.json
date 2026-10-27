@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AeryxVPN JSON subscription metadata sidecar",
+  "type": "object",
+  "required": ["schema_version", "metadata"],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "metadata": {
+      "type": "object",
+      "required": [
+        "title", "project", "format", "subscription_file", "subscription_url",
+        "support_url", "website_url", "generated_at", "updated_at_local",
+        "timezone", "update_interval_hours", "country_count", "validated_config_count",
+        "profile_sha256", "countries"
+      ],
+      "properties": {
+        "title": {"type": "string"},
+        "project": {"type": "string"},
+        "description": {"type": "string"},
+        "format": {"const": "sing-box-native-json"},
+        "subscription_file": {"const": "AeryxVPN.json"},
+        "subscription_url": {"type": "string"},
+        "support_url": {"type": "string", "format": "uri"},
+        "website_url": {"type": "string", "format": "uri"},
+        "generated_at": {"type": "string", "format": "date-time"},
+        "updated_at_local": {"type": "string"},
+        "timezone": {"type": "string"},
+        "update_interval_hours": {"type": "integer", "minimum": 1},
+        "country_count": {"type": "integer", "minimum": 1},
+        "validated_config_count": {"type": "integer", "minimum": 1},
+        "country_selector_tag": {"type": "string"},
+        "balancing": {"type": "object"},
+        "profile_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "countries": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["code", "name", "flag", "node_count", "balancer_tag"],
+            "properties": {
+              "code": {"type": "string", "pattern": "^[A-Z]{2}$"},
+              "name": {"type": "string"},
+              "flag": {"type": "string"},
+              "node_count": {"type": "integer", "minimum": 1},
+              "balancer_tag": {"type": "string"}
+            },
+            "additionalProperties": true
+          }
+        },
+        "note": {"type": "string"}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

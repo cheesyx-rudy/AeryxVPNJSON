@@ -4,7 +4,7 @@ from pathlib import Path
 from .pipeline import run_pipeline, DEFAULT_CONFIG, DEFAULT_SOURCES
 
 def main() -> int:
-    p=argparse.ArgumentParser(prog="AeryxJSON-Parser",description="AeryxVPN country-separated JSON subscription parser and validator")
+    p=argparse.ArgumentParser(prog="AeryxJSON-Parser",description="AeryxVPN single JSON subscription parser with country groups and native balancers")
     p.add_argument("--config",type=Path,default=DEFAULT_CONFIG,help="settings YAML")
     p.add_argument("--sources",type=Path,default=DEFAULT_SOURCES,help="source list (TXT: URL per line, optional | Header: value) or legacy YAML")
     p.add_argument("--check",choices=("proxy","tcp","none"),default=None,help="proxy=tunnel test (requires Xray/sing-box), tcp=diagnostic only, none=parse only")
