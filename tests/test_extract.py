@@ -77,6 +77,26 @@ class ExtractTests(unittest.TestCase):
         self.assertEqual(len(links),1)
         self.assertTrue(links[0].startswith("hysteria2://"))
 
+
+    def test_base64_wrapped_xray_json_is_parsed_as_structured_config(self):
+        import json, base64
+        from aeryx_json_parser.pipeline import _parse_document
+        obj = {
+            "outbounds": [{
+                "protocol": "vless", "tag": "wrapped-node",
+                "settings": {"vnext": [{"address": "node.example", "port": 443,
+                                          "users": [{"id": UUID, "encryption": "none"}]}]},
+                "streamSettings": {"network": "tcp", "security": "reality",
+                                   "realitySettings": {"serverName": "www.example.org", "publicKey": "pubkey", "shortId": "a1"}},
+            }, {"protocol": "freedom", "tag": "direct"}],
+        }
+        wrapped = base64.b64encode(json.dumps(obj).encode()).decode()
+        links, providers = _parse_document(wrapped)
+        self.assertEqual(len(links), 1)
+        self.assertTrue(links[0].startswith(f"vless://{UUID}@node.example:443"))
+        self.assertIn("security=reality", links[0])
+        self.assertEqual(providers, [])
+
     def test_uri_redact_fragment_not_in_identity(self):
         from aeryx_json_parser.models import ProxyNode
         a=ProxyNode(uri=f"vless://{UUID}@example.org:443?security=tls#a",scheme="vless",host="example.org",port=443)

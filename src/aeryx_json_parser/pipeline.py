@@ -1,5 +1,5 @@
 from __future__ import annotations
-import json, time, hashlib
+import json, time, hashlib, re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
@@ -9,7 +9,7 @@ from typing import Any
 import yaml
 from .models import ProxyNode, FetchResult, parse_endpoint, SUPPORTED_SCHEMES
 from .fetch import Fetcher, redact_url
-from .extract import extract_uri_strings
+from .extract import extract_uri_strings, decode_layers
 from .adapters import extract_structured_nodes
 from .filtering import load_blocklists, NetworkIndex, evaluate_endpoint, parse_networks
 from .checks import (detect_cores, validate_nodes, precheck_endpoints, PROBE_URLS, DEFAULT_MIN_SUCCESSFUL_PROBES, DEFAULT_REQUIRE_INDEPENDENT_PROVIDERS)
@@ -43,8 +43,10 @@ def _parse_txt_source(line: str, index: int) -> dict[str, Any]:
     """TXT line format: URL [| Header: value | Header: value]."""
     parts = [part.strip() for part in line.split("|")]
     url = parts[0]
-    if not url.lower().startswith(("http://", "https://")):
-        raise ValueError(f"sources.txt line {index}: expected an absolute HTTP(S) URL")
+    # A complete URL may live in an Actions secret so a public sources.txt never exposes tokens.
+    is_env_url = bool(re.fullmatch(r"\$\{[A-Za-z_][A-Za-z0-9_]*\}", url))
+    if not url.lower().startswith(("http://", "https://")) and not is_env_url:
+        raise ValueError(f"sources.txt line {index}: expected an absolute HTTP(S) URL or a full ${{SECRET_NAME}} URL reference")
     headers: dict[str, str] = {}
     for raw_header in parts[1:]:
         if not raw_header:
@@ -58,7 +60,7 @@ def _parse_txt_source(line: str, index: int) -> dict[str, Any]:
         if any(ord(ch) < 32 or ord(ch) == 127 for ch in key + value):
             raise ValueError(f"sources.txt line {index}: control characters are not allowed in headers")
         headers[key] = value
-    item: dict[str, Any] = {"url": url, "name": _source_name(url, index), "enabled": True}
+    item: dict[str, Any] = {"url": url, "name": (f"secret-source-{index}" if is_env_url else _source_name(url, index)), "enabled": True}
     if headers:
         item["headers"] = headers
     return item
@@ -129,13 +131,27 @@ def _parse_link(uri: str, source: str) -> ProxyNode:
 
 
 def _parse_document(content: str) -> tuple[list[str],list[dict[str,Any]]]:
-    links=extract_uri_strings(content)
-    structured,providers=extract_structured_nodes(content)
-    links.extend(structured)
-    unique=[]; seen=set()
+    """Parse plain/Base64 share links and structured Xray/sing-box JSON layers."""
+    links = extract_uri_strings(content)
+    providers: list[dict[str, Any]] = []
+    # Some panels Base64-wrap a complete Xray/sing-box JSON object, not a URI list.
+    # Decode each bounded layer and run the structured adapters on it as well.
+    for layer in decode_layers(content):
+        structured, discovered = extract_structured_nodes(layer)
+        links.extend(structured)
+        providers.extend(discovered)
+    unique: list[str] = []
+    seen: set[str] = set()
     for link in links:
-        if link not in seen: unique.append(link); seen.add(link)
-    return unique,providers
+        if link not in seen:
+            unique.append(link); seen.add(link)
+    unique_providers: list[dict[str, Any]] = []
+    seen_providers: set[str] = set()
+    for provider in providers:
+        key = json.dumps(provider, sort_keys=True, ensure_ascii=False, default=str)
+        if key not in seen_providers:
+            unique_providers.append(provider); seen_providers.add(key)
+    return unique, unique_providers
 
 
 def _static_networks(config: dict[str,Any]) -> list:
@@ -227,7 +243,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
     deadline=started+runtime; out_dir=Path(ocfg.get("directory","output")); out_dir=out_dir if out_dir.is_absolute() else ROOT/out_dir; out_dir.mkdir(parents=True,exist_ok=True)
     cache=Path(bcfg.get("cache_path","output/blocklist_cache.json")); cache=cache if cache.is_absolute() else ROOT/cache
     progress=ProgressReporter(out_dir/"progress.jsonl")
-    report={"schema_version":1,"parser":"AeryxParser","version":"2.5.0","started_at":datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    report={"schema_version":1,"parser":"AeryxJSON-Parser","version":"1.2.1","started_at":datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "check_mode":mode,"runtime_budget_seconds":runtime,"sources":[],"stages":[],"counts":{},"warnings":[]}
     fetcher=Fetcher(fcfg); initial=load_sources(sources_path)
     progress.emit("start", "Запуск обработки подписки", {"sources":len(initial),"budget_seconds":runtime,"mode":mode})
@@ -252,6 +268,10 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
                 except Exception as exc: fr=FetchResult(url=redact_url(str(source.get("url",""))),source_name=str(source.get("name","")),error=f"{type(exc).__name__}: source processing failed")
                 record={"name":fr.source_name,"url":fr.url,"final_url":fr.final_url,"status":fr.status,"status_code":fr.status_code,
                         "content_type":fr.content_type,"bytes_downloaded":fr.bytes_downloaded,"elapsed_ms":fr.elapsed_ms}
+                if getattr(fr, "client_profile", "default") != "default":
+                    record["client_profile"] = fr.client_profile
+                if getattr(fr, "compatibility_note", ""):
+                    record["compatibility_note"] = fr.compatibility_note[:240]
                 if fr.error: record["error"]=fr.error[:300]; fetch_errors+=1
                 links,providers=_parse_document(fr.content) if fr.status=="ok" and fr.content else ([],[])
                 record["links_extracted"]=len(links); record["providers_discovered"]=len(providers)

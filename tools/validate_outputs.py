@@ -1,92 +1,192 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
+from typing import Any
+
+SPECIAL_PROTOCOLS = {"freedom", "blackhole", "dns", "loopback"}
+SUPPORTED_PROXY_PROTOCOLS = {"vless", "vmess", "trojan", "shadowsocks", "socks", "http", "hysteria"}
 
 
-def run(binary: str, args: list[str], timeout: int = 30) -> tuple[bool, str]:
-    try:
-        result = subprocess.run([binary, *args], capture_output=True, text=True, timeout=timeout)
-        message = (result.stdout + "\n" + result.stderr).strip()[-1500:]
-        return result.returncode == 0, message
-    except Exception as exc:
-        return False, f"{type(exc).__name__}: {exc}"
+def validate_structure(subscription_path: Path, metadata_path: Path, report_path: Path) -> dict[str, Any]:
+    """Validate the published Happ Xray JSON array, including country balancing references."""
+    profiles = json.loads(subscription_path.read_text(encoding="utf-8"))
+    metadata_doc = json.loads(metadata_path.read_text(encoding="utf-8"))
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    if not isinstance(profiles, list) or not profiles:
+        raise ValueError("AeryxVPN.json must be a non-empty JSON array of Xray profiles")
+    meta = metadata_doc.get("metadata")
+    if not isinstance(meta, dict):
+        raise ValueError("metadata sidecar is missing its metadata object")
+    if meta.get("format") != "happ-xray-json-array":
+        raise ValueError("metadata format must be happ-xray-json-array")
+    if int(meta.get("profile_count", -1)) != len(profiles):
+        raise ValueError("metadata profile_count does not match JSON array length")
+
+    remarks = [str(profile.get("remarks") or "") for profile in profiles if isinstance(profile, dict)]
+    if len(remarks) != len(profiles) or any(not name for name in remarks):
+        raise ValueError("every array item must be an object with a non-empty remarks field")
+    if len(remarks) != len(set(remarks)):
+        raise ValueError("profile remarks must be unique")
+
+    country_rows = meta.get("countries")
+    if not isinstance(country_rows, list) or not country_rows:
+        raise ValueError("metadata must contain country rows")
+    if int(meta.get("country_count", -1)) != len(country_rows):
+        raise ValueError("metadata country_count does not match country rows")
+    row_by_name = {str(row.get("profile_name")): row for row in country_rows if isinstance(row, dict)}
+    if len(row_by_name) != len(country_rows):
+        raise ValueError("country profile names in metadata are missing or duplicated")
+    country_profile_names = set(row_by_name)
+    unknown_profiles = set(remarks) - country_profile_names
+    auto_names = [name for name in remarks if name not in country_profile_names]
+    expected_auto = {str(meta.get("auto_profile_name") or "🌐 AeryxVPN Auto")} if meta.get("auto_profile_included") else set()
+    if unknown_profiles != expected_auto or len(auto_names) > 1:
+        raise ValueError("JSON array does not match the configured country profiles and global Auto profile")
+
+    country_total = 0
+    core_profiles: list[dict[str, Any]] = []
+    for profile in profiles:
+        if not isinstance(profile, dict):
+            raise ValueError("each JSON array item must be an object")
+        name = str(profile.get("remarks") or "(unnamed)")
+        meta_fields = profile.get("meta") or {}
+        if not isinstance(meta_fields, dict) or not isinstance(meta_fields.get("serverDescription"), str):
+            raise ValueError(f"{name}: meta.serverDescription is required for an informative list row")
+        inbounds = profile.get("inbounds")
+        socks = [item for item in inbounds or [] if item.get("tag") == "socks-in"]
+        if len(socks) != 1 or socks[0].get("protocol") != "socks" or socks[0].get("listen") != "127.0.0.1":
+            raise ValueError(f"{name}: profile must have one loopback SOCKS inbound tagged socks-in")
+
+        outbounds = profile.get("outbounds")
+        if not isinstance(outbounds, list) or not outbounds:
+            raise ValueError(f"{name}: outbounds array is missing")
+        tags = [str(item.get("tag") or "") for item in outbounds]
+        if any(not tag for tag in tags) or len(tags) != len(set(tags)):
+            raise ValueError(f"{name}: outbound tags must be non-empty and unique")
+        by_tag = {item["tag"]: item for item in outbounds}
+        if tags[0] != "proxy" or by_tag["proxy"].get("protocol") not in SUPPORTED_PROXY_PROTOCOLS:
+            raise ValueError(f"{name}: the first outbound must be a supported server tagged proxy (Happ summary target)")
+        protocols = [str(item.get("protocol") or "") for item in outbounds]
+        concrete = [item for item in outbounds if item.get("protocol") not in SPECIAL_PROTOCOLS]
+        if not concrete or any(item.get("protocol") not in SUPPORTED_PROXY_PROTOCOLS for item in concrete):
+            raise ValueError(f"{name}: unsupported or empty proxy outbound found")
+        if "direct" not in by_tag or by_tag["direct"].get("protocol") != "freedom":
+            raise ValueError(f"{name}: direct freedom outbound is missing")
+        if "block" not in by_tag or by_tag["block"].get("protocol") != "blackhole":
+            raise ValueError(f"{name}: block blackhole outbound is missing")
+
+        observatory = profile.get("observatory") or {}
+        selector = observatory.get("subjectSelector") or []
+        if "proxy" not in selector or "aeryx-node-" not in selector:
+            raise ValueError(f"{name}: observatory does not cover all node tags")
+        if not observatory.get("probeUrl") or not observatory.get("probeInterval"):
+            raise ValueError(f"{name}: observatory probe URL/interval missing")
+        routing = profile.get("routing") or {}
+        balancers = routing.get("balancers") or []
+        if len(balancers) != 1:
+            raise ValueError(f"{name}: exactly one leastPing balancer is required")
+        balancer = balancers[0]
+        if balancer.get("strategy", {}).get("type") != "leastPing":
+            raise ValueError(f"{name}: balancer must use leastPing")
+        if balancer.get("fallbackTag") != "proxy" or balancer.get("fallbackTag") not in by_tag:
+            raise ValueError(f"{name}: balancer fallbackTag must resolve to proxy")
+        if "proxy" not in (balancer.get("selector") or []) or "aeryx-node-" not in (balancer.get("selector") or []):
+            raise ValueError(f"{name}: balancer selector does not cover node tags")
+        rules = routing.get("rules") or []
+        if not any(rule.get("balancerTag") == balancer.get("tag") and "socks-in" in (rule.get("inboundTag") or []) for rule in rules):
+            raise ValueError(f"{name}: SOCKS inbound is not routed through the balancer")
+
+        node_count = len(concrete)
+        if name in country_profile_names:
+            country_total += node_count
+            if int(row_by_name[name].get("node_count", -1)) != node_count:
+                raise ValueError(f"{name}: country node_count in metadata does not match profile")
+        # Happ consumes remarks/meta; Xray-core itself validates only the actual config.
+        xray_cfg = copy.deepcopy(profile)
+        xray_cfg.pop("remarks", None)
+        xray_cfg.pop("meta", None)
+        core_profiles.append(xray_cfg)
+
+    if country_total != int(meta.get("validated_config_count", -1)):
+        raise ValueError("metadata validated_config_count does not match country profiles")
+    if report.get("published_config_count") != country_total:
+        raise ValueError("build report published_config_count does not match country profiles")
+    if report.get("profile_count") != len(profiles):
+        raise ValueError("build report profile_count does not match JSON array length")
+    if bool(meta.get("auto_profile_included")) != bool(auto_names):
+        raise ValueError("metadata auto_profile_included does not match JSON array")
+    if auto_names:
+        auto_profile = next(profile for profile in profiles if profile.get("remarks") == auto_names[0])
+        auto_node_count = sum(1 for item in auto_profile["outbounds"] if item.get("protocol") not in SPECIAL_PROTOCOLS)
+        if auto_node_count != country_total:
+            raise ValueError("global Auto profile does not contain all country nodes")
+    actual_hash = hashlib.sha256(subscription_path.read_bytes()).hexdigest()
+    if actual_hash != meta.get("profile_sha256"):
+        raise ValueError("metadata profile SHA-256 does not match subscription")
+
+    return {
+        "profiles": core_profiles,
+        "profile_names": remarks,
+        "countries": len(country_rows),
+        "validated_nodes": country_total,
+        "auto_profile_count": len(auto_names),
+    }
+
+
+def validate_with_xray(binary: str, profiles: list[dict[str, Any]], profile_names: list[str] | None = None) -> list[dict[str, Any]]:
+    """Run each importable profile through Xray's native config checker.
+
+    Raw core stderr is deliberately not printed: startup errors can echo server
+    addresses or configuration fragments. Failures are reported by profile index/name
+    and exit code only, keeping credentials out of the Actions log.
+    """
+    errors: list[dict[str, Any]] = []
+    with tempfile.TemporaryDirectory(prefix="aeryx-xray-check-") as tempdir:
+        root = Path(tempdir)
+        for index, profile in enumerate(profiles, start=1):
+            profile_name = profile_names[index - 1] if profile_names and index <= len(profile_names) else f"profile-{index:03d}"
+            path = root / f"profile-{index:03d}.json"
+            path.write_text(json.dumps(profile, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+            try:
+                proc = subprocess.run(
+                    [binary, "run", "-test", "-config", str(path)],
+                    capture_output=True, text=True, timeout=25,
+                )
+                if proc.returncode != 0:
+                    errors.append({"profile_index": index, "profile": profile_name, "error": "xray_core_rejected_config", "exit_code": proc.returncode})
+            except subprocess.TimeoutExpired:
+                errors.append({"profile_index": index, "profile": profile_name, "error": "xray_validation_timeout"})
+            except FileNotFoundError:
+                return [{"error": "xray_binary_not_found"}]
+            except Exception as exc:
+                errors.append({"profile_index": index, "profile": profile_name, "error": type(exc).__name__})
+    return errors
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Validate the single AeryxVPN sing-box JSON subscription")
+    ap = argparse.ArgumentParser(description="Validate Happ-compatible Xray JSON-array subscription")
     ap.add_argument("--root", type=Path, default=Path("output/publish"))
-    ap.add_argument("--sing-box", default="tools/sing-box")
+    ap.add_argument("--xray", default="tools/xray")
     args = ap.parse_args()
     root = args.root
-    subscription_path = root / "AeryxVPN.json"
-    metadata_path = root / "AeryxVPN.metadata.json"
-    report_path = root / "build-report.json"
-    errors: list[str] = []
-
     try:
-        cfg = json.loads(subscription_path.read_text(encoding="utf-8"))
-        metadata_doc = json.loads(metadata_path.read_text(encoding="utf-8"))
-        report = json.loads(report_path.read_text(encoding="utf-8"))
-        meta = metadata_doc["metadata"]
-        outbounds = cfg["outbounds"]
-        by_tag = {item["tag"]: item for item in outbounds}
-        if len(by_tag) != len(outbounds):
-            raise ValueError("duplicate outbound tags")
-        final_tag = cfg["route"]["final"]
-        selector = by_tag[final_tag]
-        if selector.get("type") != "selector":
-            raise ValueError("route.final must point to the top-level country selector")
-        country_group_tags = selector.get("outbounds", [])
-        if not country_group_tags or any(tag not in by_tag for tag in country_group_tags):
-            raise ValueError("country selector references missing groups")
-        if selector.get("default") not in country_group_tags:
-            raise ValueError("country selector default is not one of the country groups")
-        group_nodes = 0
-        for country_tag in country_group_tags:
-            group = by_tag[country_tag]
-            if group.get("type") != "urltest":
-                raise ValueError(f"country group {country_tag!r} is not urltest")
-            node_tags = group.get("outbounds", [])
-            if not node_tags or any(tag not in by_tag for tag in node_tags):
-                raise ValueError(f"country group {country_tag!r} references missing node tags")
-            if any(by_tag[tag].get("type") in {"urltest", "selector", "direct", "block"} for tag in node_tags):
-                raise ValueError(f"country group {country_tag!r} contains a non-node outbound")
-            group_nodes += len(node_tags)
-        concrete_nodes = sum(1 for item in outbounds if item.get("type") not in {"urltest", "selector", "direct", "block"})
-        if group_nodes != concrete_nodes:
-            raise ValueError(f"country group references ({group_nodes}) != concrete node outbounds ({concrete_nodes})")
-        if group_nodes <= 0 or group_nodes != int(meta["validated_config_count"]):
-            raise ValueError("metadata config count does not match actual profile")
-        if len(country_group_tags) != int(meta["country_count"]):
-            raise ValueError("metadata country count does not match selector country groups")
-        actual_hash = hashlib.sha256(subscription_path.read_bytes()).hexdigest()
-        if actual_hash != meta.get("profile_sha256"):
-            raise ValueError("metadata profile SHA-256 does not match subscription")
-        if report.get("published_config_count") != concrete_nodes:
-            raise ValueError("build report config count does not match subscription")
-        if not cfg.get("inbounds") or not isinstance(cfg.get("route"), dict):
-            raise ValueError("profile missing inbounds or route")
+        validated = validate_structure(root / "AeryxVPN.json", root / "AeryxVPN.metadata.json", root / "build-report.json")
     except Exception as exc:
-        print(f"ERROR: unified subscription is invalid: {type(exc).__name__}: {exc}", file=sys.stderr)
+        print(json.dumps({"status": "invalid", "error": type(exc).__name__, "message": str(exc)}, ensure_ascii=False, indent=2), file=sys.stderr)
         return 2
-
-    ok, msg = run(args.sing_box, ["check", "-c", str(subscription_path)])
-    if not ok:
-        errors.append(f"sing-box native config check failed: {msg}")
-
-    print(json.dumps({
-        "subscription": subscription_path.name,
-        "countries": len(country_group_tags),
-        "validated_configs": concrete_nodes,
-        "selector": final_tag,
-        "errors": errors,
-    }, ensure_ascii=False, indent=2))
-    return 1 if errors else 0
+    core_profiles = validated.pop("profiles")
+    core_errors = validate_with_xray(args.xray, core_profiles, validated.get("profile_names"))
+    validated.pop("profile_names", None)
+    result = {"status": "valid" if not core_errors else "invalid", **validated, "xray_errors": core_errors}
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 1 if core_errors else 0
 
 
 if __name__ == "__main__":

@@ -1,10 +1,9 @@
-"""Build one complete sing-box JSON subscription with country-level auto balancers.
+"""Build one Happ-compatible Xray JSON-array subscription.
 
-The importable subscription is a single native sing-box configuration, AeryxVPN.json.
-Every country is represented by a native urltest outbound, and one top-level selector
-lets the user choose a country while each country's group selects its best node.
-Subscription metadata is emitted as a sidecar because sing-box rejects arbitrary
-non-standard metadata fields in a native client configuration.
+The published AeryxVPN.json is one JSON array. Every array element is one
+visible Happ profile (one country, plus a global Auto profile), and every
+profile contains all compatible nodes for its scope with Xray observatory +
+leastPing balancing. The metadata and build report are non-importable sidecars.
 """
 from __future__ import annotations
 
@@ -22,8 +21,8 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import yaml
 
-from .checks import build_singbox_outbound
-from .geolocation import Country, country_from_label, flag_for_code
+from .geolocation import Country, CountryResolver, country_from_label, flag_for_code
+from .xray_builder import build_xray_json_profile, uri_to_xray_outbound
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_INPUT = ROOT / "output" / "engine" / "parsed_proxies.json"
@@ -38,17 +37,38 @@ def _load_config(path: Path) -> dict[str, Any]:
     return obj
 
 
-def _get_country(node: dict[str, Any]) -> Country | None:
-    """Use the already-resolved node label as fallback country evidence."""
-    candidates = [str(node.get("name") or "")]
+def _label_candidates(node: dict[str, Any]) -> list[str]:
+    values = [str(node.get("name") or ""), str(node.get("source_name") or ""), str(node.get("source") or "")]
     uri = str(node.get("uri") or "")
     try:
         fragment = urlsplit(uri).fragment
         if fragment:
-            candidates.append(unquote(fragment))
+            values.insert(0, unquote(fragment))
     except Exception:
         pass
-    for label in candidates:
+    return [v for v in values if v]
+
+
+def _get_country(node: dict[str, Any], resolver: CountryResolver | None = None) -> Country | None:
+    """Resolve country by public endpoint IP first; use explicit labels/TLD only as fallback."""
+    uri = str(node.get("uri") or "")
+    try:
+        host = str(node.get("host") or urlsplit(uri).hostname or "")
+    except Exception:
+        host = str(node.get("host") or "")
+    ips: list[str] = []
+    for key in ("endpoint_ip", "resolved_ip", "resolved_ips", "allowed_ips"):
+        value = node.get(key)
+        if isinstance(value, (list, tuple, set)):
+            ips.extend(str(item) for item in value if item)
+        elif value:
+            ips.append(str(value))
+    labels = _label_candidates(node)
+    if resolver is not None:
+        country = resolver.resolve(ips, labels, host)
+        if country:
+            return country
+    for label in labels:
         country = country_from_label(label, method="parser_label")
         if country:
             return country
@@ -64,137 +84,58 @@ def _country_sort(code: str) -> tuple[bool, str]:
     return (code != "EU", code)
 
 
-def _tag_for_node(country: Country, index: int) -> str:
-    return f"{flag_for_code(country.code)} {country.name} · AeryxVPN {index:03d}"
+def _country_profile_name(country: Country) -> str:
+    return f"{flag_for_code(country.code)} {country.name}"
 
 
-def _tag_for_country(country: Country) -> str:
-    return f"{flag_for_code(country.code)} {country.name} · Автовыбор"
-
-
-def _build_singbox_profile(
+def _build_profiles(
     grouped: dict[str, list[dict[str, Any]]],
     countries: dict[str, Country],
     settings: dict[str, Any],
-) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
-    """Create a single sing-box profile with all nodes and one urltest per country."""
-    cfg = settings.get("sing_box", {}) or {}
-    probe_url = str(cfg.get("probe_url", "https://www.gstatic.com/generate_204"))
-    interval = str(cfg.get("interval", "3m"))
-    tolerance = max(0, int(cfg.get("tolerance_ms", 80)))
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    xcfg = settings.get("xray_json", {}) or {}
+    probe_url = str(xcfg.get("probe_url", "https://www.google.com/generate_204"))
+    probe_interval = str(xcfg.get("probe_interval", "30s"))
+    socks_port = int(xcfg.get("inbound_socks_port", 10808))
+    suffix = str(xcfg.get("country_profile_name_suffix", "" )).strip()
+    profiles: list[dict[str, Any]] = []
+    country_rows: list[dict[str, Any]] = []
 
-    all_outbounds: list[dict[str, Any]] = []
-    country_groups: dict[str, dict[str, Any]] = {}
-    country_counts: dict[str, dict[str, Any]] = {}
-
-    # Add concrete proxy outbounds first. All countries live in this single array.
     ordered_codes = sorted(grouped, key=lambda code: (-len(grouped[code]), _country_sort(code)))
+    all_records: list[dict[str, Any]] = []
     for code in ordered_codes:
         country = countries[code]
-        country_records = grouped[code]
-        node_tags: list[str] = []
-        seen_uris: set[str] = set()
-        accepted_for_country = 0
-        for record in country_records:
-            uri = str(record["uri"])
-            if uri in seen_uris:
-                continue
-            seen_uris.add(uri)
-            accepted_for_country += 1
-            tag = _tag_for_node(country, accepted_for_country)
-            outbound = dict(record["singbox"])
-            outbound["tag"] = tag
-            all_outbounds.append(outbound)
-            node_tags.append(tag)
-        if not node_tags:
+        records = grouped[code]
+        if not records:
             continue
-
-        country_tag = _tag_for_country(country)
-        country_groups[code] = {
-            "tag": country_tag,
-            "outbounds": node_tags,
-            "country": country,
-            "node_count": len(node_tags),
-        }
-        country_counts[code] = {
+        # First outbound must be tagged exactly `proxy`; Happ uses it to render the
+        # protocol/transport subtitle and to associate the profile with a real node.
+        name = _country_profile_name(country)
+        if suffix:
+            name = f"{name} {suffix}"
+        description = f"Автовыбор из {len(records)} узл." if len(records) == 1 else f"Автовыбор из {len(records)} узлов"
+        tag = f"aeryx-{code.lower()}-least-ping"
+        profiles.append(build_xray_json_profile(name, description, records, probe_url, probe_interval, socks_port, tag))
+        country_rows.append({
+            "code": code,
             "name": country.name,
             "flag": flag_for_code(code),
-            "node_count": len(node_tags),
-            "balancer_tag": country_tag,
-        }
-
-    if not country_groups:
-        raise ValueError("Safety stop: no country has a sing-box-compatible node")
-
-    # Each country has its own native health-tested group.
-    country_auto_tags: list[str] = []
-    for code in ordered_codes:
-        group = country_groups.get(code)
-        if not group:
-            continue
-        all_outbounds.append({
-            "type": "urltest",
-            "tag": group["tag"],
-            "outbounds": group["outbounds"],
-            "url": probe_url,
-            "interval": interval,
-            "tolerance": tolerance,
-            "idle_timeout": str(cfg.get("idle_timeout", "30m")),
-            "interrupt_exist_connections": bool(cfg.get("interrupt_exist_connections", False)),
+            "profile_name": name,
+            "node_count": len(records),
+            "balancer_tag": tag,
+            "balancing": "observatory+leastPing",
         })
-        country_auto_tags.append(group["tag"])
+        all_records.extend(records)
 
-    # Choose the largest country by default; user can switch the parent selector to any country.
-    default_code = max(
-        (code for code in country_groups),
-        key=lambda code: (country_groups[code]["node_count"], code),
-    )
-    parent_selector_tag = str(cfg.get("country_selector_tag", "🌍 Выбор страны · AeryxVPN"))
-    all_outbounds.append({
-        "type": "selector",
-        "tag": parent_selector_tag,
-        "outbounds": country_auto_tags,
-        "default": country_groups[default_code]["tag"],
-        "interrupt_exist_connections": bool(cfg.get("interrupt_exist_connections", False)),
-    })
-    all_outbounds.append({"type": "direct", "tag": "direct"})
-
-    profile = {
-        "log": {"level": "warn"},
-        "dns": {
-            "servers": [{"type": "local", "tag": "local-dns"}],
-            "final": "local-dns",
-            "strategy": "prefer_ipv4",
-        },
-        "inbounds": [
-            {
-                "type": "socks", "tag": "socks-in", "listen": "127.0.0.1",
-                "listen_port": int(cfg.get("socks_listen_port", 2080)),
-            },
-            {
-                "type": "http", "tag": "http-in", "listen": "127.0.0.1",
-                "listen_port": int(cfg.get("http_listen_port", 2081)),
-            },
-        ],
-        "outbounds": all_outbounds,
-        "route": {
-            "auto_detect_interface": True,
-            "rules": [
-                {"action": "sniff"},
-                {"protocol": ["dns"], "action": "hijack-dns"},
-            ],
-            "final": parent_selector_tag,
-        },
-        # sing-box selectors are controlled through Clash API. Keep it loopback-only.
-        "experimental": {
-            "clash_api": {
-                "external_controller": f"127.0.0.1:{int(cfg.get('clash_api_port', 9090))}",
-                "secret": "",
-                "default_mode": "rule",
-            }
-        },
-    }
-    return profile, country_counts
+    if not profiles:
+        raise ValueError("Safety stop: no country contains an Xray-compatible validated node")
+    if bool(xcfg.get("include_auto_profile", True)) and len(all_records) > 1:
+        auto_name = str(xcfg.get("auto_profile_name", "🌐 AeryxVPN Auto"))
+        description = f"Автовыбор из {len(all_records)} узлов"
+        profiles.append(build_xray_json_profile(
+            auto_name, description, all_records, probe_url, probe_interval, socks_port, "aeryx-global-least-ping"
+        ))
+    return profiles, country_rows
 
 
 def _build_country_outputs_in_place(
@@ -205,85 +146,93 @@ def _build_country_outputs_in_place(
     branch: str = "main",
     generated_at: datetime | None = None,
 ) -> dict[str, Any]:
-    """Build one complete importable JSON plus non-importable metadata/report sidecars."""
+    """Build one Xray JSON array and metadata/report sidecars in a staging directory."""
     cfg = _load_config(config_path)
     jcfg = cfg.get("json_subscription", {}) or {}
     outcfg = jcfg.get("output", {}) or {}
-    if not bool((jcfg.get("sing_box", {}) or {}).get("enabled", True)):
-        raise ValueError("sing-box JSON output must stay enabled; AeryxVPN.json is the single subscription")
+    xcfg = jcfg.get("xray_json", {}) or {}
+    if not bool(xcfg.get("enabled", True)):
+        raise ValueError("Xray JSON array output must be enabled")
 
     raw = json.loads(input_path.read_text(encoding="utf-8-sig"))
     if not isinstance(raw, list):
         raise ValueError("parsed_proxies.json must contain a list")
+
+    location_cfg = cfg.get("location", {}) or {}
+    db_path_raw = str(location_cfg.get("database_path", "output/dbip-country-lite.mmdb"))
+    db_path = Path(db_path_raw)
+    if not db_path.is_absolute():
+        db_path = ROOT / db_path
+    resolver = CountryResolver(db_path)
 
     resolved: dict[str, Country] = {}
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
     rejected_reasons: Counter[str] = Counter()
     tunnel_validated_input_records = 0
     conversion_failures = 0
+    input_uri_seen: set[str] = set()
 
-    for obj in raw:
-        if not isinstance(obj, dict):
-            rejected_reasons["invalid_record"] += 1
-            continue
-        status = str(obj.get("check_status") or "")
-        if not status.startswith("proxy_ok"):
-            rejected_reasons["not_tunnel_validated"] += 1
-            continue
-        tunnel_validated_input_records += 1
-        uri = str(obj.get("uri") or "").strip()
-        if not uri:
-            rejected_reasons["missing_uri"] += 1
-            continue
-        country = _get_country(obj)
-        if country is None:
-            rejected_reasons["country_unknown"] += 1
-            continue
-        code = country.code.upper()
-        resolved[code] = country
-        try:
-            outbound = build_singbox_outbound(uri)
-            if not isinstance(outbound, dict) or not outbound.get("type"):
-                raise ValueError("adapter_returned_no_outbound")
-        except Exception as exc:
-            conversion_failures += 1
-            rejected_reasons["singbox_conversion:" + type(exc).__name__] += 1
-            continue
-        grouped[code].append({"uri": uri, "singbox": outbound})
+    try:
+        for obj in raw:
+            if not isinstance(obj, dict):
+                rejected_reasons["invalid_record"] += 1
+                continue
+            status = str(obj.get("check_status") or "")
+            if not status.startswith("proxy_ok"):
+                rejected_reasons["not_tunnel_validated"] += 1
+                continue
+            tunnel_validated_input_records += 1
+            uri = str(obj.get("uri") or "").strip()
+            if not uri:
+                rejected_reasons["missing_uri"] += 1
+                continue
+            # The upstream pipeline should already deduplicate; prevent duplicate full
+            # URIs from inflating country profile counts if a source repeats an entry.
+            if uri in input_uri_seen:
+                rejected_reasons["duplicate_uri"] += 1
+                continue
+            input_uri_seen.add(uri)
+            country = _get_country(obj, resolver)
+            if country is None:
+                rejected_reasons["country_unknown"] += 1
+                continue
+            code = country.code.upper()
+            resolved[code] = country
+            try:
+                outbound = uri_to_xray_outbound(uri)
+                if not isinstance(outbound, dict) or not outbound.get("protocol"):
+                    raise ValueError("xray_adapter_returned_no_outbound")
+            except Exception as exc:
+                conversion_failures += 1
+                reason = str(exc).split(":", 1)[0]
+                rejected_reasons["xray_conversion:" + reason] += 1
+                continue
+            grouped[code].append({"uri": uri, "xray": outbound, "country": code})
+    finally:
+        resolver.close()
 
     minimum_total = max(1, int(jcfg.get("minimum_total_configs", 5)))
     minimum_country = max(1, int(jcfg.get("minimum_country_configs", 1)))
     for code in list(grouped):
-        unique: list[dict[str, Any]] = []
-        seen: set[str] = set()
-        for rec in grouped[code]:
-            if rec["uri"] in seen:
-                rejected_reasons["duplicate_uri"] += 1
-                continue
-            seen.add(rec["uri"])
-            unique.append(rec)
-        grouped[code] = unique
-        if len(unique) < minimum_country:
-            rejected_reasons["country_below_minimum"] += len(unique)
+        if len(grouped[code]) < minimum_country:
+            rejected_reasons["country_below_minimum"] += len(grouped[code])
             del grouped[code]
             resolved.pop(code, None)
 
     usable_total = sum(len(items) for items in grouped.values())
     if usable_total < minimum_total:
         raise ValueError(
-            f"Safety stop: only {usable_total} sing-box-compatible, tunnel-validated nodes; "
-            f"minimum is {minimum_total}. Existing generated files were not touched."
+            f"Safety stop: only {usable_total} Xray-compatible, tunnel-validated nodes; "
+            f"minimum is {minimum_total}. Existing published files were not touched."
         )
 
-    profile, country_counts = _build_singbox_profile(grouped, resolved, jcfg)
+    profiles, country_rows = _build_profiles(grouped, resolved, jcfg)
     outdir = Path(output_dir)
-    if outdir.exists():
-        shutil.rmtree(outdir)
     outdir.mkdir(parents=True, exist_ok=True)
     subscription_name = str(outcfg.get("subscription_file", "AeryxVPN.json"))
     metadata_name = str(outcfg.get("metadata_file", "AeryxVPN.metadata.json"))
     subscription_path = outdir / subscription_name
-    _write_json(subscription_path, profile)
+    _write_json(subscription_path, profiles)
     profile_hash = hashlib.sha256(subscription_path.read_bytes()).hexdigest()
 
     tz_name = str(jcfg.get("timezone", "Europe/Berlin"))
@@ -296,63 +245,59 @@ def _build_country_outputs_in_place(
     if moment.tzinfo is None:
         moment = moment.replace(tzinfo=timezone.utc)
     moment_utc = moment.astimezone(timezone.utc)
-    moment_local = moment.astimezone(tz)
     updated_at = moment_utc.isoformat(timespec="seconds").replace("+00:00", "Z")
-    updated_local = moment_local.strftime("%d.%m.%Y %H:%M")
-
-    raw_url = ""
-    if repository:
-        raw_url = f"https://raw.githubusercontent.com/{repository}/{branch or 'main'}/{subscription_name}"
-    country_selector_tag = str((jcfg.get("sing_box", {}) or {}).get("country_selector_tag", "🌍 Выбор страны · AeryxVPN"))
-    total_nodes = sum(item["node_count"] for item in country_counts.values())
+    updated_local = moment.astimezone(tz).strftime("%d.%m.%Y %H:%M")
+    raw_url = f"https://raw.githubusercontent.com/{repository}/{branch or 'main'}/{subscription_name}" if repository else subscription_name
+    total_nodes = sum(row["node_count"] for row in country_rows)
+    balancing = {
+        "engine": "Xray-core",
+        "per_country": "observatory+leastPing",
+        "global_auto_profile": bool(xcfg.get("include_auto_profile", True)),
+        "probe_url": str(xcfg.get("probe_url", "https://www.google.com/generate_204")),
+        "probe_interval": str(xcfg.get("probe_interval", "30s")),
+        "method": "client-side; each profile measures its own nodes",
+    }
     metadata = {
-        "schema_version": "1.0.0",
+        "schema_version": "1.1.0",
         "metadata": {
             "title": str(jcfg.get("title", "AeryxVPN")),
             "project": "AeryxVPN",
-            "description": "Одна JSON-подписка со странами в виде групп и автоматическим выбором узла внутри каждой страны.",
-            "format": "sing-box-native-json",
+            "description": "Одна Happ-совместимая JSON-подписка: отдельный профиль для каждой страны, балансировка узлов по наблюдаемой задержке и общий Auto-профиль.",
+            "format": "happ-xray-json-array",
             "subscription_file": subscription_name,
-            "subscription_url": raw_url or subscription_name,
+            "subscription_url": raw_url,
             "support_url": str(jcfg.get("support_url", "https://t.me/cheesyx")),
             "website_url": str(jcfg.get("website_url", "https://t.me/AeryxVPN")),
             "generated_at": updated_at,
             "updated_at_local": updated_local,
             "timezone": tz_name,
             "update_interval_hours": max(1, int(jcfg.get("update_interval_hours", 6))),
-            "country_count": len(country_counts),
+            "country_count": len(country_rows),
             "validated_config_count": total_nodes,
-            "country_selector_tag": country_selector_tag,
-            "balancing": {
-                "per_country": "urltest",
-                "country_selection": "selector",
-                "probe_url": str((jcfg.get("sing_box", {}) or {}).get("probe_url", "https://www.gstatic.com/generate_204")),
-                "interval": str((jcfg.get("sing_box", {}) or {}).get("interval", "3m")),
-                "tolerance_ms": max(0, int((jcfg.get("sing_box", {}) or {}).get("tolerance_ms", 80))),
-            },
+            "profile_count": len(profiles),
+            "auto_profile_included": bool(xcfg.get("include_auto_profile", True)) and len(profiles) > len(country_rows),
+            "auto_profile_name": str(xcfg.get("auto_profile_name", "🌐 AeryxVPN Auto")),
+            "balancing": balancing,
             "profile_sha256": profile_hash,
-            "countries": [
-                {"code": code, **row}
-                for code, row in sorted(country_counts.items(), key=lambda kv: (-kv[1]["node_count"], _country_sort(kv[0])))
-            ],
-            "note": "Metadata sidecar only; import AeryxVPN.json as the client profile. Arbitrary metadata fields are not inserted into the native sing-box schema.",
+            "countries": sorted(country_rows, key=lambda row: (-row["node_count"], _country_sort(row["code"]))),
+            "note": "Metadata sidecar only. Import AeryxVPN.json; it is a JSON array of complete Xray profiles, one per country plus optional global Auto.",
         },
     }
-    metadata_path = outdir / metadata_name
-    _write_json(metadata_path, metadata)
-
+    _write_json(outdir / metadata_name, metadata)
     report = {
         "status": "built",
         "generated_at": updated_at,
         "input_records": len(raw),
         "tunnel_validated_input_records": tunnel_validated_input_records,
         "published_config_count": total_nodes,
-        "country_count": len(country_counts),
-        "countries": country_counts,
+        "country_count": len(country_rows),
+        "profile_count": len(profiles),
+        "countries": country_rows,
         "rejected_counts": dict(rejected_reasons.most_common()),
         "conversion_failures": conversion_failures,
         "files_written": [subscription_name, metadata_name, "build-report.json"],
         "subscription_sha256": profile_hash,
+        "balancing": balancing,
         "note": "No raw proxy URIs, credentials, or rejected URI list are written to this report.",
     }
     _write_json(outdir / "build-report.json", report)
@@ -402,7 +347,7 @@ def build_country_outputs(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Build one AeryxVPN JSON subscription with country groups and native balancers")
+    parser = argparse.ArgumentParser(description="Build one Happ-compatible AeryxVPN Xray JSON-array subscription")
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT)
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
@@ -414,7 +359,7 @@ def main() -> int:
     except Exception as exc:
         print(json.dumps({"status": "safety_stop", "error_type": type(exc).__name__, "message": str(exc)}, ensure_ascii=False), flush=True)
         return 2
-    print(json.dumps({k: report[k] for k in ("status", "published_config_count", "country_count", "countries", "rejected_counts", "files_written")}, ensure_ascii=False, indent=2), flush=True)
+    print(json.dumps({k: report[k] for k in ("status", "published_config_count", "country_count", "profile_count", "countries", "rejected_counts", "files_written")}, ensure_ascii=False, indent=2), flush=True)
     return 0
 
 

@@ -1,12 +1,15 @@
+import base64
 import json
 import tempfile
 import unittest
-from unittest.mock import patch
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest.mock import patch
+from urllib.parse import quote
 
 import aeryx_json_parser.json_builder as json_builder
 from aeryx_json_parser.json_builder import build_country_outputs
+from aeryx_json_parser.xray_builder import uri_to_xray_outbound
 
 UUIDS = [
     "11111111-1111-4111-8111-111111111111",
@@ -18,20 +21,14 @@ UUIDS = [
 
 
 def node(code: str, country: str, i: int, status="proxy_ok_high", scheme="vless"):
-    from urllib.parse import quote
-
-    flags = {"DE": "🇩🇪", "US": "🇺🇸", "NL": "🇳🇱"}
-    flag = flags[code]
+    flag = {"DE": "🇩🇪", "US": "🇺🇸", "NL": "🇳🇱"}[code]
     label = quote(f"{flag} {country} • AeryxVPN", safe="")
     host_prefix = "de" if code == "DE" else "us"
     host = f"{host_prefix}{i}.example.org"
     if scheme == "hysteria2":
-        uri = f"hysteria2://password-{i}@host-{i}.example.org:443?sni=host-{i}.example.org#{label}"
+        uri = f"hysteria2://password-{i}@{host}:443?sni={host}#{label}"
     else:
-        uri = (
-            f"vless://{UUIDS[i-1]}@{host}:443?encryption=none&security=tls"
-            f"&sni={host}&type=tcp#{label}"
-        )
+        uri = f"vless://{UUIDS[i-1]}@{host}:443?encryption=none&security=tls&sni={host}&type=tcp#{label}"
     return {
         "uri": uri,
         "scheme": scheme,
@@ -69,64 +66,141 @@ class UnifiedJSONBuilderTests(unittest.TestCase):
         )
         return out, report
 
-    def test_builds_one_complete_subscription_and_metadata_sidecar(self):
+    def test_emits_one_happ_json_array_and_metadata_sidecar(self):
         with tempfile.TemporaryDirectory() as td:
             out, report = self._build(Path(td))
             self.assertEqual(report["status"], "built")
             self.assertEqual(report["published_config_count"], 5)
             self.assertEqual(report["country_count"], 2)
+            self.assertEqual(report["profile_count"], 3)  # Germany, USA, global Auto
             self.assertTrue((out / "AeryxVPN.json").is_file())
             self.assertTrue((out / "AeryxVPN.metadata.json").is_file())
+            profiles = json.loads((out / "AeryxVPN.json").read_text(encoding="utf-8"))
+            self.assertIsInstance(profiles, list)
+            self.assertEqual(len(profiles), 3)
             self.assertFalse((out / "index.json").exists())
             self.assertFalse((out / "countries").exists())
             self.assertFalse((out / "xray").exists())
             metadata = json.loads((out / "AeryxVPN.metadata.json").read_text(encoding="utf-8"))["metadata"]
+            self.assertEqual(metadata["format"], "happ-xray-json-array")
             self.assertEqual(metadata["validated_config_count"], 5)
             self.assertEqual(metadata["country_count"], 2)
+            self.assertEqual(metadata["profile_count"], 3)
             self.assertEqual(metadata["generated_at"], "2026-10-27T12:00:00Z")
-            self.assertIn("https://raw.githubusercontent.com/cheesyx-rudy/aeryx-json-parser/main/AeryxVPN.json",
-                          metadata["subscription_url"])
+            self.assertIn("https://raw.githubusercontent.com/cheesyx-rudy/aeryx-json-parser/main/AeryxVPN.json", metadata["subscription_url"])
 
-    def test_one_profile_contains_country_urltests_and_one_country_selector(self):
+    def test_output_passes_structural_validator(self):
+        from tools.validate_outputs import validate_structure
         with tempfile.TemporaryDirectory() as td:
             out, _ = self._build(Path(td))
-            cfg = json.loads((out / "AeryxVPN.json").read_text(encoding="utf-8"))
-            by_tag = {item["tag"]: item for item in cfg["outbounds"]}
-            self.assertEqual(cfg["route"]["final"], "🌍 Выбор страны · AeryxVPN")
-            selector = by_tag[cfg["route"]["final"]]
-            self.assertEqual(cfg["experimental"]["clash_api"]["external_controller"], "127.0.0.1:9090")
-            self.assertEqual(selector["type"], "selector")
-            self.assertEqual(len(selector["outbounds"]), 2)
-            self.assertIn(selector["default"], selector["outbounds"])
-            de_auto = by_tag["🇩🇪 Germany · Автовыбор"]
-            us_auto = by_tag["🇺🇸 United States · Автовыбор"]
-            self.assertEqual(de_auto["type"], "urltest")
-            self.assertEqual(us_auto["type"], "urltest")
-            self.assertEqual(len(de_auto["outbounds"]), 3)
-            self.assertEqual(len(us_auto["outbounds"]), 2)
-            self.assertTrue(all(by_tag[tag]["type"] in {"vless", "hysteria2"} for tag in de_auto["outbounds"]))
-            self.assertEqual(de_auto["url"], "https://www.gstatic.com/generate_204")
+            result = validate_structure(out / "AeryxVPN.json", out / "AeryxVPN.metadata.json", out / "build-report.json")
+            self.assertEqual(result["countries"], 2)
+            self.assertEqual(result["validated_nodes"], 5)
+            self.assertEqual(result["auto_profile_count"], 1)
+            self.assertEqual(len(result["profiles"]), 3)
 
-    def test_each_node_has_unique_tag_and_all_groups_resolve(self):
+    def test_country_profiles_are_separate_happ_list_rows(self):
         with tempfile.TemporaryDirectory() as td:
             out, _ = self._build(Path(td))
-            cfg = json.loads((out / "AeryxVPN.json").read_text(encoding="utf-8"))
-            tags = [item["tag"] for item in cfg["outbounds"]]
-            self.assertEqual(len(tags), len(set(tags)))
-            by_tag = {item["tag"]: item for item in cfg["outbounds"]}
-            for outbound in cfg["outbounds"]:
-                if outbound["type"] in {"urltest", "selector"}:
-                    self.assertTrue(outbound["outbounds"])
-                    self.assertTrue(all(tag in by_tag for tag in outbound["outbounds"]))
+            profiles = json.loads((out / "AeryxVPN.json").read_text(encoding="utf-8"))
+            by_name = {item["remarks"]: item for item in profiles}
+            self.assertEqual(set(by_name), {"🇩🇪 Germany", "🇺🇸 United States", "🌐 AeryxVPN Auto"})
+            self.assertEqual(by_name["🇩🇪 Germany"]["meta"]["serverDescription"], "Автовыбор из 3 узлов")
+            self.assertEqual(by_name["🇺🇸 United States"]["meta"]["serverDescription"], "Автовыбор из 2 узлов")
+            self.assertEqual(by_name["🌐 AeryxVPN Auto"]["meta"]["serverDescription"], "Автовыбор из 5 узлов")
 
-    def test_unchecked_nodes_do_not_enter_single_subscription(self):
+    def test_each_country_profile_has_observatory_and_least_ping_balancer(self):
         with tempfile.TemporaryDirectory() as td:
             out, _ = self._build(Path(td))
-            cfg = json.loads((out / "AeryxVPN.json").read_text(encoding="utf-8"))
-            nodes = [v for v in cfg["outbounds"] if v.get("type") not in {"urltest", "selector", "direct"}]
-            self.assertEqual(len(nodes), 5)
+            profiles = json.loads((out / "AeryxVPN.json").read_text(encoding="utf-8"))
+            for profile in profiles:
+                by_tag = {item["tag"]: item for item in profile["outbounds"]}
+                self.assertEqual(profile["outbounds"][0]["tag"], "proxy")
+                self.assertEqual(by_tag["direct"]["protocol"], "freedom")
+                self.assertEqual(by_tag["block"]["protocol"], "blackhole")
+                self.assertEqual(profile["observatory"]["subjectSelector"], ["proxy", "aeryx-node-"])
+                self.assertEqual(profile["observatory"]["probeUrl"], "https://www.google.com/generate_204")
+                balancer = profile["routing"]["balancers"][0]
+                self.assertEqual(balancer["strategy"]["type"], "leastPing")
+                self.assertEqual(balancer["fallbackTag"], "proxy")
+                self.assertEqual(balancer["selector"], ["proxy", "aeryx-node-"])
+                self.assertTrue(any(rule.get("balancerTag") == balancer["tag"] for rule in profile["routing"]["rules"]))
+                self.assertEqual(profile["inbounds"][0]["tag"], "socks-in")
+                tags = [item["tag"] for item in profile["outbounds"]]
+                self.assertEqual(len(tags), len(set(tags)))
+
+    def test_only_tunnel_validated_and_xray_convertible_nodes_are_published(self):
+        with tempfile.TemporaryDirectory() as td:
+            out, _ = self._build(Path(td))
+            profiles = json.loads((out / "AeryxVPN.json").read_text(encoding="utf-8"))
+            country_profiles = [p for p in profiles if p["remarks"] != "🌐 AeryxVPN Auto"]
+            node_count = 0
+            for profile in country_profiles:
+                node_count += sum(item["protocol"] not in {"freedom", "blackhole"} for item in profile["outbounds"])
+            self.assertEqual(node_count, 5)
             report = json.loads((out / "build-report.json").read_text(encoding="utf-8"))
             self.assertEqual(report["rejected_counts"]["not_tunnel_validated"], 1)
+
+    def test_converter_builds_reality_and_ws_using_xray_fields(self):
+        uri = (
+            "vless://11111111-1111-4111-8111-111111111111@de.example.org:443"
+            "?encryption=none&security=reality&sni=www.example.com&pbk=PUBKEY&sid=1234&fp=chrome"
+            "&spx=%2F&type=ws&host=www.example.com&path=%2Fsocket#Germany"
+        )
+        out = uri_to_xray_outbound(uri)
+        self.assertEqual(out["protocol"], "vless")
+        self.assertEqual(out["settings"]["vnext"][0]["users"][0]["encryption"], "none")
+        stream = out["streamSettings"]
+        self.assertEqual(stream["security"], "reality")
+        self.assertEqual(stream["realitySettings"]["publicKey"], "PUBKEY")
+        self.assertEqual(stream["realitySettings"]["spiderX"], "/")
+        self.assertEqual(stream["network"], "ws")
+        self.assertEqual(stream["wsSettings"]["headers"]["Host"], "www.example.com")
+
+    def test_converter_builds_grpc_shadowsocks_and_hysteria2(self):
+        trojan = uri_to_xray_outbound("trojan://secret@de.example.org:443?sni=de.example.org&type=grpc&serviceName=svc#x")
+        self.assertEqual(trojan["protocol"], "trojan")
+        self.assertEqual(trojan["streamSettings"]["grpcSettings"]["serviceName"], "svc")
+        ss_uri = "ss://" + base64.urlsafe_b64encode(b"aes-256-gcm:secret").decode().rstrip("=") + "@de.example.org:8388#x"
+        ss = uri_to_xray_outbound(ss_uri)
+        self.assertEqual(ss["protocol"], "shadowsocks")
+        self.assertEqual(ss["settings"]["servers"][0]["method"], "aes-256-gcm")
+        hy2 = uri_to_xray_outbound("hy2://secret@de.example.org:443?sni=de.example.org&obfs=salamander&obfs-password=mask#x")
+        self.assertEqual(hy2["protocol"], "hysteria")
+        self.assertEqual(hy2["settings"]["version"], 2)
+        self.assertEqual(hy2["streamSettings"]["hysteriaSettings"]["auth"], "secret")
+        self.assertEqual(hy2["streamSettings"]["finalmask"]["udp"][0]["type"], "salamander")
+
+    def test_converter_builds_vmess_socks_and_httpupgrade(self):
+        payload = {
+            "add": "de.example.org", "port": "443", "id": UUIDS[0], "aid": "0",
+            "scy": "auto", "net": "ws", "type": "none", "host": "cdn.example.org",
+            "path": "/socket", "tls": "tls", "sni": "de.example.org",
+        }
+        encoded = base64.urlsafe_b64encode(json.dumps(payload, separators=(",", ":")).encode()).decode().rstrip("=")
+        vmess = uri_to_xray_outbound(f"vmess://{encoded}#Germany")
+        self.assertEqual(vmess["protocol"], "vmess")
+        self.assertEqual(vmess["streamSettings"]["network"], "ws")
+        self.assertEqual(vmess["streamSettings"]["wsSettings"]["path"], "/socket")
+        self.assertEqual(vmess["streamSettings"]["wsSettings"]["headers"]["Host"], "cdn.example.org")
+
+        socks = uri_to_xray_outbound("socks://user:pass@de.example.org:1080#Germany")
+        self.assertEqual(socks["protocol"], "socks")
+        self.assertEqual(socks["settings"]["servers"][0]["users"][0], {"user": "user", "pass": "pass"})
+
+        upgrade = uri_to_xray_outbound("vless://11111111-1111-4111-8111-111111111111@de.example.org:443?security=tls&type=httpupgrade&host=cdn.example.org&path=%2Fconnect&sni=de.example.org#Germany")
+        self.assertEqual(upgrade["streamSettings"]["network"], "httpupgrade")
+        self.assertEqual(upgrade["streamSettings"]["httpupgradeSettings"]["host"], "cdn.example.org")
+
+    def test_unsupported_xray_protocols_are_rejected_instead_of_published_broken(self):
+        for uri in [
+            "tuic://11111111-1111-4111-8111-111111111111:password@de.example.org:443?sni=de.example.org#x",
+            "anytls://password@de.example.org:443?sni=de.example.org#x",
+            "hysteria://password@de.example.org:443?sni=de.example.org#x",
+        ]:
+            with self.subTest(scheme=uri.split(":", 1)[0]):
+                with self.assertRaises(ValueError):
+                    uri_to_xray_outbound(uri)
 
     def test_diagnostics_do_not_expose_proxy_uris_or_passwords(self):
         with tempfile.TemporaryDirectory() as td:
@@ -146,11 +220,11 @@ class UnifiedJSONBuilderTests(unittest.TestCase):
             out = root / "publish"
             out.mkdir()
             previous = out / "AeryxVPN.json"
-            previous.write_text('{"existing": true}', encoding="utf-8")
+            previous.write_text('[{"existing":true}]', encoding="utf-8")
             config = Path(__file__).resolve().parents[1] / "config" / "settings.yaml"
             with self.assertRaisesRegex(ValueError, "Safety stop"):
                 build_country_outputs(input_file, out, config)
-            self.assertEqual(previous.read_text(encoding="utf-8"), '{"existing": true}')
+            self.assertEqual(previous.read_text(encoding="utf-8"), '[{"existing":true}]')
 
     def test_failed_late_build_preserves_previous_complete_output(self):
         with tempfile.TemporaryDirectory() as td:
@@ -159,7 +233,7 @@ class UnifiedJSONBuilderTests(unittest.TestCase):
             out = root / "publish"
             out.mkdir()
             previous = out / "AeryxVPN.json"
-            previous.write_text('{"previous": true}', encoding="utf-8")
+            previous.write_text('[{"previous":true}]', encoding="utf-8")
             original_writer = json_builder._write_json
 
             def fail_metadata(path, value):
@@ -170,7 +244,7 @@ class UnifiedJSONBuilderTests(unittest.TestCase):
             with patch.object(json_builder, "_write_json", side_effect=fail_metadata):
                 with self.assertRaisesRegex(RuntimeError, "simulated late write failure"):
                     build_country_outputs(source, out, config, "owner/repo", "main")
-            self.assertEqual(previous.read_text(encoding="utf-8"), '{"previous": true}')
+            self.assertEqual(previous.read_text(encoding="utf-8"), '[{"previous":true}]')
             self.assertFalse(any(p.name.startswith(".publish.staging-") for p in root.iterdir()))
 
 

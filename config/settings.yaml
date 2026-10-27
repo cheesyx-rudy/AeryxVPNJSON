@@ -13,6 +13,16 @@ fetch:
   max_total_sources: 100
   follow_depth: 2
   follow_web_pages: true
+  # Retry recognized provider wrappers that return a human instruction instead of a subscription.
+  client_compatibility_fallback: true
+  happ_profile:
+    user_agent: Happ/3.23.0
+    device_os: Android
+    device_model: AeryxJSON-Parser
+    os_version: "14"
+    locale: ru_RU
+    # Optional, sent as X-Xray-Core only when set; leave empty unless the source requires it.
+    xray_core_version: ""
 
 check:
   mode: proxy
@@ -87,17 +97,16 @@ json_subscription:
   website_url: https://t.me/AeryxVPN
   update_interval_hours: 6
   timezone: Europe/Berlin
-  # Native sing-box URLTest selects the best latency-tested outbound within each country.
-  sing_box:
+  # Happ consumes a JSON array: each element becomes a separate list entry.
+  # The Xray config uses observatory + leastPing inside each country profile.
+  xray_json:
     enabled: true
-    probe_url: https://www.gstatic.com/generate_204
-    interval: 3m
-    tolerance_ms: 80
-    socks_listen_port: 2080
-    http_listen_port: 2081
-    country_selector_tag: "🌍 Выбор страны · AeryxVPN"
-    clash_api_port: 9090
-    interrupt_exist_connections: false
+    probe_url: https://www.google.com/generate_204
+    probe_interval: 30s
+    inbound_socks_port: 10808
+    country_profile_name_suffix: ""
+    auto_profile_name: "🌐 AeryxVPN Auto"
+    include_auto_profile: true
   minimum_total_configs: 5
   minimum_country_configs: 1
   output:

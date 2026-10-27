@@ -1,14 +1,99 @@
 from __future__ import annotations
-import os, re, time, threading, mimetypes
+import os, re, time, threading, mimetypes, hashlib
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 from typing import Any
 from pathlib import Path
 import requests
 from .models import FetchResult
-from .extract import extract_html_links
+from .extract import extract_html_links, extract_uri_strings, decode_layers
+from .adapters import extract_structured_nodes
+from .models import SUPPORTED_SCHEMES
 
-DEFAULT_UA = "AeryxJSON-Parser/1.0 (subscription fetch)"
+DEFAULT_UA = "AeryxParser/2.2 (+subscription import; Python requests)"
 _ENV_RE = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
+
+CLIENT_LANDING_MARKERS = (
+    "вставлять в клиент", "вставить в клиент", "а не по ней переходить",
+    "вставить в приложение", "откройте ссылку в приложении", "используйте ссылку в клиенте",
+    "insert this link into the client", "paste this link into the client",
+    "open this link in the app", "use this link in the app", "client is not supported",
+    "app not supported", "use happ", "unsupported client",
+)
+
+
+def has_supported_payload(content: str) -> bool:
+    """True only when content contains proxy share links or convertible structured nodes."""
+    if not content or not content.strip():
+        return False
+    try:
+        layers = decode_layers(content)
+    except Exception:
+        layers = [content]
+    for layer in layers:
+        try:
+            for link in extract_uri_strings(layer):
+                scheme = urlsplit(link).scheme.lower()
+                if scheme in SUPPORTED_SCHEMES:
+                    return True
+        except Exception:
+            pass
+        try:
+            links, _ = extract_structured_nodes(layer)
+            if links:
+                return True
+        except Exception:
+            pass
+    return False
+
+
+def _safe_set_header(headers: dict[str, Any], name: str, value: str) -> None:
+    """Set an HTTP header without keeping duplicate keys with different casing."""
+    for existing in list(headers):
+        if str(existing).lower() == name.lower():
+            del headers[existing]
+    headers[name] = value
+
+
+def _happ_headers(url: str, existing: dict[str, Any], settings: dict[str, Any]) -> dict[str, Any]:
+    """Build a Happ-compatible request profile without inventing a device identity.
+
+    If a panel requires device registration, callers must provide their own permitted
+    HWID using the HAPP_HWID secret or an explicit per-source X-HWID header.
+    """
+    headers = dict(existing)
+    profile = settings.get("happ_profile", {}) or {}
+    _safe_set_header(headers, "User-Agent", str(profile.get("user_agent", "Happ/3.23.0")))
+    _safe_set_header(headers, "Accept", str(profile.get("accept", "text/plain, application/json, */*")))
+    defaults = {
+        "X-Device-OS": str(profile.get("device_os", "Android")),
+        "X-Device-Model": str(profile.get("device_model", "AeryxJSON-Parser")),
+        "X-Ver-OS": str(profile.get("os_version", "14")),
+        "X-Device-Locale": str(profile.get("locale", "ru_RU")),
+    }
+    configured_hwid = os.environ.get("HAPP_HWID", "").strip()
+    source_header_names = {str(k).lower() for k in existing}
+    # Do not synthesize/spoof an HWID. Use the authorized device identifier explicitly
+    # configured by the operator, or preserve the per-source X-HWID header as supplied.
+    if configured_hwid and "x-hwid" not in source_header_names:
+        defaults["X-HWID"] = configured_hwid
+    core_version = str(profile.get("xray_core_version", "")).strip()
+    if core_version:
+        defaults["X-Xray-Core"] = core_version
+    for name, value in defaults.items():
+        if name.lower() not in source_header_names:
+            _safe_set_header(headers, name, value)
+    return headers
+
+
+def _needs_happ_compatibility(url: str, result: FetchResult) -> bool:
+    """Recognize provider wrappers that return a browser instruction instead of data."""
+    path = urlsplit(url).path.lower()
+    if "bypass-hwid-lock" in path or "happ" in path:
+        return not has_supported_payload(result.content)
+    body = (result.content or "").lower()
+    if any(marker in body for marker in CLIENT_LANDING_MARKERS):
+        return not has_supported_payload(result.content)
+    return False
 
 
 def resolve_env(value: Any) -> Any:
@@ -46,6 +131,8 @@ def redact_url(url: str) -> str:
 
 class Fetcher:
     def __init__(self, settings: dict[str,Any]):
+        self.settings = dict(settings or {})
+        settings = self.settings
         self.timeout_connect=float(settings.get("connect_timeout_seconds",4))
         self.timeout_read=float(settings.get("read_timeout_seconds",8))
         self.max_bytes=int(settings.get("max_source_bytes",20*1024*1024))
@@ -60,7 +147,45 @@ class Fetcher:
             self._local.session=s
         return self._local.session
 
-    def fetch(self, source: dict[str,Any], deadline: float | None = None) -> FetchResult:
+    def fetch(self, source: dict[str, Any], deadline: float | None = None) -> FetchResult:
+        """Fetch normally; retry special client-only provider links as a Happ-compatible client."""
+        initial = self._fetch_once(source, deadline)
+        if not bool(self.settings.get("client_compatibility_fallback", True)):
+            return initial
+        raw_url = str(source.get("url") or "").strip()
+        try:
+            url = str(resolve_env(raw_url)).strip() if raw_url else ""
+        except Exception:
+            return initial
+        if not url or not _needs_happ_compatibility(url, initial):
+            return initial
+        if deadline is not None and time.monotonic() >= deadline:
+            initial.compatibility_note = "Happ-compatible retry skipped: runtime deadline reached."
+            return initial
+
+        original_headers = source.get("headers") or {}
+        if not isinstance(original_headers, dict):
+            original_headers = {}
+        compatible_source = dict(source)
+        compatible_source["headers"] = _happ_headers(url, original_headers, self.settings)
+        compatible = self._fetch_once(compatible_source, deadline)
+        compatible.client_profile = "happ-compat"
+        used_hwid = any(str(k).lower() == "x-hwid" for k in compatible_source["headers"])
+        compatible.compatibility_note = (
+            "Retried with a Happ-compatible request profile because the endpoint returned a client-only page "
+            "or no parseable proxy data. "
+            + ("An explicitly configured device ID was sent." if used_hwid else "No HWID was fabricated or sent; set HAPP_HWID only if this is an authorized device ID and the panel requires it.")
+        )
+        if not has_supported_payload(compatible.content):
+            # Keep the final response for diagnostics, but make the failed adapter attempt explicit.
+            failure = f"HTTP {compatible.status_code}" if compatible.status_code else (compatible.error or "no response")
+            compatible.error = (
+                f"Happ-compatible retry returned no recognized proxy data ({failure}); "
+                "the source may require its registered device ID or a different documented client profile."
+            )
+        return compatible
+
+    def _fetch_once(self, source: dict[str,Any], deadline: float | None = None) -> FetchResult:
         raw_url=str(source.get("url") or "").strip()
         try: url=str(resolve_env(raw_url)).strip() if raw_url else ""
         except Exception as exc:

@@ -63,6 +63,8 @@ class FetchResult:
     error: str = ""
     discovered_urls: list[dict[str, Any]] = field(default_factory=list)
     source_name: str = ""
+    client_profile: str = "default"
+    compatibility_note: str = ""
 
 
 def parse_endpoint(uri: str) -> tuple[str, int, str]:
