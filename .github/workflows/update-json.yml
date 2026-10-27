@@ -1,0 +1,133 @@
+name: AeryxJSON country subscriptions
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'sources.txt'
+      - 'config/**'
+      - 'src/**'
+      - 'tests/**'
+      - 'tools/**'
+      - 'pyproject.toml'
+      - 'requirements.txt'
+      - 'schemas/**'
+      - '.github/workflows/update-json.yml'
+  schedule:
+    - cron: '17 */6 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: aeryxjson-subscription-update
+  cancel-in-progress: false
+
+jobs:
+  build-country-json:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONUNBUFFERED: '1'
+      PYTHONPATH: src
+      # For private sources, add only the secrets you actually reference in sources.txt.
+      PANEL_TOKEN: ${{ secrets.PANEL_TOKEN }}
+      PANEL_SESSION: ${{ secrets.PANEL_SESSION }}
+      SUB_TOKEN: ${{ secrets.SUB_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check -e .
+
+      - name: Run offline tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Check whether sources.txt has active URLs
+        id: source_check
+        shell: bash
+        run: |
+          if grep -Eq '^[[:space:]]*https?://' sources.txt; then
+            echo 'has_sources=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'has_sources=false' >> "$GITHUB_OUTPUT"
+            echo 'No source URLs configured. Tests passed; generation is skipped without changing any published files.'
+          fi
+
+      - name: Download DB-IP Lite country database
+        if: steps.source_check.outputs.has_sources == 'true'
+        run: python tools/download_geoip.py --output output/dbip-country-lite.mmdb
+
+      - name: Install official stable Xray and sing-box cores
+        if: steps.source_check.outputs.has_sources == 'true'
+        run: python tools/install_cores.py --platform linux --arch amd64
+
+      - name: Fetch, parse, filter and tunnel-check source configs
+        if: steps.source_check.outputs.has_sources == 'true'
+        run: python -m aeryx_json_parser --check proxy --max-runtime 360
+
+      - name: Build per-country JSON subscriptions and balancing profiles
+        if: steps.source_check.outputs.has_sources == 'true'
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: >-
+          python -m aeryx_json_parser.json_builder
+          --input output/engine/parsed_proxies.json
+          --output output/publish
+          --repository "$GITHUB_REPOSITORY"
+          --branch main
+
+      - name: Validate generated profiles with native cores
+        if: steps.source_check.outputs.has_sources == 'true'
+        run: python tools/validate_outputs.py --root output/publish --sing-box tools/sing-box --xray tools/xray
+
+      - name: Upload safe build diagnostics (not committed)
+        if: always() && steps.source_check.outputs.has_sources == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: aeryxjson-build-report
+          path: |
+            output/engine/validation_report.json
+            output/engine/progress.jsonl
+            output/publish/build-report.json
+            output/tools/core-versions.json
+            tools/core-versions.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Publish country JSONs to this repository
+        if: success() && steps.source_check.outputs.has_sources == 'true' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s output/publish/index.json
+          test -s output/publish/build-report.json
+          mkdir -p countries xray country-metadata
+          rsync -a --delete output/publish/countries/ countries/
+          rsync -a --delete output/publish/xray/ xray/
+          rsync -a --delete output/publish/country-metadata/ country-metadata/
+          install -m 0644 output/publish/index.json index.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A -- index.json countries/ country-metadata/
+          if find xray -type f -name '*.json' -print -quit | grep -q .; then
+            git add -A -- xray/
+          else
+            git rm -r --ignore-unmatch xray/
+          fi
+          if git diff --cached --quiet; then
+            echo 'Country JSONs are unchanged; no commit needed.'
+          else
+            git commit -m 'Update country-split AeryxVPN JSON subscriptions'
+            git push origin HEAD:main
+          fi
