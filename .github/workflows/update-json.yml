@@ -1,4 +1,4 @@
-name: AeryxJSON country subscriptions
+name: AeryxVPN single JSON subscription
 
 on:
   workflow_dispatch:
@@ -13,6 +13,8 @@ on:
       - 'pyproject.toml'
       - 'requirements.txt'
       - 'schemas/**'
+      - 'README_RU.md'
+      - 'RESEARCH.md'
       - '.github/workflows/update-json.yml'
   schedule:
     - cron: '17 */6 * * *'
@@ -25,7 +27,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-country-json:
+  build-single-json:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -75,7 +77,7 @@ jobs:
         if: steps.source_check.outputs.has_sources == 'true'
         run: python -m aeryx_json_parser --check proxy --max-runtime 360
 
-      - name: Build per-country JSON subscriptions and balancing profiles
+      - name: Build one JSON subscription with per-country auto balancers
         if: steps.source_check.outputs.has_sources == 'true'
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -87,9 +89,9 @@ jobs:
           --repository "$GITHUB_REPOSITORY"
           --branch main
 
-      - name: Validate generated profiles with native cores
+      - name: Validate the single subscription with sing-box
         if: steps.source_check.outputs.has_sources == 'true'
-        run: python tools/validate_outputs.py --root output/publish --sing-box tools/sing-box --xray tools/xray
+        run: python tools/validate_outputs.py --root output/publish --sing-box tools/sing-box
 
       - name: Upload safe build diagnostics (not committed)
         if: always() && steps.source_check.outputs.has_sources == 'true'
@@ -105,29 +107,25 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-      - name: Publish country JSONs to this repository
+      - name: Publish the single JSON subscription and metadata to this repository
         if: success() && steps.source_check.outputs.has_sources == 'true' && github.ref == 'refs/heads/main'
         shell: bash
         run: |
           set -euo pipefail
-          test -s output/publish/index.json
+          test -s output/publish/AeryxVPN.json
+          test -s output/publish/AeryxVPN.metadata.json
           test -s output/publish/build-report.json
-          mkdir -p countries xray country-metadata
-          rsync -a --delete output/publish/countries/ countries/
-          rsync -a --delete output/publish/xray/ xray/
-          rsync -a --delete output/publish/country-metadata/ country-metadata/
-          install -m 0644 output/publish/index.json index.json
+          install -m 0644 output/publish/AeryxVPN.json AeryxVPN.json
+          install -m 0644 output/publish/AeryxVPN.metadata.json AeryxVPN.metadata.json
+          # Remove files created by the previous country-per-file layout.
+          git rm -r --ignore-unmatch countries xray country-metadata
+          git rm --ignore-unmatch index.json
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A -- index.json countries/ country-metadata/
-          if find xray -type f -name '*.json' -print -quit | grep -q .; then
-            git add -A -- xray/
-          else
-            git rm -r --ignore-unmatch xray/
-          fi
+          git add -A
           if git diff --cached --quiet; then
-            echo 'Country JSONs are unchanged; no commit needed.'
+            echo 'AeryxVPN JSON subscription is unchanged; no commit needed.'
           else
-            git commit -m 'Update country-split AeryxVPN JSON subscriptions'
+            git commit -m 'Update unified AeryxVPN JSON subscription'
             git push origin HEAD:main
           fi
