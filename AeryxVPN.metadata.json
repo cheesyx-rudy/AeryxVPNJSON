@@ -1,45 +1,43 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "metadata": {
     "title": "AeryxVPN",
     "project": "AeryxVPN",
-    "description": "Одна JSON-подписка со странами в виде групп и автоматическим выбором узла внутри каждой страны.",
-    "format": "sing-box-native-json",
+    "description": "Одна Happ-совместимая JSON-подписка: отдельный профиль для каждой страны, балансировка узлов по наблюдаемой задержке и общий Auto-профиль.",
+    "format": "happ-xray-json-array",
     "subscription_file": "AeryxVPN.json",
     "subscription_url": "https://raw.githubusercontent.com/cheesyx-rudy/AeryxVPNJSON/main/AeryxVPN.json",
     "support_url": "https://t.me/cheesyx",
     "website_url": "https://t.me/AeryxVPN",
-    "generated_at": "2026-10-27T15:09:34Z",
-    "updated_at_local": "27.10.2026 16:09",
+    "generated_at": "2026-10-27T16:14:32Z",
+    "updated_at_local": "27.10.2026 17:14",
     "timezone": "Europe/Berlin",
     "update_interval_hours": 6,
-    "country_count": 2,
-    "validated_config_count": 15,
-    "country_selector_tag": "🌍 Выбор страны · AeryxVPN",
+    "country_count": 1,
+    "validated_config_count": 8,
+    "profile_count": 2,
+    "auto_profile_included": true,
+    "auto_profile_name": "🌐 AeryxVPN Auto",
     "balancing": {
-      "per_country": "urltest",
-      "country_selection": "selector",
-      "probe_url": "https://www.gstatic.com/generate_204",
-      "interval": "3m",
-      "tolerance_ms": 80
+      "engine": "Xray-core",
+      "per_country": "observatory+leastPing",
+      "global_auto_profile": true,
+      "probe_url": "https://www.google.com/generate_204",
+      "probe_interval": "30s",
+      "method": "client-side; each profile measures its own nodes"
     },
-    "profile_sha256": "822f296a328aea78686ffb194ce468e5bcb4662d9a69d8a3888cfa440a4c847d",
+    "profile_sha256": "a66a4e9471771113162d6f76c228f8e2276ab26b6366bd1c40220dd3b5937708",
     "countries": [
       {
         "code": "RU",
         "name": "Russia",
         "flag": "🇷🇺",
-        "node_count": 12,
-        "balancer_tag": "🇷🇺 Russia · Автовыбор"
-      },
-      {
-        "code": "NL",
-        "name": "Netherlands",
-        "flag": "🇳🇱",
-        "node_count": 3,
-        "balancer_tag": "🇳🇱 Netherlands · Автовыбор"
+        "profile_name": "🇷🇺 Russia",
+        "node_count": 8,
+        "balancer_tag": "aeryx-ru-least-ping",
+        "balancing": "observatory+leastPing"
       }
     ],
-    "note": "Metadata sidecar only; import AeryxVPN.json as the client profile. Arbitrary metadata fields are not inserted into the native sing-box schema."
+    "note": "Metadata sidecar only. Import AeryxVPN.json; it is a JSON array of complete Xray profiles, one per country plus optional global Auto."
   }
 }

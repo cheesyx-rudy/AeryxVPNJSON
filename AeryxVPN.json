@@ -1,0 +1,616 @@
+[
+  {
+    "remarks": "🇷🇺 Russia",
+    "meta": {
+      "serverDescription": "Автовыбор из 8 узлов"
+    },
+    "log": {
+      "loglevel": "warning"
+    },
+    "dns": {
+      "servers": [
+        "1.1.1.1",
+        "8.8.8.8"
+      ],
+      "queryStrategy": "UseIP"
+    },
+    "inbounds": [
+      {
+        "tag": "socks-in",
+        "listen": "127.0.0.1",
+        "port": 10808,
+        "protocol": "socks",
+        "settings": {
+          "auth": "noauth",
+          "udp": true,
+          "ip": "127.0.0.1"
+        },
+        "sniffing": {
+          "enabled": true,
+          "destOverride": [
+            "http",
+            "tls",
+            "quic"
+          ],
+          "routeOnly": false
+        }
+      }
+    ],
+    "outbounds": [
+      {
+        "tag": "proxy",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "193.160.141.81",
+              "port": 8443,
+              "users": [
+                {
+                  "id": "ee82f319-ab92-425d-8e04-28a29f33f670",
+                  "encryption": "none",
+                  "flow": "xtls-rprx-vision"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "apple.com",
+            "fingerprint": "firefox",
+            "publicKey": "SbVKOEMjK0sIlbwg4akyBg5mL5KZwwB-ed4eEE7YnRc",
+            "shortId": ""
+          }
+        }
+      },
+      {
+        "tag": "aeryx-node-002",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "45.9.12.110",
+              "port": 443,
+              "users": [
+                {
+                  "id": "4b1be712-774c-4b65-8491-a3339e124a70",
+                  "encryption": "none",
+                  "flow": "xtls-rprx-vision"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "ru.letsconnectpoint.com",
+            "fingerprint": "firefox",
+            "publicKey": "myIjvlXZS0rm1eg4q2w5WsQBuj80i2rBA0HpRGCUg1w",
+            "shortId": "86d1efde"
+          }
+        }
+      },
+      {
+        "tag": "aeryx-node-003",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "72.56.242.232",
+              "port": 443,
+              "users": [
+                {
+                  "id": "27653b37-603c-4c90-b1f5-25c4d23f8932",
+                  "encryption": "none"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "grpc",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "renderer-bridge-1-881.mirra.now",
+            "fingerprint": "firefox"
+          },
+          "grpcSettings": {
+            "serviceName": "VideoRenderer"
+          }
+        }
+      },
+      {
+        "tag": "aeryx-node-004",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "72.56.38.83",
+              "port": 443,
+              "users": [
+                {
+                  "id": "Fluffy_VPN-zKZUa4Ie",
+                  "encryption": "none",
+                  "flow": "xtls-rprx-vision"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "absolute-disaster.org",
+            "fingerprint": "firefox",
+            "publicKey": "ZzIetLcQtENjIXQ9XZqFo8p3J81p8Emj0wi51Uy07n8",
+            "shortId": ""
+          }
+        }
+      },
+      {
+        "tag": "aeryx-node-005",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "77.232.135.141",
+              "port": 8445,
+              "users": [
+                {
+                  "id": "36cf792c-f07d-4500-97ea-a395e5178deb",
+                  "encryption": "none"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "grpc",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "ru1.radiolumens.uk",
+            "fingerprint": "firefox"
+          },
+          "grpcSettings": {
+            "serviceName": "beru-pl"
+          }
+        }
+      },
+      {
+        "tag": "aeryx-node-006",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "81.222.148.104",
+              "port": 443,
+              "users": [
+                {
+                  "id": "f439e4fe-139b-4882-ad8b-a16176d09c88",
+                  "encryption": "none"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "eu53.cdn77.icu",
+            "fingerprint": "firefox",
+            "publicKey": "EltWI8AOqkN8lMjRycweRRoFRah5hu6xiKtgBmQOdE8",
+            "shortId": "1ed136481e0ede74"
+          }
+        }
+      },
+      {
+        "tag": "aeryx-node-007",
+        "protocol": "hysteria",
+        "settings": {
+          "version": 2,
+          "address": "103.88.243.142",
+          "port": 11592
+        },
+        "streamSettings": {
+          "network": "hysteria",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "srv-17e124.21freedom.net",
+            "alpn": [
+              "h3"
+            ]
+          },
+          "hysteriaSettings": {
+            "version": 2,
+            "auth": "41edb44c8e"
+          }
+        }
+      },
+      {
+        "tag": "aeryx-node-008",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "176.108.253.204",
+              "port": 443,
+              "users": [
+                {
+                  "id": "d9d943cc-269b-4e34-9000-722f6795225d",
+                  "encryption": "none",
+                  "flow": "xtls-rprx-vision"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "rumos.yandex-api.com",
+            "fingerprint": "firefox",
+            "publicKey": "aacc3j_mijcn5WdrrUcMRlTV7IhTgTVawR6oK_3cJGI",
+            "shortId": ""
+          }
+        }
+      },
+      {
+        "tag": "direct",
+        "protocol": "freedom"
+      },
+      {
+        "tag": "block",
+        "protocol": "blackhole"
+      }
+    ],
+    "observatory": {
+      "subjectSelector": [
+        "proxy",
+        "aeryx-node-"
+      ],
+      "probeUrl": "https://www.google.com/generate_204",
+      "probeInterval": "30s",
+      "enableConcurrency": true
+    },
+    "routing": {
+      "domainStrategy": "AsIs",
+      "rules": [
+        {
+          "type": "field",
+          "inboundTag": [
+            "socks-in"
+          ],
+          "balancerTag": "aeryx-ru-least-ping"
+        }
+      ],
+      "balancers": [
+        {
+          "tag": "aeryx-ru-least-ping",
+          "selector": [
+            "proxy",
+            "aeryx-node-"
+          ],
+          "fallbackTag": "proxy",
+          "strategy": {
+            "type": "leastPing"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "remarks": "🌐 AeryxVPN Auto",
+    "meta": {
+      "serverDescription": "Автовыбор из 8 узлов"
+    },
+    "log": {
+      "loglevel": "warning"
+    },
+    "dns": {
+      "servers": [
+        "1.1.1.1",
+        "8.8.8.8"
+      ],
+      "queryStrategy": "UseIP"
+    },
+    "inbounds": [
+      {
+        "tag": "socks-in",
+        "listen": "127.0.0.1",
+        "port": 10808,
+        "protocol": "socks",
+        "settings": {
+          "auth": "noauth",
+          "udp": true,
+          "ip": "127.0.0.1"
+        },
+        "sniffing": {
+          "enabled": true,
+          "destOverride": [
+            "http",
+            "tls",
+            "quic"
+          ],
+          "routeOnly": false
+        }
+      }
+    ],
+    "outbounds": [
+      {
+        "tag": "proxy",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "193.160.141.81",
+              "port": 8443,
+              "users": [
+                {
+                  "id": "ee82f319-ab92-425d-8e04-28a29f33f670",
+                  "encryption": "none",
+                  "flow": "xtls-rprx-vision"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "apple.com",
+            "fingerprint": "firefox",
+            "publicKey": "SbVKOEMjK0sIlbwg4akyBg5mL5KZwwB-ed4eEE7YnRc",
+            "shortId": ""
+          }
+        }
+      },
+      {
+        "tag": "aeryx-node-002",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "45.9.12.110",
+              "port": 443,
+              "users": [
+                {
+                  "id": "4b1be712-774c-4b65-8491-a3339e124a70",
+                  "encryption": "none",
+                  "flow": "xtls-rprx-vision"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "ru.letsconnectpoint.com",
+            "fingerprint": "firefox",
+            "publicKey": "myIjvlXZS0rm1eg4q2w5WsQBuj80i2rBA0HpRGCUg1w",
+            "shortId": "86d1efde"
+          }
+        }
+      },
+      {
+        "tag": "aeryx-node-003",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "72.56.242.232",
+              "port": 443,
+              "users": [
+                {
+                  "id": "27653b37-603c-4c90-b1f5-25c4d23f8932",
+                  "encryption": "none"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "grpc",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "renderer-bridge-1-881.mirra.now",
+            "fingerprint": "firefox"
+          },
+          "grpcSettings": {
+            "serviceName": "VideoRenderer"
+          }
+        }
+      },
+      {
+        "tag": "aeryx-node-004",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "72.56.38.83",
+              "port": 443,
+              "users": [
+                {
+                  "id": "Fluffy_VPN-zKZUa4Ie",
+                  "encryption": "none",
+                  "flow": "xtls-rprx-vision"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "absolute-disaster.org",
+            "fingerprint": "firefox",
+            "publicKey": "ZzIetLcQtENjIXQ9XZqFo8p3J81p8Emj0wi51Uy07n8",
+            "shortId": ""
+          }
+        }
+      },
+      {
+        "tag": "aeryx-node-005",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "77.232.135.141",
+              "port": 8445,
+              "users": [
+                {
+                  "id": "36cf792c-f07d-4500-97ea-a395e5178deb",
+                  "encryption": "none"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "grpc",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "ru1.radiolumens.uk",
+            "fingerprint": "firefox"
+          },
+          "grpcSettings": {
+            "serviceName": "beru-pl"
+          }
+        }
+      },
+      {
+        "tag": "aeryx-node-006",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "81.222.148.104",
+              "port": 443,
+              "users": [
+                {
+                  "id": "f439e4fe-139b-4882-ad8b-a16176d09c88",
+                  "encryption": "none"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "eu53.cdn77.icu",
+            "fingerprint": "firefox",
+            "publicKey": "EltWI8AOqkN8lMjRycweRRoFRah5hu6xiKtgBmQOdE8",
+            "shortId": "1ed136481e0ede74"
+          }
+        }
+      },
+      {
+        "tag": "aeryx-node-007",
+        "protocol": "hysteria",
+        "settings": {
+          "version": 2,
+          "address": "103.88.243.142",
+          "port": 11592
+        },
+        "streamSettings": {
+          "network": "hysteria",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "srv-17e124.21freedom.net",
+            "alpn": [
+              "h3"
+            ]
+          },
+          "hysteriaSettings": {
+            "version": 2,
+            "auth": "41edb44c8e"
+          }
+        }
+      },
+      {
+        "tag": "aeryx-node-008",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "176.108.253.204",
+              "port": 443,
+              "users": [
+                {
+                  "id": "d9d943cc-269b-4e34-9000-722f6795225d",
+                  "encryption": "none",
+                  "flow": "xtls-rprx-vision"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "rumos.yandex-api.com",
+            "fingerprint": "firefox",
+            "publicKey": "aacc3j_mijcn5WdrrUcMRlTV7IhTgTVawR6oK_3cJGI",
+            "shortId": ""
+          }
+        }
+      },
+      {
+        "tag": "direct",
+        "protocol": "freedom"
+      },
+      {
+        "tag": "block",
+        "protocol": "blackhole"
+      }
+    ],
+    "observatory": {
+      "subjectSelector": [
+        "proxy",
+        "aeryx-node-"
+      ],
+      "probeUrl": "https://www.google.com/generate_204",
+      "probeInterval": "30s",
+      "enableConcurrency": true
+    },
+    "routing": {
+      "domainStrategy": "AsIs",
+      "rules": [
+        {
+          "type": "field",
+          "inboundTag": [
+            "socks-in"
+          ],
+          "balancerTag": "aeryx-global-least-ping"
+        }
+      ],
+      "balancers": [
+        {
+          "tag": "aeryx-global-least-ping",
+          "selector": [
+            "proxy",
+            "aeryx-node-"
+          ],
+          "fallbackTag": "proxy",
+          "strategy": {
+            "type": "leastPing"
+          }
+        }
+      ]
+    }
+  }
+]
