@@ -1,4 +1,4 @@
-name: AeryxVPN single JSON subscription
+name: AeryxVPN Happ Xray JSON-array subscription
 
 on:
   workflow_dispatch:
@@ -27,7 +27,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-single-json:
+  build-happ-json-array:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -37,6 +37,8 @@ jobs:
       PANEL_TOKEN: ${{ secrets.PANEL_TOKEN }}
       PANEL_SESSION: ${{ secrets.PANEL_SESSION }}
       SUB_TOKEN: ${{ secrets.SUB_TOKEN }}
+      HAPP_HWID: ${{ secrets.HAPP_HWID }}
+      WEP_SOURCE_URL: ${{ secrets.WEP_SOURCE_URL }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -58,7 +60,7 @@ jobs:
         id: source_check
         shell: bash
         run: |
-          if grep -Eq '^[[:space:]]*https?://' sources.txt; then
+          if grep -Eq '^[[:space:]]*(https?://|\$\{[A-Za-z_][A-Za-z0-9_]*\})' sources.txt; then
             echo 'has_sources=true' >> "$GITHUB_OUTPUT"
           else
             echo 'has_sources=false' >> "$GITHUB_OUTPUT"
@@ -77,7 +79,7 @@ jobs:
         if: steps.source_check.outputs.has_sources == 'true'
         run: python -m aeryx_json_parser --check proxy --max-runtime 360
 
-      - name: Build one JSON subscription with per-country auto balancers
+      - name: Build Happ JSON array: one balanced profile per country plus Auto
         if: steps.source_check.outputs.has_sources == 'true'
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -89,9 +91,9 @@ jobs:
           --repository "$GITHUB_REPOSITORY"
           --branch main
 
-      - name: Validate the single subscription with sing-box
+      - name: Validate every Happ profile with Xray-core
         if: steps.source_check.outputs.has_sources == 'true'
-        run: python tools/validate_outputs.py --root output/publish --sing-box tools/sing-box
+        run: python tools/validate_outputs.py --root output/publish --xray tools/xray
 
       - name: Upload safe build diagnostics (not committed)
         if: always() && steps.source_check.outputs.has_sources == 'true'
@@ -107,7 +109,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-      - name: Publish the single JSON subscription and metadata to this repository
+      - name: Publish the Happ JSON-array subscription and metadata to this repository
         if: success() && steps.source_check.outputs.has_sources == 'true' && github.ref == 'refs/heads/main'
         shell: bash
         run: |
