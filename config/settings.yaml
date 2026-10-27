@@ -1,0 +1,111 @@
+pipeline:
+  name: AeryxJSON-Parser
+  max_runtime_seconds: 360
+  min_output_configs: 5
+  min_output_ratio: 0.02
+
+fetch:
+  workers: 12
+  connect_timeout_seconds: 4
+  read_timeout_seconds: 8
+  retries: 1
+  max_source_bytes: 20971520
+  max_total_sources: 100
+  follow_depth: 2
+  follow_web_pages: true
+
+check:
+  mode: proxy
+  workers: 12
+  max_concurrent_core_probes: 12
+  per_node_timeout_seconds: 10
+  tcp_precheck_workers: 64
+  tcp_precheck_timeout_seconds: 0.9
+  minimum_successful_probes: 2
+  require_independent_probe_domains: true
+  retry_single_success: true
+  test_urls:
+    - https://www.gstatic.com/generate_204
+    - https://cp.cloudflare.com/generate_204
+    - http://www.msftconnecttest.com/connecttest.txt
+    - https://api.ipify.org
+    - https://checkip.amazonaws.com
+
+blocklists:
+  enabled: true
+  workers: 6
+  timeout_seconds: 5
+  dns_timeout_seconds: 1.5
+  cache_hours: 72
+  max_feed_bytes: 12582912
+  minimum_external_prefix_v4: 24
+  minimum_external_prefix_v6: 48
+  reject_non_global_addresses: true
+  manual_cidrs: []
+  manual_cidrs_file: config/manual-deny-cidrs.txt
+  feeds:
+    - name: AntiFilter aggregated list
+      url: https://antifilter.download/list/allyouneed.lst
+      format: text
+    - name: Russia blocked IPs
+      url: https://raw.githubusercontent.com/eduard256/russia-blocked-ips/main/ip.txt
+      format: text
+
+# This project emits native client JSON configs and does not embed Happ's text/URI routing profile.
+routing:
+  happ_enabled: false
+  include_in_subscription: false
+  profile_path: routing/HAPP-ROUTING.JSON
+  deeplink_path: routing/HAPP-ROUTING.DEEPLINK
+
+location:
+  database_path: output/dbip-country-lite.mmdb
+  require_country: true
+  prefer_ip_geolocation: true
+  fallbacks:
+    - existing_config_name
+    - source_name
+    - country_code_tld
+
+subscription:
+  profile_title: AeryxVPN JSON
+  support_url: https://t.me/cheesyx
+  profile_web_page_url: https://t.me/AeryxVPN
+  profile_update_interval_hours: 6
+  timezone: Europe/Berlin
+
+outputs:
+  directory: output/engine
+  subscription_file: AeryxJSON-ENGINE-RAW
+  candidate_file: parsed.candidate.txt
+  structured_file: parsed_proxies.json
+  rejected_file: rejected_proxies.txt
+
+json_subscription:
+  title: AeryxVPN JSON
+  support_url: https://t.me/cheesyx
+  website_url: https://t.me/AeryxVPN
+  update_interval_hours: 6
+  timezone: Europe/Berlin
+  # Native sing-box URLTest selects the best latency-tested outbound within each country.
+  sing_box:
+    enabled: true
+    probe_url: https://www.gstatic.com/generate_204
+    interval: 3m
+    tolerance_ms: 80
+    socks_listen_port: 2080
+    http_listen_port: 2081
+  # Xray leastPing requires observatory results; only URI schemes Xray can represent are included.
+  xray:
+    enabled: true
+    probe_url: https://www.gstatic.com/generate_204
+    probe_interval: 30s
+    socks_listen_port: 10808
+    http_listen_port: 10809
+  minimum_total_configs: 5
+  minimum_country_configs: 1
+  output:
+    index_file: index.json
+    countries_directory: countries
+    xray_directory: xray
+    country_metadata_directory: country-metadata

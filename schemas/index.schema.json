@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AeryxVPN JSON country index",
+  "type": "object",
+  "required": ["schema_version", "metadata", "countries"],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "metadata": {
+      "type": "object",
+      "required": ["title", "project", "support_url", "website_url", "generated_at", "update_interval_hours", "country_count", "validated_sing_box_config_count", "xray_compatible_config_count"],
+      "properties": {
+        "title": {"type": "string"},
+        "project": {"type": "string"},
+        "support_url": {"type": "string", "format": "uri"},
+        "website_url": {"type": "string", "format": "uri"},
+        "generated_at": {"type": "string", "format": "date-time"},
+        "updated_at_local": {"type": "string"},
+        "timezone": {"type": "string"},
+        "update_interval_hours": {"type": "integer", "minimum": 1},
+        "country_count": {"type": "integer", "minimum": 1},
+        "validated_sing_box_config_count": {"type": "integer", "minimum": 1},
+        "xray_compatible_config_count": {"type": "integer", "minimum": 0},
+        "checks": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+    "countries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["code", "name", "flag", "validated_node_count", "files", "balancers"],
+        "properties": {
+          "code": {"type": "string", "pattern": "^[A-Z]{2}$"},
+          "name": {"type": "string"},
+          "flag": {"type": "string"},
+          "validated_node_count": {"type": "integer", "minimum": 1},
+          "xray_compatible_node_count": {"type": "integer", "minimum": 0},
+          "files": {"type": "object"},
+          "balancers": {"type": "object"}
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

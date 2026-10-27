@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aeryx-json-parser"
+version = "1.0.0"
+description = "Country-split JSON VPN subscriptions with native sing-box and Xray auto-balancers"
+readme = "README_RU.md"
+requires-python = ">=3.11"
+dependencies = ["requests[socks]>=2.32,<3.0", "PyYAML>=6.0,<7.0", "maxminddb>=2.6,<3", "pycountry>=24.6,<27"]
+
+[project.scripts]
+aeryx-json-parser = "aeryx_json_parser.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
