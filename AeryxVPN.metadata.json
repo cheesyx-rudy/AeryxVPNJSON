@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0.0",
+  "metadata": {
+    "title": "AeryxVPN",
+    "project": "AeryxVPN",
+    "description": "Одна JSON-подписка со странами в виде групп и автоматическим выбором узла внутри каждой страны.",
+    "format": "sing-box-native-json",
+    "subscription_file": "AeryxVPN.json",
+    "subscription_url": "https://raw.githubusercontent.com/cheesyx-rudy/AeryxVPNJSON/main/AeryxVPN.json",
+    "support_url": "https://t.me/cheesyx",
+    "website_url": "https://t.me/AeryxVPN",
+    "generated_at": "2026-10-27T15:09:34Z",
+    "updated_at_local": "27.10.2026 16:09",
+    "timezone": "Europe/Berlin",
+    "update_interval_hours": 6,
+    "country_count": 2,
+    "validated_config_count": 15,
+    "country_selector_tag": "🌍 Выбор страны · AeryxVPN",
+    "balancing": {
+      "per_country": "urltest",
+      "country_selection": "selector",
+      "probe_url": "https://www.gstatic.com/generate_204",
+      "interval": "3m",
+      "tolerance_ms": 80
+    },
+    "profile_sha256": "822f296a328aea78686ffb194ce468e5bcb4662d9a69d8a3888cfa440a4c847d",
+    "countries": [
+      {
+        "code": "RU",
+        "name": "Russia",
+        "flag": "🇷🇺",
+        "node_count": 12,
+        "balancer_tag": "🇷🇺 Russia · Автовыбор"
+      },
+      {
+        "code": "NL",
+        "name": "Netherlands",
+        "flag": "🇳🇱",
+        "node_count": 3,
+        "balancer_tag": "🇳🇱 Netherlands · Автовыбор"
+      }
+    ],
+    "note": "Metadata sidecar only; import AeryxVPN.json as the client profile. Arbitrary metadata fields are not inserted into the native sing-box schema."
+  }
+}

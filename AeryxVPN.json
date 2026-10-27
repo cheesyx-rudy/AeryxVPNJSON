@@ -1,0 +1,401 @@
+{
+  "log": {
+    "level": "warn"
+  },
+  "dns": {
+    "servers": [
+      {
+        "type": "local",
+        "tag": "local-dns"
+      }
+    ],
+    "final": "local-dns",
+    "strategy": "prefer_ipv4"
+  },
+  "inbounds": [
+    {
+      "type": "socks",
+      "tag": "socks-in",
+      "listen": "127.0.0.1",
+      "listen_port": 2080
+    },
+    {
+      "type": "http",
+      "tag": "http-in",
+      "listen": "127.0.0.1",
+      "listen_port": 2081
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "vless",
+      "tag": "🇷🇺 Russia · AeryxVPN 001",
+      "server": "147.45.175.81",
+      "server_port": 443,
+      "uuid": "c90395e6-2140-47ad-a54d-9b166729d3ef",
+      "tls": {
+        "enabled": true,
+        "server_name": "xsru1.ddnsfree.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "firefox"
+        }
+      },
+      "transport": {
+        "type": "grpc",
+        "service_name": "grpc-ru"
+      }
+    },
+    {
+      "type": "vless",
+      "tag": "🇷🇺 Russia · AeryxVPN 002",
+      "server": "147.45.175.81",
+      "server_port": 443,
+      "uuid": "c90395e6-2140-47ad-a54d-9b166729d3ef",
+      "tls": {
+        "enabled": true,
+        "server_name": "xsru2.freeddns.org",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "firefox"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "path": "/wsru",
+        "headers": {
+          "Host": "xsru2.freeddns.org"
+        }
+      }
+    },
+    {
+      "type": "vless",
+      "tag": "🇷🇺 Russia · AeryxVPN 003",
+      "server": "147.45.175.81",
+      "server_port": 443,
+      "uuid": "c90395e6-2140-47ad-a54d-9b166729d3ef",
+      "tls": {
+        "enabled": true,
+        "server_name": "xsru1.ddnsfree.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "firefox"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "path": "/wsru",
+        "headers": {
+          "Host": "xsru1.ddnsfree.com"
+        }
+      }
+    },
+    {
+      "type": "vless",
+      "tag": "🇷🇺 Russia · AeryxVPN 004",
+      "server": "147.45.175.81",
+      "server_port": 443,
+      "uuid": "c90395e6-2140-47ad-a54d-9b166729d3ef",
+      "tls": {
+        "enabled": true,
+        "server_name": "xssite.webredirect.org",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "firefox"
+        }
+      },
+      "transport": {
+        "type": "grpc",
+        "service_name": "grpc-ru"
+      }
+    },
+    {
+      "type": "vless",
+      "tag": "🇷🇺 Russia · AeryxVPN 005",
+      "server": "176.108.253.204",
+      "server_port": 443,
+      "uuid": "d9d943cc-269b-4e34-9000-722f6795225d",
+      "tls": {
+        "enabled": true,
+        "server_name": "rumos.yandex-api.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "firefox"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "aacc3j_mijcn5WdrrUcMRlTV7IhTgTVawR6oK_3cJGI",
+          "short_id": ""
+        }
+      },
+      "flow": "xtls-rprx-vision"
+    },
+    {
+      "type": "vless",
+      "tag": "🇷🇺 Russia · AeryxVPN 006",
+      "server": "193.160.141.81",
+      "server_port": 8443,
+      "uuid": "ee82f319-ab92-425d-8e04-28a29f33f670",
+      "tls": {
+        "enabled": true,
+        "server_name": "apple.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "firefox"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "SbVKOEMjK0sIlbwg4akyBg5mL5KZwwB-ed4eEE7YnRc",
+          "short_id": ""
+        }
+      },
+      "flow": "xtls-rprx-vision"
+    },
+    {
+      "type": "vless",
+      "tag": "🇷🇺 Russia · AeryxVPN 007",
+      "server": "213.226.127.71",
+      "server_port": 2066,
+      "uuid": "5ad13ef8-ced8-43b5-9d8c-f046a3ce9ddc",
+      "tls": {
+        "enabled": true,
+        "server_name": "tiktok.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "firefox"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "kLCwYNBhCg68BQah9El1lNg6GQ7-7Y7xfTtIs6MiTEg",
+          "short_id": "d18f4e"
+        }
+      },
+      "flow": "xtls-rprx-vision"
+    },
+    {
+      "type": "vless",
+      "tag": "🇷🇺 Russia · AeryxVPN 008",
+      "server": "45.9.12.110",
+      "server_port": 443,
+      "uuid": "4b1be712-774c-4b65-8491-a3339e124a70",
+      "tls": {
+        "enabled": true,
+        "server_name": "ru.letsconnectpoint.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "firefox"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "myIjvlXZS0rm1eg4q2w5WsQBuj80i2rBA0HpRGCUg1w",
+          "short_id": "86d1efde"
+        }
+      },
+      "flow": "xtls-rprx-vision"
+    },
+    {
+      "type": "vless",
+      "tag": "🇷🇺 Russia · AeryxVPN 009",
+      "server": "72.56.242.232",
+      "server_port": 443,
+      "uuid": "27653b37-603c-4c90-b1f5-25c4d23f8932",
+      "tls": {
+        "enabled": true,
+        "server_name": "renderer-bridge-1-881.mirra.now",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "firefox"
+        }
+      },
+      "transport": {
+        "type": "grpc",
+        "service_name": "VideoRenderer"
+      }
+    },
+    {
+      "type": "vless",
+      "tag": "🇷🇺 Russia · AeryxVPN 010",
+      "server": "77.232.135.141",
+      "server_port": 8445,
+      "uuid": "36cf792c-f07d-4500-97ea-a395e5178deb",
+      "tls": {
+        "enabled": true,
+        "server_name": "ru1.radiolumens.uk",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "firefox"
+        }
+      },
+      "transport": {
+        "type": "grpc",
+        "service_name": "beru-pl"
+      }
+    },
+    {
+      "type": "vless",
+      "tag": "🇷🇺 Russia · AeryxVPN 011",
+      "server": "81.222.148.104",
+      "server_port": 443,
+      "uuid": "f439e4fe-139b-4882-ad8b-a16176d09c88",
+      "tls": {
+        "enabled": true,
+        "server_name": "eu53.cdn77.icu",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "firefox"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "EltWI8AOqkN8lMjRycweRRoFRah5hu6xiKtgBmQOdE8",
+          "short_id": "1ed136481e0ede74"
+        }
+      }
+    },
+    {
+      "type": "hysteria2",
+      "tag": "🇷🇺 Russia · AeryxVPN 012",
+      "server": "103.88.243.142",
+      "server_port": 11592,
+      "password": "41edb44c8e",
+      "tls": {
+        "enabled": true,
+        "server_name": "srv-17e124.21freedom.net"
+      }
+    },
+    {
+      "type": "vless",
+      "tag": "🇳🇱 Netherlands · AeryxVPN 001",
+      "server": "217.19.122.156",
+      "server_port": 443,
+      "uuid": "c720cb74-4c84-4fce-b8ae-637dbaa16199",
+      "tls": {
+        "enabled": true,
+        "server_name": "z1q3pv4g78.rucdncomp.pro",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "firefox"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "path": "/useraction/events/b892639b7195/",
+        "headers": {
+          "Host": "z1q3pv4g78.rucdncomp.pro"
+        }
+      }
+    },
+    {
+      "type": "vless",
+      "tag": "🇳🇱 Netherlands · AeryxVPN 002",
+      "server": "78.159.246.85",
+      "server_port": 8443,
+      "uuid": "2c634977-584e-4e1f-b501-1b70c77a6743",
+      "tls": {
+        "enabled": true,
+        "server_name": "fitindoor.net",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "firefox"
+        }
+      },
+      "transport": {
+        "type": "http",
+        "path": "/api/v1/upload",
+        "host": "fitindoor.net"
+      }
+    },
+    {
+      "type": "vless",
+      "tag": "🇳🇱 Netherlands · AeryxVPN 003",
+      "server": "81.94.148.232",
+      "server_port": 8443,
+      "uuid": "2c634977-584e-4e1f-b501-1b70c77a6743",
+      "tls": {
+        "enabled": true,
+        "server_name": "windytrout.net",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "firefox"
+        }
+      },
+      "transport": {
+        "type": "http",
+        "path": "/api/v1/upload",
+        "host": "windytrout.net"
+      }
+    },
+    {
+      "type": "urltest",
+      "tag": "🇷🇺 Russia · Автовыбор",
+      "outbounds": [
+        "🇷🇺 Russia · AeryxVPN 001",
+        "🇷🇺 Russia · AeryxVPN 002",
+        "🇷🇺 Russia · AeryxVPN 003",
+        "🇷🇺 Russia · AeryxVPN 004",
+        "🇷🇺 Russia · AeryxVPN 005",
+        "🇷🇺 Russia · AeryxVPN 006",
+        "🇷🇺 Russia · AeryxVPN 007",
+        "🇷🇺 Russia · AeryxVPN 008",
+        "🇷🇺 Russia · AeryxVPN 009",
+        "🇷🇺 Russia · AeryxVPN 010",
+        "🇷🇺 Russia · AeryxVPN 011",
+        "🇷🇺 Russia · AeryxVPN 012"
+      ],
+      "url": "https://www.gstatic.com/generate_204",
+      "interval": "3m",
+      "tolerance": 80,
+      "idle_timeout": "30m",
+      "interrupt_exist_connections": false
+    },
+    {
+      "type": "urltest",
+      "tag": "🇳🇱 Netherlands · Автовыбор",
+      "outbounds": [
+        "🇳🇱 Netherlands · AeryxVPN 001",
+        "🇳🇱 Netherlands · AeryxVPN 002",
+        "🇳🇱 Netherlands · AeryxVPN 003"
+      ],
+      "url": "https://www.gstatic.com/generate_204",
+      "interval": "3m",
+      "tolerance": 80,
+      "idle_timeout": "30m",
+      "interrupt_exist_connections": false
+    },
+    {
+      "type": "selector",
+      "tag": "🌍 Выбор страны · AeryxVPN",
+      "outbounds": [
+        "🇷🇺 Russia · Автовыбор",
+        "🇳🇱 Netherlands · Автовыбор"
+      ],
+      "default": "🇷🇺 Russia · Автовыбор",
+      "interrupt_exist_connections": false
+    },
+    {
+      "type": "direct",
+      "tag": "direct"
+    }
+  ],
+  "route": {
+    "auto_detect_interface": true,
+    "rules": [
+      {
+        "action": "sniff"
+      },
+      {
+        "protocol": [
+          "dns"
+        ],
+        "action": "hijack-dns"
+      }
+    ],
+    "final": "🌍 Выбор страны · AeryxVPN"
+  },
+  "experimental": {
+    "clash_api": {
+      "external_controller": "127.0.0.1:9090",
+      "secret": "",
+      "default_mode": "rule"
+    }
+  }
+}
