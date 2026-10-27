@@ -79,7 +79,7 @@ jobs:
         if: steps.source_check.outputs.has_sources == 'true'
         run: python -m aeryx_json_parser --check proxy --max-runtime 360
 
-      - name: Build Happ JSON array: one balanced profile per country plus Auto
+      - name: "Build Happ JSON array: one balanced profile per country plus Auto"
         if: steps.source_check.outputs.has_sources == 'true'
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
