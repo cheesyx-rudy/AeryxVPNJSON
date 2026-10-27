@@ -1,0 +1,145 @@
+{
+  "log": {
+    "level": "warn"
+  },
+  "dns": {
+    "servers": [
+      {
+        "type": "local",
+        "tag": "local-dns"
+      }
+    ],
+    "final": "local-dns",
+    "strategy": "prefer_ipv4"
+  },
+  "inbounds": [
+    {
+      "type": "socks",
+      "tag": "socks-in",
+      "listen": "127.0.0.1",
+      "listen_port": 2080
+    },
+    {
+      "type": "http",
+      "tag": "http-in",
+      "listen": "127.0.0.1",
+      "listen_port": 2081
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "vless",
+      "tag": "🇳🇱 Netherlands · AeryxVPN 001",
+      "server": "217.19.122.156",
+      "server_port": 443,
+      "uuid": "c720cb74-4c84-4fce-b8ae-637dbaa16199",
+      "tls": {
+        "enabled": true,
+        "server_name": "z1q3pv4g78.rucdncomp.pro",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "firefox"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "path": "/useraction/events/b892639b7195/",
+        "headers": {
+          "Host": "z1q3pv4g78.rucdncomp.pro"
+        }
+      }
+    },
+    {
+      "type": "vless",
+      "tag": "🇳🇱 Netherlands · AeryxVPN 002",
+      "server": "78.159.246.179",
+      "server_port": 8443,
+      "uuid": "2c634977-584e-4e1f-b501-1b70c77a6743",
+      "tls": {
+        "enabled": true,
+        "server_name": "randomquaint.net",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "firefox"
+        }
+      },
+      "transport": {
+        "type": "http",
+        "path": "/api/v1/upload",
+        "host": "randomquaint.net"
+      }
+    },
+    {
+      "type": "vless",
+      "tag": "🇳🇱 Netherlands · AeryxVPN 003",
+      "server": "81.94.148.232",
+      "server_port": 8443,
+      "uuid": "2c634977-584e-4e1f-b501-1b70c77a6743",
+      "tls": {
+        "enabled": true,
+        "server_name": "windytrout.net",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "firefox"
+        }
+      },
+      "transport": {
+        "type": "http",
+        "path": "/api/v1/upload",
+        "host": "windytrout.net"
+      }
+    },
+    {
+      "type": "vless",
+      "tag": "🇳🇱 Netherlands · AeryxVPN 004",
+      "server": "78.159.246.85",
+      "server_port": 8443,
+      "uuid": "2c634977-584e-4e1f-b501-1b70c77a6743",
+      "tls": {
+        "enabled": true,
+        "server_name": "fitindoor.net",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "firefox"
+        }
+      },
+      "transport": {
+        "type": "http",
+        "path": "/api/v1/upload",
+        "host": "fitindoor.net"
+      }
+    },
+    {
+      "type": "urltest",
+      "tag": "🇳🇱 Netherlands · Auto",
+      "outbounds": [
+        "🇳🇱 Netherlands · AeryxVPN 001",
+        "🇳🇱 Netherlands · AeryxVPN 002",
+        "🇳🇱 Netherlands · AeryxVPN 003",
+        "🇳🇱 Netherlands · AeryxVPN 004"
+      ],
+      "url": "https://www.gstatic.com/generate_204",
+      "interval": "3m",
+      "tolerance": 80
+    },
+    {
+      "type": "direct",
+      "tag": "direct"
+    }
+  ],
+  "route": {
+    "auto_detect_interface": true,
+    "rules": [
+      {
+        "action": "sniff"
+      },
+      {
+        "protocol": [
+          "dns"
+        ],
+        "action": "hijack-dns"
+      }
+    ],
+    "final": "🇳🇱 Netherlands · Auto"
+  }
+}
