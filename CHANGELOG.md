@@ -1,3 +1,9 @@
+## 1.4.1 — 2026-10-28
+
+- Fixed CI Xray validation for the Happ reference profile: `WH-DIRECT` and `STD-DIRECT` are app-specific geodata selectors and their data files are not supplied to the official Xray binary. The validator now removes only those selectors from a temporary validation copy, leaving the published Happ JSON and its routing rules unchanged.
+- Added sanitized Xray stderr diagnostics to validation failures, so the next error report includes the actual cause without dumping proxy credentials or complete configs.
+- Added regression tests for custom-geodata handling and safe diagnostics.
+
 # Changelog
 
 ## 1.4.0 — sample-aligned Happ/Xray JSON profiles
