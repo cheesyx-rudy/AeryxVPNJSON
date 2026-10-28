@@ -3,19 +3,19 @@
   "metadata": {
     "title": "AeryxVPN",
     "project": "AeryxVPN",
-    "description": "Happ-совместимая JSON-подписка на основе общего Xray-профиля: узлы сгруппированы по странам и доступны в профиле авто-выбора.",
+    "description": "Happ-compatible Xray JSON array using the shared reference profile template, per-country profiles, and one global Auto profile.",
     "format": "happ-xray-json-array",
     "subscription_file": "AeryxVPN.json",
     "subscription_url": "https://raw.githubusercontent.com/cheesyx-rudy/AeryxVPNJSON/main/AeryxVPN.json",
     "support_url": "https://t.me/cheesyx",
     "website_url": "https://t.me/AeryxVPN",
-    "generated_at": "2026-10-28T16:50:09Z",
-    "updated_at_local": "28.10.2026 17:50",
+    "generated_at": "2026-10-28T16:55:00Z",
+    "updated_at_local": "28.10.2026 17:55",
     "timezone": "Europe/Berlin",
     "update_interval_hours": 6,
-    "country_count": 5,
-    "validated_config_count": 337,
-    "profile_count": 6,
+    "country_count": 12,
+    "validated_config_count": 95,
+    "profile_count": 13,
     "auto_profile_included": true,
     "auto_profile_name": "🇪🇺 Автовыбор",
     "balancing": {
@@ -29,54 +29,118 @@
       "timeout": "2s",
       "method": "client-side; each profile measures its own nodes"
     },
-    "profile_sha256": "45f301875e5a3c5880c2c639a83a6f9ed2e89af958488c62675f67ba2cd4666c",
+    "profile_sha256": "8444fb5876e35237c52e9d9ffbf7616e1b4bf8c22dae4766c665a3c7582e7ddd",
     "countries": [
       {
-        "code": "MD",
-        "name": "Moldova",
-        "flag": "🇲🇩",
-        "profile_name": "🇲🇩 Молдова",
-        "node_count": 323,
+        "code": "NL",
+        "name": "Нидерланды",
+        "flag": "🇳🇱",
+        "profile_name": "🇳🇱 Нидерланды",
+        "node_count": 31,
         "balancer_tag": "balancer",
         "balancing": "burstObservatory+leastPing"
       },
       {
         "code": "RU",
-        "name": "Russia",
+        "name": "Россия",
         "flag": "🇷🇺",
         "profile_name": "🇷🇺 Россия",
-        "node_count": 8,
+        "node_count": 29,
         "balancer_tag": "balancer",
         "balancing": "burstObservatory+leastPing"
       },
       {
-        "code": "NL",
-        "name": "The Netherlands",
-        "flag": "🇳🇱",
-        "profile_name": "🇳🇱 Нидерланды",
+        "code": "CA",
+        "name": "Канада",
+        "flag": "🇨🇦",
+        "profile_name": "🇨🇦 Канада",
+        "node_count": 9,
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
+      },
+      {
+        "code": "IT",
+        "name": "Италия",
+        "flag": "🇮🇹",
+        "profile_name": "🇮🇹 Италия",
+        "node_count": 9,
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
+      },
+      {
+        "code": "SG",
+        "name": "Сингапур",
+        "flag": "🇸🇬",
+        "profile_name": "🇸🇬 Сингапур",
+        "node_count": 5,
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
+      },
+      {
+        "code": "DE",
+        "name": "Германия",
+        "flag": "🇩🇪",
+        "profile_name": "🇩🇪 Германия",
         "node_count": 3,
         "balancer_tag": "balancer",
         "balancing": "burstObservatory+leastPing"
       },
       {
         "code": "US",
-        "name": "United States",
+        "name": "США",
         "flag": "🇺🇸",
         "profile_name": "🇺🇸 США",
+        "node_count": 3,
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
+      },
+      {
+        "code": "FR",
+        "name": "Франция",
+        "flag": "🇫🇷",
+        "profile_name": "🇫🇷 Франция",
         "node_count": 2,
         "balancer_tag": "balancer",
         "balancing": "burstObservatory+leastPing"
       },
       {
-        "code": "IT",
-        "name": "Italy",
-        "flag": "🇮🇹",
-        "profile_name": "🇮🇹 Италия",
+        "code": "CH",
+        "name": "Швейцария",
+        "flag": "🇨🇭",
+        "profile_name": "🇨🇭 Швейцария",
+        "node_count": 1,
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
+      },
+      {
+        "code": "FI",
+        "name": "Финляндия",
+        "flag": "🇫🇮",
+        "profile_name": "🇫🇮 Финляндия",
+        "node_count": 1,
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
+      },
+      {
+        "code": "GB",
+        "name": "Великобритания",
+        "flag": "🇬🇧",
+        "profile_name": "🇬🇧 Великобритания",
+        "node_count": 1,
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
+      },
+      {
+        "code": "LT",
+        "name": "Литва",
+        "flag": "🇱🇹",
+        "profile_name": "🇱🇹 Литва",
         "node_count": 1,
         "balancer_tag": "balancer",
         "balancing": "burstObservatory+leastPing"
       }
     ],
-    "note": "Metadata sidecar only. Import AeryxVPN.json; it is a JSON array of complete Xray profiles, one per country plus optional global Auto. Proxy nodes are checked by the source pipeline; the shared profile shell follows config/xray-profile-template.json."
+    "note": "Template revision 1.4.4 removes references to custom WH-DIRECT/STD-DIRECT geosite/geoip labels. No extra custom geosite.dat or geoip.dat sections are required by the published profiles. The profile SHA-256 matches AeryxVPN.json. Live server connectivity has not been re-tested by this structural update.",
+    "profile_template_revision": "1.4.4"
   }
 }

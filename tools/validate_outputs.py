@@ -124,13 +124,15 @@ def validate_structure(subscription_path: Path, metadata_path: Path, report_path
         xray_cfg = copy.deepcopy(profile)
         xray_cfg.pop("remarks", None)
         xray_cfg.pop("meta", None)
-        # WH-DIRECT and STD-DIRECT are Happ-specific geodata labels used by
-        # the reference profiles. The official Xray binary downloaded in CI
-        # does not ship the matching custom geosite/geoip database. Keep those
-        # rules in the published profile, but omit only those external lookups
-        # from the temporary core-validation copy so the remaining Xray config
-        # can still be validated by the official core.
-        core_profiles.append(_without_happ_specific_geodata(xray_cfg))
+        custom_geo_references = _find_unavailable_custom_geodata(xray_cfg)
+        if custom_geo_references:
+            raise ValueError(
+                f"{name}: profile references custom geo data that is not bundled with the core: "
+                + ", ".join(custom_geo_references)
+            )
+        # Validate the actual published profile. Only Happ presentation fields
+        # (`remarks` and `meta`) are removed; no routing or DNS matcher is rewritten.
+        core_profiles.append(xray_cfg)
 
     if country_total != int(meta.get("validated_config_count", -1)):
         raise ValueError("metadata validated_config_count does not match country profiles")
@@ -156,81 +158,31 @@ def validate_structure(subscription_path: Path, metadata_path: Path, report_path
         "validated_nodes": country_total,
         "auto_profile_count": len(auto_names),
         "xray_validation_note": (
-            "WH-DIRECT and STD-DIRECT geodata lookups are omitted only from the temporary "
-            "official-core validation copy; published Happ JSON keeps the reference rules."
+            "The published profile is validated as-is by official Xray-core, except for "
+            "Happ presentation-only fields remarks/meta. Custom WH-DIRECT/STD-DIRECT geo labels are forbidden."
         ),
     }
 
 
-_HAPP_GEO_TAGS = {"WH-DIRECT", "STD-DIRECT"}
+_UNAVAILABLE_CUSTOM_GEO_TAGS = {"WH-DIRECT", "STD-DIRECT"}
+_CUSTOM_GEO_SELECTOR = re.compile(r"^(?:geosite|geoip):([^:]+)$", flags=re.IGNORECASE)
 
 
-def _is_happ_specific_geodata(value: Any) -> bool:
-    if not isinstance(value, str):
-        return False
-    match = re.fullmatch(r"(?:geosite|geoip):([^:]+)", value, flags=re.IGNORECASE)
-    return bool(match and match.group(1).upper() in _HAPP_GEO_TAGS)
-
-
-def _without_happ_specific_geodata(profile: dict[str, Any]) -> dict[str, Any]:
-    """Copy a profile while removing only external Happ geodata lookups.
-
-    The original/published profile is never mutated. Route rules that become
-    unconditional after removing a geodata-only matcher are removed entirely.
-    """
-    result = copy.deepcopy(profile)
-
-    dns = result.get("dns")
-    if isinstance(dns, dict):
-        servers = dns.get("servers")
-        if isinstance(servers, list):
-            cleaned_servers = []
-            for server in servers:
-                if not isinstance(server, dict):
-                    cleaned_servers.append(server)
-                    continue
-                domains = server.get("domains")
-                if isinstance(domains, list):
-                    remaining = [value for value in domains if not _is_happ_specific_geodata(value)]
-                    if remaining:
-                        server["domains"] = remaining
-                    elif domains and len(remaining) != len(domains):
-                        # Do not accidentally turn a domain-restricted DNS server
-                        # into an unconditional server in the validation copy.
-                        continue
-                cleaned_servers.append(server)
-            dns["servers"] = cleaned_servers
-
-    routing = result.get("routing")
-    if isinstance(routing, dict) and isinstance(routing.get("rules"), list):
-        cleaned_rules = []
-        matcher_fields = {"domain", "ip", "port", "network", "protocol", "inboundTag", "source", "sourcePort", "user", "attrs", "outboundTag", "balancerTag"}
-        for rule in routing["rules"]:
-            if not isinstance(rule, dict):
-                cleaned_rules.append(rule)
-                continue
-            had_custom_geo_matcher = False
-            for field in ("domain", "ip"):
-                values = rule.get(field)
-                if isinstance(values, list):
-                    remaining = [value for value in values if not _is_happ_specific_geodata(value)]
-                    if len(remaining) != len(values):
-                        had_custom_geo_matcher = True
-                        if remaining:
-                            rule[field] = remaining
-                        else:
-                            rule.pop(field, None)
-            if had_custom_geo_matcher:
-                # The sample's WH-DIRECT/STD-DIRECT rules are geodata-only.
-                # Dropping the now-conditionless rule avoids changing the
-                # meaning of the validation copy into a catch-all rule.
-                other_matchers = set(rule) & (matcher_fields - {"outboundTag", "balancerTag"})
-                if not other_matchers:
-                    continue
-            cleaned_rules.append(rule)
-        routing["rules"] = cleaned_rules
-
-    return result
+def _find_unavailable_custom_geodata(value: Any, path: str = "$", found: list[str] | None = None) -> list[str]:
+    """Find references to custom geo categories that aren't shipped with this project/core."""
+    if found is None:
+        found = []
+    if isinstance(value, str):
+        match = _CUSTOM_GEO_SELECTOR.fullmatch(value)
+        if match and match.group(1).upper() in _UNAVAILABLE_CUSTOM_GEO_TAGS:
+            found.append(f"{path}={value}")
+    elif isinstance(value, dict):
+        for key, child in value.items():
+            _find_unavailable_custom_geodata(child, f"{path}.{key}", found)
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            _find_unavailable_custom_geodata(child, f"{path}[{index}]", found)
+    return found
 
 
 def _safe_xray_diagnostic(proc: subprocess.CompletedProcess[str], config_path: Path) -> str | None:
@@ -247,11 +199,10 @@ def _safe_xray_diagnostic(proc: subprocess.CompletedProcess[str], config_path: P
 
 
 def validate_with_xray(binary: str, profiles: list[dict[str, Any]], profile_names: list[str] | None = None) -> list[dict[str, Any]]:
-    """Run each Xray-compatible profile through Xray's native config checker.
+    """Run each published Xray-compatible profile through Xray's native checker.
 
-    Published Happ profiles retain their reference geodata rules. Only the
-    temporary validation copy has Happ-specific geodata selectors removed,
-    because the official core installer does not ship the matching custom DB.
+    The caller removes only Happ presentation fields (`remarks` and `meta`).
+    Routing and DNS remain unchanged so validation catches client startup errors.
     """
     errors: list[dict[str, Any]] = []
     with tempfile.TemporaryDirectory(prefix="aeryx-xray-check-") as tempdir:

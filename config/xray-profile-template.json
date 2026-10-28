@@ -46,14 +46,6 @@
     "serveStale": true,
     "servers": [
       "https://security.cloudflare-dns.com/dns-query",
-      {
-        "address": "https://safe.dot.dns.yandex.net/dns-query",
-        "domains": [
-          "geosite:WH-DIRECT",
-          "geosite:STD-DIRECT"
-        ],
-        "skipFallback": true
-      },
       "https+local://security.cloudflare-dns.com/dns-query",
       "https+local://dns.google/dns-query",
       "tcp+local://77.88.8.88:53"
@@ -356,20 +348,6 @@
           "domain:tgram.org",
           "domain:torg.org"
         ]
-      },
-      {
-        "domain": [
-          "geosite:WH-DIRECT",
-          "geosite:STD-DIRECT"
-        ],
-        "outboundTag": "direct"
-      },
-      {
-        "ip": [
-          "geoip:WH-DIRECT",
-          "geoip:STD-DIRECT"
-        ],
-        "outboundTag": "direct"
       },
       {
         "balancerTag": "balancer",

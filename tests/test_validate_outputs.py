@@ -1,62 +1,51 @@
-import copy
+import json
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 
-from tools.validate_outputs import _safe_xray_diagnostic, _without_happ_specific_geodata
+from tools.validate_outputs import _find_unavailable_custom_geodata, _safe_xray_diagnostic
 
 
-class HappGeodataValidationCopyTests(unittest.TestCase):
-    def test_removes_only_happ_specific_selectors_from_validation_copy(self):
+class CustomGeodataGuardTests(unittest.TestCase):
+    def test_finds_custom_categories_anywhere_in_config(self):
         profile = {
             "dns": {
                 "servers": [
                     "https://1.1.1.1/dns-query",
-                    {
-                        "address": "https://dns.example/dns-query",
-                        "domains": ["geosite:WH-DIRECT", "geosite:STD-DIRECT"],
-                        "skipFallback": True,
-                    },
-                    {
-                        "address": "https://dns2.example/dns-query",
-                        "domains": ["geosite:example", "domain:example.org"],
-                    },
+                    {"address": "https://dns.example/dns-query", "domains": ["geosite:WH-DIRECT"]},
                 ]
             },
             "routing": {
                 "rules": [
-                    {"domain": ["geosite:WH-DIRECT", "geosite:STD-DIRECT"], "outboundTag": "direct"},
-                    {"ip": ["geoip:WH-DIRECT", "geoip:private"], "outboundTag": "direct"},
-                    {"domain": ["domain:example.org"], "outboundTag": "proxy"},
+                    {"domain": ["geosite:STD-DIRECT"], "outboundTag": "direct"},
+                    {"ip": ["geoip:WH-DIRECT"], "outboundTag": "direct"},
                 ]
             },
         }
-        original = copy.deepcopy(profile)
+        found = _find_unavailable_custom_geodata(profile)
+        self.assertEqual(len(found), 3)
+        self.assertTrue(any("dns.servers[1].domains[0]" in item for item in found))
+        self.assertTrue(any("routing.rules[0].domain[0]" in item for item in found))
+        self.assertTrue(any("routing.rules[1].ip[0]" in item for item in found))
 
-        validated = _without_happ_specific_geodata(profile)
-
-        self.assertEqual(profile, original, "published/source profile must not be mutated")
-        self.assertEqual(len(validated["dns"]["servers"]), 2)
-        self.assertEqual(
-            validated["dns"]["servers"][1]["domains"],
-            ["geosite:example", "domain:example.org"],
-        )
-        self.assertEqual(
-            validated["routing"]["rules"],
-            [
+    def test_allows_standard_geo_selectors(self):
+        profile = {
+            "routing": {"rules": [
+                {"domain": ["geosite:example"], "outboundTag": "direct"},
                 {"ip": ["geoip:private"], "outboundTag": "direct"},
-                {"domain": ["domain:example.org"], "outboundTag": "proxy"},
-            ],
-        )
+            ]}
+        }
+        self.assertEqual(_find_unavailable_custom_geodata(profile), [])
 
-    def test_drops_geodata_only_rule_instead_of_turning_it_into_catch_all(self):
-        profile = {"routing": {"rules": [
-            {"domain": ["geosite:WH-DIRECT"], "outboundTag": "direct"},
-            {"ip": ["geoip:STD-DIRECT"], "outboundTag": "direct"},
-        ]}}
-        validated = _without_happ_specific_geodata(profile)
-        self.assertEqual(validated["routing"]["rules"], [])
+    def test_repository_template_and_published_profiles_have_no_custom_geo_dependencies(self):
+        root = Path(__file__).resolve().parents[1]
+        template = json.loads((root / "config" / "xray-profile-template.json").read_text(encoding="utf-8"))
+        profiles = json.loads((root / "AeryxVPN.json").read_text(encoding="utf-8"))
+        self.assertEqual(_find_unavailable_custom_geodata(template), [])
+        self.assertTrue(profiles)
+        for profile in profiles:
+            self.assertEqual(_find_unavailable_custom_geodata(profile), [], profile.get("remarks"))
 
     def test_failure_diagnostic_is_useful_but_redacts_uuid_ip_and_temp_path(self):
         secret_uuid = "11111111-1111-4111-8111-111111111111"

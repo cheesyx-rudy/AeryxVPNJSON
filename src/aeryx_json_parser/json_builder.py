@@ -310,7 +310,8 @@ def _build_country_outputs_in_place(
             "balancing": balancing,
             "profile_sha256": profile_hash,
             "countries": sorted(country_rows, key=lambda row: (-row["node_count"], _country_sort(row["code"]))),
-            "note": "Metadata sidecar only. Import AeryxVPN.json; it is a JSON array of complete Xray profiles, one per country plus optional global Auto. Proxy nodes are checked by the source pipeline; the shared profile shell follows config/xray-profile-template.json.",
+            "profile_template_revision": "1.4.4",
+            "note": "Metadata sidecar only. Import AeryxVPN.json; it is a JSON array of complete Xray profiles, one per country plus optional global Auto. Proxy nodes are checked by the source pipeline; the shared profile shell follows config/xray-profile-template.json. Custom WH-DIRECT/STD-DIRECT geosite/geoip selectors are not used, so no additional custom geo databases are required.",
         },
     }
     _write_json(outdir / metadata_name, metadata)

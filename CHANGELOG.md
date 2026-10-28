@@ -1,3 +1,12 @@
+## 1.4.4 — remove unavailable custom geodata dependencies
+
+- Removed `geosite:WH-DIRECT`, `geosite:STD-DIRECT`, `geoip:WH-DIRECT`, and `geoip:STD-DIRECT` rules from the profile template and all published profiles.
+- Removed the DNS-over-HTTPS server entry restricted to those custom geosite selectors.
+- Updated validation to check the real published profile (except Happ presentation-only `remarks`/`meta`) instead of silently stripping unsupported selectors from a temporary copy.
+- Added a guard/test preventing custom geodata selectors from returning.
+- Kept all proxy outbound/server parameters and the `burstObservatory` + `leastPing` balancer unchanged.
+- Live server reachability was not re-tested as part of this change.
+
 ## 1.4.3 — remove unrelated IP routing rule
 
 - Removed the dedicated `138.124.110.69` routing rule from the shared profile template and all 13 committed Happ/Xray profiles. Remaining routing rules and balancing settings are unchanged; no replacement was added.
