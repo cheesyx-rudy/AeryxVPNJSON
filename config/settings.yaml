@@ -98,15 +98,20 @@ json_subscription:
   update_interval_hours: 6
   timezone: Europe/Berlin
   # Happ consumes a JSON array: each element becomes a separate list entry.
-  # The Xray config uses observatory + leastPing inside each country profile.
+  # Matches the supplied working Happ/Xray profiles: burstObservatory + proxy-N tag prefix.
   xray_json:
     enabled: true
-    probe_url: https://www.google.com/generate_204
-    probe_interval: 30s
     inbound_socks_port: 10808
     country_profile_name_suffix: ""
-    auto_profile_name: "🌐 AeryxVPN Auto"
+    auto_profile_name: "🇪🇺 Автовыбор"
     include_auto_profile: true
+    burst_observatory:
+      connectivity: https://browser.yandex.ru/generate_204
+      destination: https://www.google.com
+      http_method: GET
+      interval: 15s
+      sampling: 4
+      timeout: 2s
   minimum_total_configs: 5
   minimum_country_configs: 1
   output:

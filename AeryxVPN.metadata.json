@@ -3,140 +3,144 @@
   "metadata": {
     "title": "AeryxVPN",
     "project": "AeryxVPN",
-    "description": "Одна Happ-совместимая JSON-подписка: отдельный профиль для каждой страны, балансировка узлов по наблюдаемой задержке и общий Auto-профиль.",
+    "description": "Happ-compatible Xray JSON array using the shared reference profile template, per-country profiles, and one global Auto profile.",
     "format": "happ-xray-json-array",
     "subscription_file": "AeryxVPN.json",
     "subscription_url": "https://raw.githubusercontent.com/cheesyx-rudy/AeryxVPNJSON/main/AeryxVPN.json",
     "support_url": "https://t.me/cheesyx",
     "website_url": "https://t.me/AeryxVPN",
-    "generated_at": "2026-10-27T22:13:03Z",
-    "updated_at_local": "27.10.2026 23:13",
+    "generated_at": "2026-10-28T14:38:11Z",
+    "updated_at_local": "28.10.2026 15:38",
     "timezone": "Europe/Berlin",
     "update_interval_hours": 6,
     "country_count": 12,
     "validated_config_count": 95,
     "profile_count": 13,
     "auto_profile_included": true,
-    "auto_profile_name": "🌐 AeryxVPN Auto",
+    "auto_profile_name": "🇪🇺 Автовыбор",
     "balancing": {
       "engine": "Xray-core",
-      "per_country": "observatory+leastPing",
+      "per_country": "burstObservatory+leastPing",
       "global_auto_profile": true,
-      "probe_url": "https://www.google.com/generate_204",
-      "probe_interval": "30s",
+      "connectivity": "https://browser.yandex.ru/generate_204",
+      "destination": "https://www.google.com",
+      "interval": "15s",
+      "sampling": 4,
+      "timeout": "2s",
       "method": "client-side; each profile measures its own nodes"
     },
-    "profile_sha256": "b40c5f661480c392a66aac8480711d1dd4692951b6d4f6892ee5a5f57e155dab",
+    "profile_sha256": "bd00e7f89e2b8a239c7f3bd233af4301f40d0ca64e24da3e5d5994cdeee4c7f7",
     "countries": [
       {
         "code": "NL",
-        "name": "The Netherlands",
+        "name": "Нидерланды",
         "flag": "🇳🇱",
-        "profile_name": "🇳🇱 The Netherlands",
+        "profile_name": "🇳🇱 Нидерланды",
         "node_count": 31,
-        "balancer_tag": "aeryx-nl-least-ping",
-        "balancing": "observatory+leastPing"
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
       },
       {
         "code": "RU",
-        "name": "Russia",
+        "name": "Россия",
         "flag": "🇷🇺",
-        "profile_name": "🇷🇺 Russia",
+        "profile_name": "🇷🇺 Россия",
         "node_count": 29,
-        "balancer_tag": "aeryx-ru-least-ping",
-        "balancing": "observatory+leastPing"
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
       },
       {
         "code": "CA",
-        "name": "Canada",
+        "name": "Канада",
         "flag": "🇨🇦",
-        "profile_name": "🇨🇦 Canada",
+        "profile_name": "🇨🇦 Канада",
         "node_count": 9,
-        "balancer_tag": "aeryx-ca-least-ping",
-        "balancing": "observatory+leastPing"
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
       },
       {
         "code": "IT",
-        "name": "Italy",
+        "name": "Италия",
         "flag": "🇮🇹",
-        "profile_name": "🇮🇹 Italy",
+        "profile_name": "🇮🇹 Италия",
         "node_count": 9,
-        "balancer_tag": "aeryx-it-least-ping",
-        "balancing": "observatory+leastPing"
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
       },
       {
         "code": "SG",
-        "name": "Singapore",
+        "name": "Сингапур",
         "flag": "🇸🇬",
-        "profile_name": "🇸🇬 Singapore",
+        "profile_name": "🇸🇬 Сингапур",
         "node_count": 5,
-        "balancer_tag": "aeryx-sg-least-ping",
-        "balancing": "observatory+leastPing"
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
       },
       {
         "code": "DE",
-        "name": "Germany",
+        "name": "Германия",
         "flag": "🇩🇪",
-        "profile_name": "🇩🇪 Germany",
+        "profile_name": "🇩🇪 Германия",
         "node_count": 3,
-        "balancer_tag": "aeryx-de-least-ping",
-        "balancing": "observatory+leastPing"
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
       },
       {
         "code": "US",
-        "name": "United States",
+        "name": "США",
         "flag": "🇺🇸",
-        "profile_name": "🇺🇸 United States",
+        "profile_name": "🇺🇸 США",
         "node_count": 3,
-        "balancer_tag": "aeryx-us-least-ping",
-        "balancing": "observatory+leastPing"
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
       },
       {
         "code": "FR",
-        "name": "France",
+        "name": "Франция",
         "flag": "🇫🇷",
-        "profile_name": "🇫🇷 France",
+        "profile_name": "🇫🇷 Франция",
         "node_count": 2,
-        "balancer_tag": "aeryx-fr-least-ping",
-        "balancing": "observatory+leastPing"
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
       },
       {
         "code": "CH",
-        "name": "Switzerland",
+        "name": "Швейцария",
         "flag": "🇨🇭",
-        "profile_name": "🇨🇭 Switzerland",
+        "profile_name": "🇨🇭 Швейцария",
         "node_count": 1,
-        "balancer_tag": "aeryx-ch-least-ping",
-        "balancing": "observatory+leastPing"
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
       },
       {
         "code": "FI",
-        "name": "Finland",
+        "name": "Финляндия",
         "flag": "🇫🇮",
-        "profile_name": "🇫🇮 Finland",
+        "profile_name": "🇫🇮 Финляндия",
         "node_count": 1,
-        "balancer_tag": "aeryx-fi-least-ping",
-        "balancing": "observatory+leastPing"
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
       },
       {
         "code": "GB",
-        "name": "United Kingdom",
+        "name": "Великобритания",
         "flag": "🇬🇧",
-        "profile_name": "🇬🇧 United Kingdom",
+        "profile_name": "🇬🇧 Великобритания",
         "node_count": 1,
-        "balancer_tag": "aeryx-gb-least-ping",
-        "balancing": "observatory+leastPing"
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
       },
       {
         "code": "LT",
-        "name": "Lithuania",
+        "name": "Литва",
         "flag": "🇱🇹",
-        "profile_name": "🇱🇹 Lithuania",
+        "profile_name": "🇱🇹 Литва",
         "node_count": 1,
-        "balancer_tag": "aeryx-lt-least-ping",
-        "balancing": "observatory+leastPing"
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
       }
     ],
-    "note": "Metadata sidecar only. Import AeryxVPN.json; it is a JSON array of complete Xray profiles, one per country plus optional global Auto."
+    "note": "Template migration only: existing node payloads and previously recorded validation counts were retained; live connectivity was not re-tested during this structural edit. The JSON profile shell follows config/xray-profile-template.json.",
+    "profile_template_revision": "1.4.0"
   }
 }

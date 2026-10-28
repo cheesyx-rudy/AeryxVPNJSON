@@ -46,7 +46,7 @@ def validate_structure(subscription_path: Path, metadata_path: Path, report_path
     country_profile_names = set(row_by_name)
     unknown_profiles = set(remarks) - country_profile_names
     auto_names = [name for name in remarks if name not in country_profile_names]
-    expected_auto = {str(meta.get("auto_profile_name") or "🌐 AeryxVPN Auto")} if meta.get("auto_profile_included") else set()
+    expected_auto = {str(meta.get("auto_profile_name") or "🇪🇺 Автовыбор")} if meta.get("auto_profile_included") else set()
     if unknown_profiles != expected_auto or len(auto_names) > 1:
         raise ValueError("JSON array does not match the configured country profiles and global Auto profile")
 
@@ -56,13 +56,17 @@ def validate_structure(subscription_path: Path, metadata_path: Path, report_path
         if not isinstance(profile, dict):
             raise ValueError("each JSON array item must be an object")
         name = str(profile.get("remarks") or "(unnamed)")
-        meta_fields = profile.get("meta") or {}
-        if not isinstance(meta_fields, dict) or not isinstance(meta_fields.get("serverDescription"), str):
-            raise ValueError(f"{name}: meta.serverDescription is required for an informative list row")
+        # The supplied working examples use meta: null; the visible title is remarks.
+        if "meta" not in profile:
+            raise ValueError(f"{name}: Happ profile must retain the meta field from the reference template")
+        required_template_keys = {"api", "burstObservatory", "dns", "inbounds", "log", "meta", "metrics", "outbounds", "policy", "remarks", "routing", "stats"}
+        if not required_template_keys.issubset(profile):
+            missing = sorted(required_template_keys - set(profile))
+            raise ValueError(f"{name}: shared Happ template fields are missing: {', '.join(missing)}")
         inbounds = profile.get("inbounds")
-        socks = [item for item in inbounds or [] if item.get("tag") == "socks-in"]
+        socks = [item for item in inbounds or [] if item.get("tag") == "socks"]
         if len(socks) != 1 or socks[0].get("protocol") != "socks" or socks[0].get("listen") != "127.0.0.1":
-            raise ValueError(f"{name}: profile must have one loopback SOCKS inbound tagged socks-in")
+            raise ValueError(f"{name}: profile must have one loopback SOCKS inbound tagged socks")
 
         outbounds = profile.get("outbounds")
         if not isinstance(outbounds, list) or not outbounds:
@@ -71,8 +75,11 @@ def validate_structure(subscription_path: Path, metadata_path: Path, report_path
         if any(not tag for tag in tags) or len(tags) != len(set(tags)):
             raise ValueError(f"{name}: outbound tags must be non-empty and unique")
         by_tag = {item["tag"]: item for item in outbounds}
-        if tags[0] != "proxy" or by_tag["proxy"].get("protocol") not in SUPPORTED_PROXY_PROTOCOLS:
-            raise ValueError(f"{name}: the first outbound must be a supported server tagged proxy (Happ summary target)")
+        if tags[0] != "proxy-1" or by_tag["proxy-1"].get("protocol") not in SUPPORTED_PROXY_PROTOCOLS:
+            raise ValueError(f"{name}: the first outbound must be a supported server tagged proxy-1")
+        proxy_tags = [tag for tag in tags if tag.startswith("proxy-")]
+        if proxy_tags != [f"proxy-{index}" for index in range(1, len(proxy_tags) + 1)]:
+            raise ValueError(f"{name}: proxy tags must be sequential proxy-1, proxy-2, ...")
         protocols = [str(item.get("protocol") or "") for item in outbounds]
         concrete = [item for item in outbounds if item.get("protocol") not in SPECIAL_PROTOCOLS]
         if not concrete or any(item.get("protocol") not in SUPPORTED_PROXY_PROTOCOLS for item in concrete):
@@ -82,12 +89,14 @@ def validate_structure(subscription_path: Path, metadata_path: Path, report_path
         if "block" not in by_tag or by_tag["block"].get("protocol") != "blackhole":
             raise ValueError(f"{name}: block blackhole outbound is missing")
 
-        observatory = profile.get("observatory") or {}
+        observatory = profile.get("burstObservatory") or {}
         selector = observatory.get("subjectSelector") or []
-        if "proxy" not in selector or "aeryx-node-" not in selector:
-            raise ValueError(f"{name}: observatory does not cover all node tags")
-        if not observatory.get("probeUrl") or not observatory.get("probeInterval"):
-            raise ValueError(f"{name}: observatory probe URL/interval missing")
+        if selector != ["proxy"]:
+            raise ValueError(f"{name}: burstObservatory must observe the proxy tag prefix")
+        ping_config = observatory.get("pingConfig") or {}
+        for key in ("connectivity", "destination", "httpMethod", "interval", "sampling", "timeout"):
+            if ping_config.get(key) in (None, ""):
+                raise ValueError(f"{name}: burstObservatory.pingConfig.{key} is missing")
         routing = profile.get("routing") or {}
         balancers = routing.get("balancers") or []
         if len(balancers) != 1:
@@ -95,13 +104,15 @@ def validate_structure(subscription_path: Path, metadata_path: Path, report_path
         balancer = balancers[0]
         if balancer.get("strategy", {}).get("type") != "leastPing":
             raise ValueError(f"{name}: balancer must use leastPing")
-        if balancer.get("fallbackTag") != "proxy" or balancer.get("fallbackTag") not in by_tag:
-            raise ValueError(f"{name}: balancer fallbackTag must resolve to proxy")
-        if "proxy" not in (balancer.get("selector") or []) or "aeryx-node-" not in (balancer.get("selector") or []):
-            raise ValueError(f"{name}: balancer selector does not cover node tags")
+        if balancer.get("tag") != "balancer":
+            raise ValueError(f"{name}: balancer tag must match the reference template")
+        if balancer.get("selector") != ["proxy"]:
+            raise ValueError(f"{name}: balancer selector must match proxy-N outbound tags")
+        if "fallbackTag" in balancer:
+            raise ValueError(f"{name}: reference template does not use fallbackTag")
         rules = routing.get("rules") or []
-        if not any(rule.get("balancerTag") == balancer.get("tag") and "socks-in" in (rule.get("inboundTag") or []) for rule in rules):
-            raise ValueError(f"{name}: SOCKS inbound is not routed through the balancer")
+        if not any(rule.get("balancerTag") == balancer.get("tag") and rule.get("network") == "tcp,udp" for rule in rules):
+            raise ValueError(f"{name}: catch-all TCP/UDP traffic is not routed through the balancer")
 
         node_count = len(concrete)
         if name in country_profile_names:

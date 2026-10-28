@@ -2,7 +2,7 @@
 
 The published AeryxVPN.json is one JSON array. Every array element is one
 visible Happ profile (one country, plus a global Auto profile), and every
-profile contains all compatible nodes for its scope with Xray observatory +
+profile contains all compatible nodes for its scope with Xray burstObservatory +
 leastPing balancing. The metadata and build report are non-importable sidecars.
 """
 from __future__ import annotations
@@ -84,8 +84,38 @@ def _country_sort(code: str) -> tuple[bool, str]:
     return (code != "EU", code)
 
 
+_RUSSIAN_COUNTRY_NAMES = {
+    "Australia": "Австралия", "Austria": "Австрия", "Azerbaijan": "Азербайджан",
+    "Belarus": "Беларусь", "Belgium": "Бельгия", "Brazil": "Бразилия",
+    "Bulgaria": "Болгария", "Canada": "Канада", "Chile": "Чили",
+    "China": "Китай", "Croatia": "Хорватия", "Cyprus": "Кипр",
+    "Czechia": "Чехия", "Czech Republic": "Чехия", "Denmark": "Дания",
+    "Estonia": "Эстония", "Finland": "Финляндия", "France": "Франция",
+    "Georgia": "Грузия", "Germany": "Германия", "Greece": "Греция",
+    "Hong Kong": "Гонконг", "Hungary": "Венгрия", "Iceland": "Исландия",
+    "India": "Индия", "Indonesia": "Индонезия", "Ireland": "Ирландия",
+    "Israel": "Израиль", "Italy": "Италия", "Japan": "Япония",
+    "Kazakhstan": "Казахстан", "Latvia": "Латвия", "Lithuania": "Литва",
+    "Luxembourg": "Люксембург", "Malaysia": "Малайзия", "Mexico": "Мексика",
+    "Moldova": "Молдова", "Moldova, Republic of": "Молдова", "Netherlands": "Нидерланды",
+    "New Zealand": "Новая Зеландия", "Norway": "Норвегия", "Poland": "Польша",
+    "Portugal": "Португалия", "Romania": "Румыния", "Russia": "Россия",
+    "Russian Federation": "Россия", "Serbia": "Сербия", "Singapore": "Сингапур",
+    "Slovakia": "Словакия", "Slovenia": "Словения", "South Africa": "ЮАР",
+    "South Korea": "Южная Корея", "Korea, Republic of": "Южная Корея",
+    "Spain": "Испания", "Sweden": "Швеция", "Switzerland": "Швейцария",
+    "Taiwan": "Тайвань", "Thailand": "Таиланд", "Turkey": "Турция",
+    "Türkiye": "Турция", "Ukraine": "Украина", "United Arab Emirates": "ОАЭ",
+    "United Kingdom": "Великобритания", "United States": "США", "United States of America": "США",
+    "Vietnam": "Вьетнам", "Armenia": "Армения", "Argentina": "Аргентина",
+    "UAE": "ОАЭ", "The Netherlands": "Нидерланды", "Republic of Korea": "Южная Корея",
+}
+
+
 def _country_profile_name(country: Country) -> str:
-    return f"{flag_for_code(country.code)} {country.name}"
+    # The provided working Happ profiles use Russian labels; unknown names keep their source label.
+    name = _RUSSIAN_COUNTRY_NAMES.get(country.name, country.name)
+    return f"{flag_for_code(country.code)} {name}"
 
 
 def _build_profiles(
@@ -94,8 +124,9 @@ def _build_profiles(
     settings: dict[str, Any],
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     xcfg = settings.get("xray_json", {}) or {}
-    probe_url = str(xcfg.get("probe_url", "https://www.google.com/generate_204"))
-    probe_interval = str(xcfg.get("probe_interval", "30s"))
+    burst_observatory = xcfg.get("burst_observatory", {}) or {}
+    if not isinstance(burst_observatory, dict):
+        raise ValueError("json_subscription.xray_json.burst_observatory must be an object")
     socks_port = int(xcfg.get("inbound_socks_port", 10808))
     suffix = str(xcfg.get("country_profile_name_suffix", "" )).strip()
     profiles: list[dict[str, Any]] = []
@@ -108,33 +139,28 @@ def _build_profiles(
         records = grouped[code]
         if not records:
             continue
-        # First outbound must be tagged exactly `proxy`; Happ uses it to render the
-        # protocol/transport subtitle and to associate the profile with a real node.
+        # Outbound tags follow the supplied Happ template (`proxy-1`, `proxy-2`, ...);
+        # Xray prefix selectors match all of them via the shared `proxy` prefix.
         name = _country_profile_name(country)
         if suffix:
             name = f"{name} {suffix}"
-        description = f"Автовыбор из {len(records)} узл." if len(records) == 1 else f"Автовыбор из {len(records)} узлов"
-        tag = f"aeryx-{code.lower()}-least-ping"
-        profiles.append(build_xray_json_profile(name, description, records, probe_url, probe_interval, socks_port, tag))
+        profiles.append(build_xray_json_profile(name, records, burst_observatory, socks_port))
         country_rows.append({
             "code": code,
             "name": country.name,
             "flag": flag_for_code(code),
             "profile_name": name,
             "node_count": len(records),
-            "balancer_tag": tag,
-            "balancing": "observatory+leastPing",
+            "balancer_tag": "balancer",
+            "balancing": "burstObservatory+leastPing",
         })
         all_records.extend(records)
 
     if not profiles:
         raise ValueError("Safety stop: no country contains an Xray-compatible validated node")
     if bool(xcfg.get("include_auto_profile", True)) and len(all_records) > 1:
-        auto_name = str(xcfg.get("auto_profile_name", "🌐 AeryxVPN Auto"))
-        description = f"Автовыбор из {len(all_records)} узлов"
-        profiles.append(build_xray_json_profile(
-            auto_name, description, all_records, probe_url, probe_interval, socks_port, "aeryx-global-least-ping"
-        ))
+        auto_name = str(xcfg.get("auto_profile_name", "🇪🇺 Автовыбор"))
+        profiles.append(build_xray_json_profile(auto_name, all_records, burst_observatory, socks_port))
     return profiles, country_rows
 
 
@@ -249,12 +275,16 @@ def _build_country_outputs_in_place(
     updated_local = moment.astimezone(tz).strftime("%d.%m.%Y %H:%M")
     raw_url = f"https://raw.githubusercontent.com/{repository}/{branch or 'main'}/{subscription_name}" if repository else subscription_name
     total_nodes = sum(row["node_count"] for row in country_rows)
+    burst_cfg = xcfg.get("burst_observatory", {}) or {}
     balancing = {
         "engine": "Xray-core",
-        "per_country": "observatory+leastPing",
+        "per_country": "burstObservatory+leastPing",
         "global_auto_profile": bool(xcfg.get("include_auto_profile", True)),
-        "probe_url": str(xcfg.get("probe_url", "https://www.google.com/generate_204")),
-        "probe_interval": str(xcfg.get("probe_interval", "30s")),
+        "connectivity": str(burst_cfg.get("connectivity", "https://browser.yandex.ru/generate_204")),
+        "destination": str(burst_cfg.get("destination", "https://www.google.com")),
+        "interval": str(burst_cfg.get("interval", "15s")),
+        "sampling": int(burst_cfg.get("sampling", 4)),
+        "timeout": str(burst_cfg.get("timeout", "2s")),
         "method": "client-side; each profile measures its own nodes",
     }
     metadata = {
@@ -262,7 +292,7 @@ def _build_country_outputs_in_place(
         "metadata": {
             "title": str(jcfg.get("title", "AeryxVPN")),
             "project": "AeryxVPN",
-            "description": "Одна Happ-совместимая JSON-подписка: отдельный профиль для каждой страны, балансировка узлов по наблюдаемой задержке и общий Auto-профиль.",
+            "description": "Happ-совместимая JSON-подписка на основе общего Xray-профиля: узлы сгруппированы по странам и доступны в профиле авто-выбора.",
             "format": "happ-xray-json-array",
             "subscription_file": subscription_name,
             "subscription_url": raw_url,
@@ -276,11 +306,11 @@ def _build_country_outputs_in_place(
             "validated_config_count": total_nodes,
             "profile_count": len(profiles),
             "auto_profile_included": bool(xcfg.get("include_auto_profile", True)) and len(profiles) > len(country_rows),
-            "auto_profile_name": str(xcfg.get("auto_profile_name", "🌐 AeryxVPN Auto")),
+            "auto_profile_name": str(xcfg.get("auto_profile_name", "🇪🇺 Автовыбор")),
             "balancing": balancing,
             "profile_sha256": profile_hash,
             "countries": sorted(country_rows, key=lambda row: (-row["node_count"], _country_sort(row["code"]))),
-            "note": "Metadata sidecar only. Import AeryxVPN.json; it is a JSON array of complete Xray profiles, one per country plus optional global Auto.",
+            "note": "Metadata sidecar only. Import AeryxVPN.json; it is a JSON array of complete Xray profiles, one per country plus optional global Auto. Proxy nodes are checked by the source pipeline; the shared profile shell follows config/xray-profile-template.json.",
         },
     }
     _write_json(outdir / metadata_name, metadata)

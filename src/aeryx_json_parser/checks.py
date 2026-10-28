@@ -100,7 +100,7 @@ def build_singbox_outbound(uri: str) -> dict[str,Any]:
     elif scheme in {"http","https"}:
         out={"type":"http","tag":name,"server":host,"server_port":port}
         if p.username is not None: out.update({"username":urllib.parse.unquote(p.username),"password":urllib.parse.unquote(p.password or "")})
-        if scheme=="https": out["tls"]={"enabled":True,"server_name":host}
+        if scheme=="https": out["tls"]=tls
     elif scheme in {"hysteria2","hy2","hysteria"}:
         password=urllib.parse.unquote(p.username or "")
         if not password: raise ValueError("Hysteria password missing")

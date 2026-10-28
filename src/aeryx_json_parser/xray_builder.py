@@ -1,16 +1,27 @@
 """Happ-compatible Xray JSON-array subscription builder.
 
 Each JSON array item is one importable Happ entry. Country entries contain all
-validated Xray-compatible nodes in that country and use Xray's observatory +
+validated Xray-compatible nodes in that country and use Xray's burstObservatory +
 leastPing balancer. A global auto entry includes every supported node.
 """
 from __future__ import annotations
 
+import copy
 import json
+from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlsplit, unquote
 
 from .checks import build_singbox_outbound
+
+ROOT = Path(__file__).resolve().parents[2]
+PROFILE_TEMPLATE_PATH = ROOT / "config" / "xray-profile-template.json"
+DEFAULT_SOCKOPT = {
+    "domainStrategy": "UseIPv4",
+    "tcpKeepAliveIdle": 60,
+    "tcpKeepAliveInterval": 15,
+    "tcpNoDelay": True,
+}
 
 
 def _first(query: dict[str, list[str]], key: str, default: str = "") -> str:
@@ -38,6 +49,7 @@ def _tls_parts(normalized: dict[str, Any], host: str) -> tuple[str, dict[str, An
             "fingerprint": (tls.get("utls") or {}).get("fingerprint") or "chrome",
             "publicKey": reality.get("public_key") or "",
             "shortId": reality.get("short_id") or "",
+            "allowInsecure": False,
         }
         return "reality", settings
     if tls.get("enabled"):
@@ -65,11 +77,10 @@ def _stream_settings(normalized: dict[str, Any], uri: str, protocol: str) -> dic
         stream: dict[str, Any] = {
             "network": "hysteria",
             "security": "tls",
-            "tlsSettings": tls_settings or {"serverName": host, "alpn": ["h3"]},
+            "method": "hysteria",
+            "tlsSettings": tls_settings or {"serverName": host},
             "hysteriaSettings": {"version": 2, "auth": str(normalized.get("password") or "")},
         }
-        if "alpn" not in stream["tlsSettings"]:
-            stream["tlsSettings"]["alpn"] = ["h3"]
         obfs = normalized.get("obfs") or {}
         if obfs:
             if str(obfs.get("type", "")).lower() != "salamander" or not obfs.get("password"):
@@ -101,7 +112,7 @@ def _stream_settings(normalized: dict[str, Any], uri: str, protocol: str) -> dic
         stream["realitySettings"] = security_settings
         spider_x = _first(query, "spx", "")
         if spider_x:
-            stream["realitySettings"]["spiderX"] = unquote(spider_x)
+            stream["realitySettings"]["spiderX"] = spider_x
 
     transport = normalized.get("transport") or {}
     if net == "ws":
@@ -131,15 +142,19 @@ def _stream_settings(normalized: dict[str, Any], uri: str, protocol: str) -> dic
     elif net == "xhttp":
         xhttp: dict[str, Any] = {
             "path": str(transport.get("path") or _first(query, "path", "/")),
-            "mode": _first(query, "mode", "auto"),
         }
+        mode = _first(query, "mode", "")
+        if mode:
+            xhttp["mode"] = mode
         host_header = transport.get("host") or _first(query, "host", "")
         if host_header:
             xhttp["host"] = str(host_header)
+        # parse_qs has already percent-decoded query values. Unquoting again can
+        # corrupt JSON values that intentionally contain percent-escaped text.
         extra = _first(query, "extra", "")
         if extra:
             try:
-                parsed_extra = json.loads(unquote(extra))
+                parsed_extra = json.loads(extra)
             except Exception as exc:
                 raise ValueError("xray_invalid_xhttp_extra") from exc
             if not isinstance(parsed_extra, dict):
@@ -163,7 +178,7 @@ def uri_to_xray_outbound(uri: str) -> dict[str, Any]:
         raise ValueError("xray_missing_host_or_port")
 
     if scheme == "vless":
-        user: dict[str, Any] = {"id": str(normalized.get("uuid") or ""), "encryption": "none"}
+        user: dict[str, Any] = {"id": str(normalized.get("uuid") or ""), "encryption": "none", "level": 8}
         if not user["id"]:
             raise ValueError("xray_vless_uuid_missing")
         if normalized.get("flow"):
@@ -180,6 +195,7 @@ def uri_to_xray_outbound(uri: str) -> dict[str, Any]:
             "id": str(normalized.get("uuid") or ""),
             "alterId": int(normalized.get("alter_id") or 0),
             "security": str(normalized.get("security") or "auto"),
+            "level": 8,
         }
         if not user["id"]:
             raise ValueError("xray_vmess_uuid_missing")
@@ -214,7 +230,8 @@ def uri_to_xray_outbound(uri: str) -> dict[str, Any]:
             server["users"] = [{"user": str(normalized.get("username") or ""), "pass": str(normalized.get("password") or "") }]
         result = {"tag": "proxy", "protocol": protocol, "settings": {"servers": [server]}}
         if scheme == "https":
-            result["streamSettings"] = {"security": "tls", "tlsSettings": {"serverName": host}}
+            _, tls_settings = _tls_parts(normalized, host)
+            result["streamSettings"] = {"security": "tls", "tlsSettings": tls_settings}
         return result
 
     if scheme in {"hysteria2", "hy2"}:
@@ -237,62 +254,83 @@ def uri_to_xray_outbound(uri: str) -> dict[str, Any]:
     raise ValueError(f"xray_protocol_unsupported:{scheme or 'unknown'}")
 
 
+def _load_profile_template() -> dict[str, Any]:
+    """Load the shared profile shell copied from the supplied working Happ example."""
+    try:
+        template = json.loads(PROFILE_TEMPLATE_PATH.read_text(encoding="utf-8-sig"))
+    except FileNotFoundError as exc:
+        raise ValueError(f"Happ/Xray profile template is missing: {PROFILE_TEMPLATE_PATH}") from exc
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Happ/Xray profile template is invalid JSON: {PROFILE_TEMPLATE_PATH}") from exc
+    if not isinstance(template, dict):
+        raise ValueError("Happ/Xray profile template must be a JSON object")
+    if not isinstance(template.get("outbounds"), list):
+        raise ValueError("Happ/Xray profile template must contain an outbounds array")
+    return template
+
+
 def _unique_outbounds(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Assign tags unique to this profile; the first tag remains `proxy` for Happ summaries."""
-    result = []
+    """Assign proxy-N tags exactly like the sample profiles; `proxy` matches the prefix."""
+    result: list[dict[str, Any]] = []
     for index, record in enumerate(records, start=1):
-        item = json.loads(json.dumps(record["xray"], ensure_ascii=False))
-        item["tag"] = "proxy" if index == 1 else f"aeryx-node-{index:03d}"
+        item = copy.deepcopy(record["xray"])
+        item["tag"] = f"proxy-{index}"
+        if item.get("protocol") in {"vless", "vmess"}:
+            for server in (item.get("settings") or {}).get("vnext", []):
+                for user in server.get("users", []):
+                    user.setdefault("level", 8)
+        stream = item.get("streamSettings")
+        if isinstance(stream, dict):
+            sockopt = dict(DEFAULT_SOCKOPT)
+            sockopt.update(stream.get("sockopt") or {})
+            stream["sockopt"] = sockopt
         result.append(item)
     return result
 
 
 def build_xray_json_profile(
     remarks: str,
-    description: str,
     records: list[dict[str, Any]],
-    probe_url: str,
-    probe_interval: str,
+    burst_observatory: dict[str, Any] | None = None,
     socks_port: int = 10808,
-    balancer_tag: str = "aeryx-least-ping",
 ) -> dict[str, Any]:
-    """Build one complete Xray JSON subscription item compatible with Happ's JSON array."""
+    """Build one Happ Xray profile using the supplied shared JSON template."""
     if not records:
         raise ValueError("cannot build a country profile without proxy nodes")
-    outbounds = _unique_outbounds(records)
-    node_tags = [item["tag"] for item in outbounds]
-    prefix = "aeryx-node-"
-    selector = ["proxy", prefix]
-    outbounds.extend([
-        {"tag": "direct", "protocol": "freedom"},
-        {"tag": "block", "protocol": "blackhole"},
-    ])
-    profile = {
-        "remarks": remarks,
-        "meta": {"serverDescription": description},
-        "log": {"loglevel": "warning"},
-        "dns": {"servers": ["1.1.1.1", "8.8.8.8"], "queryStrategy": "UseIP"},
-        "inbounds": [{
-            "tag": "socks-in", "listen": "127.0.0.1", "port": int(socks_port),
-            "protocol": "socks", "settings": {"auth": "noauth", "udp": True, "ip": "127.0.0.1"},
-            "sniffing": {"enabled": True, "destOverride": ["http", "tls", "quic"], "routeOnly": False},
-        }],
-        "outbounds": outbounds,
-        "observatory": {
-            "subjectSelector": selector,
-            "probeUrl": probe_url,
-            "probeInterval": probe_interval,
-            "enableConcurrency": True,
-        },
-        "routing": {
-            "domainStrategy": "AsIs",
-            "rules": [{"type": "field", "inboundTag": ["socks-in"], "balancerTag": balancer_tag}],
-            "balancers": [{
-                "tag": balancer_tag,
-                "selector": selector,
-                "fallbackTag": "proxy",
-                "strategy": {"type": "leastPing"},
-            }],
-        },
-    }
+
+    profile = copy.deepcopy(_load_profile_template())
+    profile["remarks"] = remarks
+    profile["outbounds"] = _unique_outbounds(records) + copy.deepcopy(profile["outbounds"])
+
+    inbounds = profile.get("inbounds") or []
+    socks = next((item for item in inbounds if item.get("tag") == "socks"), None)
+    if socks is None:
+        raise ValueError("profile template must contain a SOCKS inbound tagged 'socks'")
+    socks["port"] = int(socks_port)
+
+    # Keep the template's selectors/routing in sync with its proxy-N tag convention.
+    profile["burstObservatory"]["subjectSelector"] = ["proxy"]
+    balancers = profile["routing"].get("balancers") or []
+    if len(balancers) != 1:
+        raise ValueError("profile template must contain exactly one balancer")
+    balancer = balancers[0]
+    balancer["tag"] = "balancer"
+    balancer["selector"] = ["proxy"]
+    balancer.pop("fallbackTag", None)
+
+    if burst_observatory:
+        config = burst_observatory
+        ping = profile["burstObservatory"]["pingConfig"]
+        mapping = {
+            "connectivity": "connectivity",
+            "destination": "destination",
+            "http_method": "httpMethod",
+            "interval": "interval",
+            "sampling": "sampling",
+            "timeout": "timeout",
+        }
+        for source_key, target_key in mapping.items():
+            if source_key in config and config[source_key] not in (None, ""):
+                ping[target_key] = config[source_key]
+
     return profile

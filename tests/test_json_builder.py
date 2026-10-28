@@ -104,28 +104,37 @@ class UnifiedJSONBuilderTests(unittest.TestCase):
             out, _ = self._build(Path(td))
             profiles = json.loads((out / "AeryxVPN.json").read_text(encoding="utf-8"))
             by_name = {item["remarks"]: item for item in profiles}
-            self.assertEqual(set(by_name), {"🇩🇪 Germany", "🇺🇸 United States", "🌐 AeryxVPN Auto"})
-            self.assertEqual(by_name["🇩🇪 Germany"]["meta"]["serverDescription"], "Автовыбор из 3 узлов")
-            self.assertEqual(by_name["🇺🇸 United States"]["meta"]["serverDescription"], "Автовыбор из 2 узлов")
-            self.assertEqual(by_name["🌐 AeryxVPN Auto"]["meta"]["serverDescription"], "Автовыбор из 5 узлов")
+            self.assertEqual(set(by_name), {"🇩🇪 Германия", "🇺🇸 США", "🇪🇺 Автовыбор"})
+            for profile in profiles:
+                self.assertIsNone(profile["meta"])
 
-    def test_each_country_profile_has_observatory_and_least_ping_balancer(self):
+    def test_each_country_profile_matches_reference_template_and_balances_with_burst_observatory(self):
         with tempfile.TemporaryDirectory() as td:
             out, _ = self._build(Path(td))
             profiles = json.loads((out / "AeryxVPN.json").read_text(encoding="utf-8"))
             for profile in profiles:
                 by_tag = {item["tag"]: item for item in profile["outbounds"]}
-                self.assertEqual(profile["outbounds"][0]["tag"], "proxy")
+                self.assertEqual(profile["outbounds"][0]["tag"], "proxy-1")
                 self.assertEqual(by_tag["direct"]["protocol"], "freedom")
                 self.assertEqual(by_tag["block"]["protocol"], "blackhole")
-                self.assertEqual(profile["observatory"]["subjectSelector"], ["proxy", "aeryx-node-"])
-                self.assertEqual(profile["observatory"]["probeUrl"], "https://www.google.com/generate_204")
+                self.assertEqual(profile["burstObservatory"]["subjectSelector"], ["proxy"])
+                self.assertEqual(profile["burstObservatory"]["pingConfig"]["connectivity"], "https://browser.yandex.ru/generate_204")
+                self.assertEqual(profile["burstObservatory"]["pingConfig"]["destination"], "https://www.google.com")
                 balancer = profile["routing"]["balancers"][0]
                 self.assertEqual(balancer["strategy"]["type"], "leastPing")
-                self.assertEqual(balancer["fallbackTag"], "proxy")
-                self.assertEqual(balancer["selector"], ["proxy", "aeryx-node-"])
-                self.assertTrue(any(rule.get("balancerTag") == balancer["tag"] for rule in profile["routing"]["rules"]))
-                self.assertEqual(profile["inbounds"][0]["tag"], "socks-in")
+                self.assertNotIn("fallbackTag", balancer)
+                self.assertEqual(balancer["tag"], "balancer")
+                self.assertEqual(balancer["selector"], ["proxy"])
+                self.assertTrue(any(rule.get("balancerTag") == balancer["tag"] and rule.get("network") == "tcp,udp" for rule in profile["routing"]["rules"]))
+                self.assertEqual(profile["inbounds"][0]["tag"], "socks")
+                self.assertEqual(profile["inbounds"][1]["tag"], "http")
+                self.assertEqual(len(profile["routing"]["rules"]), 18)
+                self.assertIn("policy", profile)
+                self.assertIn("metrics", profile)
+                self.assertEqual(profile["meta"], None)
+                node_tags = [item["tag"] for item in profile["outbounds"] if item["tag"].startswith("proxy-")]
+                self.assertEqual(node_tags, [f"proxy-{i}" for i in range(1, len(node_tags) + 1)])
+                self.assertTrue(all("sockopt" in item.get("streamSettings", {}) for item in profile["outbounds"] if item.get("protocol") not in {"freedom", "blackhole"} and "streamSettings" in item))
                 tags = [item["tag"] for item in profile["outbounds"]]
                 self.assertEqual(len(tags), len(set(tags)))
 
@@ -133,7 +142,7 @@ class UnifiedJSONBuilderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             out, _ = self._build(Path(td))
             profiles = json.loads((out / "AeryxVPN.json").read_text(encoding="utf-8"))
-            country_profiles = [p for p in profiles if p["remarks"] != "🌐 AeryxVPN Auto"]
+            country_profiles = [p for p in profiles if p["remarks"] != "🇪🇺 Автовыбор"]
             node_count = 0
             for profile in country_profiles:
                 node_count += sum(item["protocol"] not in {"freedom", "blackhole"} for item in profile["outbounds"])
@@ -170,6 +179,35 @@ class UnifiedJSONBuilderTests(unittest.TestCase):
         self.assertEqual(hy2["settings"]["version"], 2)
         self.assertEqual(hy2["streamSettings"]["hysteriaSettings"]["auth"], "secret")
         self.assertEqual(hy2["streamSettings"]["finalmask"]["udp"][0]["type"], "salamander")
+
+    def test_https_proxy_preserves_tls_sni_fingerprint_and_alpn(self):
+        outbound = uri_to_xray_outbound(
+            "https://user:secret@proxy.example.org:443?sni=tls.example.org&fp=firefox&alpn=h2"
+        )
+        self.assertEqual(outbound["protocol"], "http")
+        tls = outbound["streamSettings"]["tlsSettings"]
+        self.assertEqual(tls["serverName"], "tls.example.org")
+        self.assertEqual(tls["fingerprint"], "firefox")
+        self.assertEqual(tls["alpn"], ["h2"])
+
+    def test_reality_spiderx_is_not_unquoted_twice(self):
+        uri = (
+            "vless://11111111-1111-4111-8111-111111111111@de.example.org:443"
+            "?encryption=none&security=reality&sni=www.example.com&pbk=PUBKEY&sid=1234"
+            "&spx=%252Falready-escaped&type=tcp#x"
+        )
+        outbound = uri_to_xray_outbound(uri)
+        self.assertEqual(outbound["streamSettings"]["realitySettings"]["spiderX"], "%2Falready-escaped")
+
+    def test_xhttp_extra_query_is_decoded_once(self):
+        extra = {"path": "/percent%2Fkept", "header": "X-Test"}
+        encoded_extra = quote(json.dumps(extra, separators=(",", ":")), safe="")
+        uri = (
+            "vless://11111111-1111-4111-8111-111111111111@de.example.org:443"
+            "?security=tls&type=xhttp&extra=" + encoded_extra + "#x"
+        )
+        outbound = uri_to_xray_outbound(uri)
+        self.assertEqual(outbound["streamSettings"]["xhttpSettings"]["extra"], extra)
 
     def test_converter_builds_vmess_socks_and_httpupgrade(self):
         payload = {
