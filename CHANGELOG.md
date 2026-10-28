@@ -1,3 +1,13 @@
+## 1.4.3 — remove unrelated IP routing rule
+
+- Removed the dedicated `138.124.110.69` routing rule from the shared profile template and all 13 committed Happ/Xray profiles. Remaining routing rules and balancing settings are unchanged; no replacement was added.
+- Updated subscription SHA-256 metadata and added a regression assertion to prevent the unrelated IP rule from returning.
+
+## 1.4.2 — remove unrelated domain routing rule
+
+- Removed `domain:flaregate.dedyn.io` from the shared Happ/Xray profile template and all currently published profiles because it is not an AeryxVPN-controlled domain. No replacement domain was invented.
+- Updated the committed subscription SHA-256 metadata and added a regression assertion that generated profiles do not restore the rule.
+
 ## 1.4.1 — 2026-10-28
 
 - Fixed CI Xray validation for the Happ reference profile: `WH-DIRECT` and `STD-DIRECT` are app-specific geodata selectors and their data files are not supplied to the official Xray binary. The validator now removes only those selectors from a temporary validation copy, leaving the published Happ JSON and its routing rules unchanged.
