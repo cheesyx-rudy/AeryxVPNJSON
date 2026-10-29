@@ -75,6 +75,7 @@ jobs:
           --output output/publish
           --repository "$GITHUB_REPOSITORY"
           --branch main
+          --xray tools/xray
 
       - name: Validate every Happ profile with Xray-core
         if: steps.source_check.outputs.has_sources == 'true'
