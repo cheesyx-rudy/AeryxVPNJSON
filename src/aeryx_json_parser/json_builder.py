@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 import shutil
+import subprocess
 import tempfile
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
@@ -23,6 +24,7 @@ import yaml
 
 from .geolocation import Country, CountryResolver, country_from_label, flag_for_code
 from .xray_builder import build_xray_json_profile, uri_to_xray_outbound
+from .xray_validation import safe_xray_diagnostic
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_INPUT = ROOT / "output" / "engine" / "parsed_proxies.json"
@@ -160,8 +162,63 @@ def _build_profiles(
         raise ValueError("Safety stop: no country contains an Xray-compatible validated node")
     if bool(xcfg.get("include_auto_profile", True)) and len(all_records) > 1:
         auto_name = str(xcfg.get("auto_profile_name", "🇪🇺 Автовыбор"))
-        profiles.append(build_xray_json_profile(auto_name, all_records, burst_observatory, socks_port))
+        # Happ displays profiles in JSON-array order; keep the global Auto profile first.
+        profiles.insert(0, build_xray_json_profile(auto_name, all_records, burst_observatory, socks_port))
     return profiles, country_rows
+
+
+def _xray_rejection_code(diagnostic: str | None) -> str:
+    """Return a safe, stable rejection category rather than putting node data in reports."""
+    value = (diagnostic or "").lower()
+    if "without tls" in value or "requires tls" in value or "public ip" in value:
+        return "security_required"
+    if "unsupported" in value or "not supported" in value:
+        return "unsupported_config"
+    if "unknown" in value or "invalid" in value or "parse" in value or "decode" in value:
+        return "invalid_config"
+    if "failed to start" in value or "failed to load" in value or "failed to build" in value:
+        return "startup_error"
+    return "core_rejected_config"
+
+
+def _xray_prevalidate_outbound(
+    outbound: dict[str, Any],
+    xray_binary: str | Path,
+    burst_observatory: dict[str, Any] | None,
+    socks_port: int,
+) -> tuple[bool, str | None]:
+    """Validate one candidate node inside the actual Happ/Xray profile shell.
+
+    This runs before country grouping so one Xray-incompatible node cannot poison
+    both its country profile and the global Auto profile.
+    """
+    profile = build_xray_json_profile(
+        "AeryxVPN node compatibility check",
+        [{"xray": outbound}],
+        burst_observatory,
+        socks_port,
+    )
+    profile.pop("remarks", None)
+    profile.pop("meta", None)
+    with tempfile.TemporaryDirectory(prefix="aeryx-xray-node-") as temp_dir:
+        config_path = Path(temp_dir) / "node.json"
+        config_path.write_text(json.dumps(profile, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        try:
+            proc = subprocess.run(
+                [str(xray_binary), "run", "-test", "-config", str(config_path)],
+                capture_output=True,
+                text=True,
+                timeout=8,
+            )
+        except subprocess.TimeoutExpired as exc:
+            # A timeout is an environment/core problem, not proof that the node is
+            # bad. Abort the build rather than silently dropping every slow check.
+            raise RuntimeError("xray_node_prevalidation_timeout") from exc
+        except FileNotFoundError as exc:
+            raise RuntimeError("xray_node_prevalidation_binary_missing") from exc
+        if proc.returncode != 0:
+            return False, safe_xray_diagnostic(proc, config_path)
+    return True, None
 
 
 def _build_country_outputs_in_place(
@@ -171,6 +228,7 @@ def _build_country_outputs_in_place(
     repository: str = "",
     branch: str = "main",
     generated_at: datetime | None = None,
+    xray_binary: str | Path | None = None,
 ) -> dict[str, Any]:
     """Build one Xray JSON array and metadata/report sidecars in a staging directory."""
     cfg = _load_config(config_path)
@@ -179,6 +237,10 @@ def _build_country_outputs_in_place(
     xcfg = jcfg.get("xray_json", {}) or {}
     if not bool(xcfg.get("enabled", True)):
         raise ValueError("Xray JSON array output must be enabled")
+    burst_cfg = xcfg.get("burst_observatory", {}) or {}
+    socks_port = int(xcfg.get("inbound_socks_port", 10808))
+    if xray_binary is not None and not Path(xray_binary).is_file():
+        raise FileNotFoundError(f"Xray pre-validation binary not found: {xray_binary}")
 
     raw = json.loads(input_path.read_text(encoding="utf-8-sig"))
     if not isinstance(raw, list):
@@ -196,6 +258,7 @@ def _build_country_outputs_in_place(
     rejected_reasons: Counter[str] = Counter()
     tunnel_validated_input_records = 0
     conversion_failures = 0
+    xray_validation_failures = 0
     input_uri_seen: set[str] = set()
 
     try:
@@ -233,6 +296,16 @@ def _build_country_outputs_in_place(
                 reason = str(exc).split(":", 1)[0]
                 rejected_reasons["xray_conversion:" + reason] += 1
                 continue
+            if xray_binary is not None:
+                compatible, diagnostic = _xray_prevalidate_outbound(
+                    outbound, xray_binary, burst_cfg, socks_port
+                )
+                if not compatible:
+                    xray_validation_failures += 1
+                    rejected_reasons[
+                        "xray_core_rejected_node:" + _xray_rejection_code(diagnostic)
+                    ] += 1
+                    continue
             grouped[code].append({"uri": uri, "xray": outbound, "country": code})
     finally:
         resolver.close()
@@ -249,7 +322,9 @@ def _build_country_outputs_in_place(
     if usable_total < minimum_total:
         raise ValueError(
             f"Safety stop: only {usable_total} Xray-compatible, tunnel-validated nodes; "
-            f"minimum is {minimum_total}. Existing published files were not touched."
+            f"minimum is {minimum_total}. Xray-core rejected {xray_validation_failures} node(s). "
+            f"Rejection counts: {dict(rejected_reasons.most_common())}. "
+            "Existing published files were not touched."
         )
 
     profiles, country_rows = _build_profiles(grouped, resolved, jcfg)
@@ -311,7 +386,11 @@ def _build_country_outputs_in_place(
             "profile_sha256": profile_hash,
             "countries": sorted(country_rows, key=lambda row: (-row["node_count"], _country_sort(row["code"]))),
             "profile_template_revision": "1.4.4",
-            "note": "Metadata sidecar only. Import AeryxVPN.json; it is a JSON array of complete Xray profiles, one per country plus optional global Auto. Proxy nodes are checked by the source pipeline; the shared profile shell follows config/xray-profile-template.json. Custom WH-DIRECT/STD-DIRECT geosite/geoip selectors are not used, so no additional custom geo databases are required.",
+            "note": (
+                "Metadata sidecar only. Import AeryxVPN.json; it is a JSON array of complete Xray profiles, one per country plus optional global Auto. "
+                + ("Every candidate outbound was prevalidated with official Xray-core before grouping. " if xray_binary is not None else "Nodes passed source-pipeline checks and Xray JSON conversion; core prevalidation was not requested. ")
+                + "The shared profile shell follows config/xray-profile-template.json. Custom WH-DIRECT/STD-DIRECT geosite/geoip selectors are not used, so no additional custom geo databases are required."
+            ),
         },
     }
     _write_json(outdir / metadata_name, metadata)
@@ -326,6 +405,8 @@ def _build_country_outputs_in_place(
         "countries": country_rows,
         "rejected_counts": dict(rejected_reasons.most_common()),
         "conversion_failures": conversion_failures,
+        "xray_validation_enabled": xray_binary is not None,
+        "xray_validation_failures": xray_validation_failures,
         "files_written": [subscription_name, metadata_name, "build-report.json"],
         "subscription_sha256": profile_hash,
         "balancing": balancing,
@@ -342,6 +423,7 @@ def build_country_outputs(
     repository: str = "",
     branch: str = "main",
     generated_at: datetime | None = None,
+    xray_binary: str | Path | None = None,
 ) -> dict[str, Any]:
     """Build to a sibling staging directory and swap only after successful generation."""
     target = Path(output_dir)
@@ -356,6 +438,7 @@ def build_country_outputs(
         report = _build_country_outputs_in_place(
             input_path=input_path, output_dir=staging, config_path=config_path,
             repository=repository, branch=branch, generated_at=generated_at,
+            xray_binary=xray_binary,
         )
         if backup.exists():
             shutil.rmtree(backup) if backup.is_dir() else backup.unlink()
@@ -384,9 +467,13 @@ def main() -> int:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--repository", default="", help="GitHub owner/repo for raw subscription URL metadata")
     parser.add_argument("--branch", default="main")
+    parser.add_argument("--xray", default=None, help="official Xray-core binary; prevalidates each node before publishing")
     args = parser.parse_args()
     try:
-        report = build_country_outputs(args.input, args.output, args.config, args.repository, args.branch)
+        report = build_country_outputs(
+            args.input, args.output, args.config, args.repository, args.branch,
+            xray_binary=args.xray,
+        )
     except Exception as exc:
         print(json.dumps({"status": "safety_stop", "error_type": type(exc).__name__, "message": str(exc)}, ensure_ascii=False), flush=True)
         return 2

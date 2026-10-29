@@ -47,6 +47,19 @@ class CustomGeodataGuardTests(unittest.TestCase):
         for profile in profiles:
             self.assertEqual(_find_unavailable_custom_geodata(profile), [], profile.get("remarks"))
 
+    def test_diagnostic_prefers_real_stdout_error_over_stderr_deprecation_warning(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_path = Path(temp_dir) / "profile.json"
+            proc = subprocess.CompletedProcess(
+                args=["xray"], returncode=23,
+                stdout="Failed to start: invalid hysteria settings",
+                stderr="2026/10/29 [Warning] common/errors: WebSocket transport is deprecated",
+            )
+            diagnostic = _safe_xray_diagnostic(proc, config_path)
+        self.assertIn("Failed to start", diagnostic)
+        self.assertIn("invalid hysteria settings", diagnostic)
+        self.assertNotIn("deprecated", diagnostic)
+
     def test_failure_diagnostic_is_useful_but_redacts_uuid_ip_and_temp_path(self):
         secret_uuid = "11111111-1111-4111-8111-111111111111"
         with tempfile.TemporaryDirectory() as temp_dir:

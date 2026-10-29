@@ -11,6 +11,8 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from aeryx_json_parser.xray_validation import safe_xray_diagnostic as _safe_xray_diagnostic
+
 SPECIAL_PROTOCOLS = {"freedom", "blackhole", "dns", "loopback"}
 SUPPORTED_PROXY_PROTOCOLS = {"vless", "vmess", "trojan", "shadowsocks", "socks", "http", "hysteria"}
 
@@ -183,19 +185,6 @@ def _find_unavailable_custom_geodata(value: Any, path: str = "$", found: list[st
         for index, child in enumerate(value):
             _find_unavailable_custom_geodata(child, f"{path}[{index}]", found)
     return found
-
-
-def _safe_xray_diagnostic(proc: subprocess.CompletedProcess[str], config_path: Path) -> str | None:
-    """Return a short validation detail without dumping a complete config."""
-    raw = (proc.stderr or proc.stdout or "").strip()
-    if not raw:
-        return None
-    raw = raw.replace(str(config_path), "<config>")
-    raw = re.sub(r"(?i)\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", "<uuid>", raw)
-    raw = re.sub(r"(?<![\w.])(?:\d{1,3}\.){3}\d{1,3}(?![\w.])", "<ip>", raw)
-    lines = [line.strip() for line in raw.splitlines() if line.strip()]
-    useful = next((line for line in lines if any(token in line.lower() for token in ("failed", "error", "invalid", "unknown", "not found", "cannot", "unsupported", "parse", "decode"))), lines[0] if lines else "")
-    return useful[:400] or None
 
 
 def validate_with_xray(binary: str, profiles: list[dict[str, Any]], profile_names: list[str] | None = None) -> list[dict[str, Any]]:

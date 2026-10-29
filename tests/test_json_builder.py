@@ -78,6 +78,11 @@ class UnifiedJSONBuilderTests(unittest.TestCase):
             profiles = json.loads((out / "AeryxVPN.json").read_text(encoding="utf-8"))
             self.assertIsInstance(profiles, list)
             self.assertEqual(len(profiles), 3)
+            self.assertEqual(profiles[0]["remarks"], "🇪🇺 Автовыбор")
+            self.assertEqual(
+                [profile["remarks"] for profile in profiles[1:]],
+                ["🇩🇪 Германия", "🇺🇸 США"],
+            )
             self.assertFalse((out / "index.json").exists())
             self.assertFalse((out / "countries").exists())
             self.assertFalse((out / "xray").exists())
@@ -238,6 +243,50 @@ class UnifiedJSONBuilderTests(unittest.TestCase):
         upgrade = uri_to_xray_outbound("vless://11111111-1111-4111-8111-111111111111@de.example.org:443?security=tls&type=httpupgrade&host=cdn.example.org&path=%2Fconnect&sni=de.example.org#Germany")
         self.assertEqual(upgrade["streamSettings"]["network"], "httpupgrade")
         self.assertEqual(upgrade["streamSettings"]["httpupgradeSettings"]["host"], "cdn.example.org")
+
+    def test_vless_public_ip_without_tls_or_reality_is_rejected_before_publish(self):
+        uri = "vless://11111111-1111-4111-8111-111111111111@8.8.8.8:443?encryption=none&type=tcp#Public IP without TLS"
+        with self.assertRaisesRegex(ValueError, "xray_public_ip_requires_tls_or_reality"):
+            uri_to_xray_outbound(uri)
+
+    def test_xray_prevalidation_filters_invalid_node_before_country_and_auto_profiles(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            source, config = self._fixture(root)
+            # A deliberate node rejection leaves four nodes, so lower the fixture's
+            # safety floor from five to four for this targeted test.
+            config_text = config.read_text(encoding="utf-8")
+            config.write_text(config_text.replace("minimum_total_configs: 5", "minimum_total_configs: 4"), encoding="utf-8")
+            fake_binary = root / "xray"
+            fake_binary.write_text("fake executable placeholder", encoding="utf-8")
+            # The first two Germany nodes pass; the Hysteria2 node fails due to a
+            # synthetic Xray config error; the two USA nodes pass.
+            responses = [
+                __import__("subprocess").CompletedProcess(["xray"], 0, "Configuration OK", ""),
+                __import__("subprocess").CompletedProcess(["xray"], 0, "Configuration OK", ""),
+                __import__("subprocess").CompletedProcess(
+                    ["xray"], 23,
+                    "Failed to start: invalid hysteria settings", 
+                    "[Warning] WebSocket transport is deprecated",
+                ),
+                __import__("subprocess").CompletedProcess(["xray"], 0, "Configuration OK", ""),
+                __import__("subprocess").CompletedProcess(["xray"], 0, "Configuration OK", ""),
+            ]
+            with patch("aeryx_json_parser.json_builder.subprocess.run", side_effect=responses) as mocked:
+                report = build_country_outputs(
+                    source, root / "publish", config,
+                    "cheesyx-rudy/aeryx-json-parser", "main",
+                    datetime(2026, 10, 27, 12, 0, tzinfo=timezone.utc),
+                    xray_binary=fake_binary,
+                )
+            self.assertEqual(mocked.call_count, 5)
+            self.assertTrue(report["xray_validation_enabled"])
+            self.assertEqual(report["xray_validation_failures"], 1)
+            self.assertEqual(report["published_config_count"], 4)
+            self.assertEqual(report["rejected_counts"]["xray_core_rejected_node:invalid_config"], 1)
+            profiles = json.loads((root / "publish" / "AeryxVPN.json").read_text(encoding="utf-8"))
+            self.assertEqual(profiles[0]["remarks"], "🇪🇺 Автовыбор")
+            self.assertEqual(sum(len([o for o in p["outbounds"] if o.get("protocol") not in {"freedom", "blackhole"}]) for p in profiles if p["remarks"] != "🇪🇺 Автовыбор"), 4)
 
     def test_unsupported_xray_protocols_are_rejected_instead_of_published_broken(self):
         for uri in [

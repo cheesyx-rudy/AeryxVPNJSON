@@ -7,6 +7,7 @@ leastPing balancer. A global auto entry includes every supported node.
 from __future__ import annotations
 
 import copy
+import ipaddress
 import json
 from pathlib import Path
 from typing import Any
@@ -167,6 +168,27 @@ def _stream_settings(normalized: dict[str, Any], uri: str, protocol: str) -> dic
     return stream
 
 
+def _reject_public_ip_without_transport_security(host: str, protocol: str, stream: dict[str, Any]) -> None:
+    """Reject VLESS-family nodes that current Xray-core refuses for public IP endpoints.
+
+    Xray permits an unencrypted VLESS/VMess/Trojan endpoint on a domain name or a
+    private IP, but rejects this configuration when the endpoint is a public IP.
+    Doing this at conversion time prevents one malformed source node from breaking
+    every country/Auto profile that contains it.
+    """
+    if protocol not in {"vless", "vmess", "trojan"}:
+        return
+    security = str(stream.get("security") or "none").lower()
+    if security not in {"", "none"}:
+        return
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        return  # Hostname endpoints are not rejected by this specific Xray rule.
+    if address.is_global:
+        raise ValueError("xray_public_ip_requires_tls_or_reality")
+
+
 def uri_to_xray_outbound(uri: str) -> dict[str, Any]:
     """Convert a supported URI to an Xray outbound, rejecting non-equivalent mappings."""
     parsed = urlsplit(uri)
@@ -183,10 +205,12 @@ def uri_to_xray_outbound(uri: str) -> dict[str, Any]:
             raise ValueError("xray_vless_uuid_missing")
         if normalized.get("flow"):
             user["flow"] = str(normalized["flow"])
+        stream = _stream_settings(normalized, uri, "vless")
+        _reject_public_ip_without_transport_security(host, "vless", stream)
         payload: dict[str, Any] = {
             "tag": "proxy", "protocol": "vless",
             "settings": {"vnext": [{"address": host, "port": port, "users": [user]}]},
-            "streamSettings": _stream_settings(normalized, uri, "vless"),
+            "streamSettings": stream,
         }
         return payload
 
@@ -199,20 +223,24 @@ def uri_to_xray_outbound(uri: str) -> dict[str, Any]:
         }
         if not user["id"]:
             raise ValueError("xray_vmess_uuid_missing")
+        stream = _stream_settings(normalized, uri, "vmess")
+        _reject_public_ip_without_transport_security(host, "vmess", stream)
         return {
             "tag": "proxy", "protocol": "vmess",
             "settings": {"vnext": [{"address": host, "port": port, "users": [user]}]},
-            "streamSettings": _stream_settings(normalized, uri, "vmess"),
+            "streamSettings": stream,
         }
 
     if scheme == "trojan":
         password = str(normalized.get("password") or "")
         if not password:
             raise ValueError("xray_trojan_password_missing")
+        stream = _stream_settings(normalized, uri, "trojan")
+        _reject_public_ip_without_transport_security(host, "trojan", stream)
         return {
             "tag": "proxy", "protocol": "trojan",
             "settings": {"servers": [{"address": host, "port": port, "password": password}]},
-            "streamSettings": _stream_settings(normalized, uri, "trojan"),
+            "streamSettings": stream,
         }
 
     if scheme == "ss":
