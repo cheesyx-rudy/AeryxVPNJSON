@@ -2,22 +2,6 @@ name: AeryxVPN Happ Xray JSON-array subscription
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'sources.txt'
-      - 'config/**'
-      - 'src/**'
-      - 'tests/**'
-      - 'tools/**'
-      - 'pyproject.toml'
-      - 'requirements.txt'
-      - 'schemas/**'
-      - 'README_RU.md'
-      - 'RESEARCH.md'
-      - '.github/workflows/update-json.yml'
-  schedule:
-    - cron: '17 */6 * * *'
 
 permissions:
   contents: write
@@ -30,15 +14,16 @@ jobs:
   build-happ-json-array:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+
     env:
       PYTHONUNBUFFERED: '1'
       PYTHONPATH: src
-      # For private sources, add only the secrets you actually reference in sources.txt.
       PANEL_TOKEN: ${{ secrets.PANEL_TOKEN }}
       PANEL_SESSION: ${{ secrets.PANEL_SESSION }}
       SUB_TOKEN: ${{ secrets.SUB_TOKEN }}
       HAPP_HWID: ${{ secrets.HAPP_HWID }}
       WEP_SOURCE_URL: ${{ secrets.WEP_SOURCE_URL }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -119,12 +104,15 @@ jobs:
           test -s output/publish/build-report.json
           install -m 0644 output/publish/AeryxVPN.json AeryxVPN.json
           install -m 0644 output/publish/AeryxVPN.metadata.json AeryxVPN.metadata.json
+
           # Remove files created by the previous country-per-file layout.
           git rm -r --ignore-unmatch countries xray country-metadata
           git rm --ignore-unmatch index.json
+
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
+
           if git diff --cached --quiet; then
             echo 'AeryxVPN JSON subscription is unchanged; no commit needed.'
           else
