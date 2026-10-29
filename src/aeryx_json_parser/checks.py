@@ -75,7 +75,9 @@ def build_singbox_outbound(uri: str) -> dict[str,Any]:
     tls_q=(_first(q,"security", "") or "").lower()
     tls={"enabled":tls_q in {"tls","reality"} or scheme in {"trojan","hysteria","hysteria2","hy2","tuic","anytls","https"},
          "server_name":_first(q,"sni",host)}
-    if _truthy(_first(q,"allowInsecure", _first(q,"insecure","false"))): tls["insecure"]=True
+    # Do not disable certificate verification for validation. `allowInsecure`
+    # was removed by recent Xray-core; nodes must work with ordinary TLS
+    # verification or be filtered out before they are published.
     fp=_first(q,"fp","")
     if fp: tls["utls"]={"enabled":True,"fingerprint":fp}
     alpn=_first(q,"alpn","")
@@ -436,7 +438,8 @@ def _tls_xray(q: dict[str,list[str]], host: str, security: str, vmess: dict[str,
         fp=_first(q,"fp",str(vmess.get("fp") or "")); alpn=_first(q,"alpn",str(vmess.get("alpn") or ""))
         if fp: tls["fingerprint"]=fp
         if alpn: tls["alpn"]=[x for x in alpn.split(",") if x]
-        if _truthy(_first(q,"allowInsecure","false")): tls["allowInsecure"]=True
+        # Xray-core 26.2.6+ rejects the legacy `allowInsecure` setting.
+        # Validate with the default secure certificate checks instead.
         value["tlsSettings"]=tls
     elif security=="reality":
         pbk=_first(q,"pbk","");

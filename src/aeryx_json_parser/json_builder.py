@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import ipaddress
 import json
 import shutil
 import subprocess
@@ -167,6 +168,38 @@ def _build_profiles(
     return profiles, country_rows
 
 
+def _reject_unsafe_plain_ip_outbound(outbound: dict[str, Any]) -> None:
+    """Guard the generated Xray outbound itself against plain protocol/IP pairs.
+
+    This complements URI-level validation so a normalization adapter cannot
+    accidentally let a public literal IP through to every generated profile.
+    """
+    protocol = str(outbound.get("protocol") or "").lower()
+    if protocol not in {"vless", "vmess", "trojan"}:
+        return
+    stream = outbound.get("streamSettings") or {}
+    security = str(stream.get("security") or "none").lower()
+    if security not in {"", "none"}:
+        return
+    settings = outbound.get("settings") or {}
+    addresses: list[str] = []
+    for item in settings.get("vnext") or []:
+        if item.get("address"):
+            addresses.append(str(item["address"]))
+    if settings.get("address"):
+        addresses.append(str(settings["address"]))
+    for item in settings.get("servers") or []:
+        if item.get("address"):
+            addresses.append(str(item["address"]))
+    for host in addresses:
+        try:
+            address = ipaddress.ip_address(host)
+        except ValueError:
+            continue  # Xray allows domain-name endpoints without TLS.
+        if not address.is_private:
+            raise ValueError("xray_public_ip_requires_tls_or_reality")
+
+
 def _xray_rejection_code(diagnostic: str | None) -> str:
     """Return a safe, stable rejection category rather than putting node data in reports."""
     value = (diagnostic or "").lower()
@@ -291,6 +324,7 @@ def _build_country_outputs_in_place(
                 outbound = uri_to_xray_outbound(uri)
                 if not isinstance(outbound, dict) or not outbound.get("protocol"):
                     raise ValueError("xray_adapter_returned_no_outbound")
+                _reject_unsafe_plain_ip_outbound(outbound)
             except Exception as exc:
                 conversion_failures += 1
                 reason = str(exc).split(":", 1)[0]

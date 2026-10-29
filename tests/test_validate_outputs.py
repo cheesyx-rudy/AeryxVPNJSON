@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.validate_outputs import _find_unavailable_custom_geodata, _safe_xray_diagnostic
+from tools.validate_outputs import _find_unavailable_custom_geodata, _find_removed_allow_insecure, _safe_xray_diagnostic
 
 
 class CustomGeodataGuardTests(unittest.TestCase):
@@ -28,6 +28,16 @@ class CustomGeodataGuardTests(unittest.TestCase):
         self.assertTrue(any("dns.servers[1].domains[0]" in item for item in found))
         self.assertTrue(any("routing.rules[0].domain[0]" in item for item in found))
         self.assertTrue(any("routing.rules[1].ip[0]" in item for item in found))
+
+    def test_finds_removed_allow_insecure_true_but_ignores_false(self):
+        profile = {
+            "outbounds": [
+                {"streamSettings": {"tlsSettings": {"allowInsecure": True}}},
+                {"streamSettings": {"tlsSettings": {"allowInsecure": False}}},
+            ]
+        }
+        paths = _find_removed_allow_insecure(profile)
+        self.assertEqual(paths, ["$.outbounds[0].streamSettings.tlsSettings.allowInsecure"])
 
     def test_allows_standard_geo_selectors(self):
         profile = {

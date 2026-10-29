@@ -66,6 +66,11 @@ class UnifiedJSONBuilderTests(unittest.TestCase):
         )
         return out, report
 
+    def test_workflow_prevalidates_each_node_with_installed_xray_before_build(self):
+        workflow = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "update-json.yml"
+        text = workflow.read_text(encoding="utf-8")
+        self.assertIn("--xray tools/xray", text)
+
     def test_emits_one_happ_json_array_and_metadata_sidecar(self):
         with tempfile.TemporaryDirectory() as td:
             out, report = self._build(Path(td))
@@ -244,10 +249,38 @@ class UnifiedJSONBuilderTests(unittest.TestCase):
         self.assertEqual(upgrade["streamSettings"]["network"], "httpupgrade")
         self.assertEqual(upgrade["streamSettings"]["httpupgradeSettings"]["host"], "cdn.example.org")
 
+    def test_legacy_allow_insecure_is_never_emitted_for_modern_xray(self):
+        outbound = uri_to_xray_outbound(
+            "vless://11111111-1111-4111-8111-111111111111@de.example.org:443"
+            "?security=tls&type=tcp&sni=de.example.org&allowInsecure=1#legacy-insecure"
+        )
+        tls = outbound["streamSettings"]["tlsSettings"]
+        self.assertNotIn("allowInsecure", tls)
+        self.assertEqual(tls["serverName"], "de.example.org")
+
+    def test_explicit_modern_tls_pin_and_verify_name_are_preserved(self):
+        pin = "a" * 64
+        outbound = uri_to_xray_outbound(
+            "vless://11111111-1111-4111-8111-111111111111@de.example.org:443"
+            f"?security=tls&sni=de.example.org&pinnedPeerCertSha256={pin}&verifyPeerCertByName=de.example.org#pinned"
+        )
+        tls = outbound["streamSettings"]["tlsSettings"]
+        self.assertEqual(tls["pinnedPeerCertSha256"], pin)
+        self.assertEqual(tls["verifyPeerCertByName"], "de.example.org")
+
     def test_vless_public_ip_without_tls_or_reality_is_rejected_before_publish(self):
         uri = "vless://11111111-1111-4111-8111-111111111111@8.8.8.8:443?encryption=none&type=tcp#Public IP without TLS"
         with self.assertRaisesRegex(ValueError, "xray_public_ip_requires_tls_or_reality"):
             uri_to_xray_outbound(uri)
+
+    def test_actual_outbound_guard_rejects_plain_public_ip(self):
+        outbound = {
+            "protocol": "vless",
+            "settings": {"vnext": [{"address": "8.8.8.8", "port": 443, "users": []}]},
+            "streamSettings": {"network": "tcp"},
+        }
+        with self.assertRaisesRegex(ValueError, "xray_public_ip_requires_tls_or_reality"):
+            json_builder._reject_unsafe_plain_ip_outbound(outbound)
 
     def test_xray_prevalidation_filters_invalid_node_before_country_and_auto_profiles(self):
         with tempfile.TemporaryDirectory() as td:

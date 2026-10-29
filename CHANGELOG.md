@@ -23,6 +23,14 @@
 - Added sanitized Xray stderr diagnostics to validation failures, so the next error report includes the actual cause without dumping proxy credentials or complete configs.
 - Added regression tests for custom-geodata handling and safe diagnostics.
 
+## 1.4.5 — Xray TLS compatibility and per-node validation
+
+- Stop emitting the removed `allowInsecure` option in generated Xray JSON and Xray validation configs; legacy sources now use normal certificate verification unless explicit modern pin/name settings are supplied.
+- Apply the same certificate-verification policy to sing-box source probes so TLS nodes that only work by skipping certificate checks are not incorrectly accepted for Xray publication.
+- Guard the generated Xray outbound itself against VLESS/VMess/Trojan using an unencrypted public literal IP.
+- Keep `--xray tools/xray` in the workflow's JSON-builder step so each node is checked against the same official Xray core before country and Auto profiles are built.
+- Added regression tests for TLS field removal, public-IP rejection and workflow prevalidation.
+
 # Changelog
 
 ## 1.4.0 — sample-aligned Happ/Xray JSON profiles

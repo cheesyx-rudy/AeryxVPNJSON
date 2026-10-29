@@ -17,6 +17,24 @@ SPECIAL_PROTOCOLS = {"freedom", "blackhole", "dns", "loopback"}
 SUPPORTED_PROXY_PROTOCOLS = {"vless", "vmess", "trojan", "shadowsocks", "socks", "http", "hysteria"}
 
 
+def _find_removed_allow_insecure(value: Any, path: str = "$", found: list[str] | None = None) -> list[str]:
+    """Locate truthy legacy TLS allowInsecure fields rejected by current Xray-core."""
+    if found is None:
+        found = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            child_path = f"{path}.{key}"
+            if str(key).lower() == "allowinsecure" and (
+                child is True or str(child).strip().lower() in {"1", "true", "yes", "on"}
+            ):
+                found.append(child_path)
+            _find_removed_allow_insecure(child, child_path, found)
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            _find_removed_allow_insecure(child, f"{path}[{index}]", found)
+    return found
+
+
 def validate_structure(subscription_path: Path, metadata_path: Path, report_path: Path) -> dict[str, Any]:
     """Validate the published Happ Xray JSON array, including country balancing references."""
     profiles = json.loads(subscription_path.read_text(encoding="utf-8"))
@@ -124,6 +142,13 @@ def validate_structure(subscription_path: Path, metadata_path: Path, report_path
                 raise ValueError(f"{name}: country node_count in metadata does not match profile")
         # Happ consumes remarks/meta; Xray-core itself validates only the actual config.
         xray_cfg = copy.deepcopy(profile)
+        legacy_tls_fields = _find_removed_allow_insecure(xray_cfg)
+        if legacy_tls_fields:
+            raise ValueError(
+                f"{name}: current Xray-core rejects legacy allowInsecure=true; "
+                "remove it or provide an explicit certificate pin. Paths: "
+                + ", ".join(legacy_tls_fields[:5])
+            )
         xray_cfg.pop("remarks", None)
         xray_cfg.pop("meta", None)
         custom_geo_references = _find_unavailable_custom_geodata(xray_cfg)

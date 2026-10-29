@@ -30,6 +30,13 @@ class CheckConfigTests(unittest.TestCase):
         out=build_xray_config(f'vless://{UUID}@node.example:443?security=tls&sni=cdn.example.org&type=ws&path=%2Fws&host=cdn.example.org#n',1080)
         self.assertEqual(out['inbounds'][0]['port'],1080)
         self.assertEqual(out['outbounds'][0]['streamSettings']['wsSettings']['path'],'/ws')
+    def test_legacy_allow_insecure_is_not_emitted_to_xray_or_singbox(self):
+        uri = f"vless://{UUID}@node.example:443?security=tls&sni=node.example&allowInsecure=1#n"
+        xray = build_xray_config(uri, 1080)["outbounds"][0]["streamSettings"]["tlsSettings"]
+        singbox = build_singbox_outbound(uri)["tls"]
+        self.assertNotIn("allowInsecure", xray)
+        self.assertNotIn("insecure", singbox)
+
     def test_unsupported_xray_protocol_fails_explicitly(self):
         with self.assertRaisesRegex(ValueError,'does not support'):
             build_xray_config('hysteria2://secret@node.example:443?sni=node.example',1080)

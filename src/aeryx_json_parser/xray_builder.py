@@ -50,13 +50,13 @@ def _tls_parts(normalized: dict[str, Any], host: str) -> tuple[str, dict[str, An
             "fingerprint": (tls.get("utls") or {}).get("fingerprint") or "chrome",
             "publicKey": reality.get("public_key") or "",
             "shortId": reality.get("short_id") or "",
-            "allowInsecure": False,
         }
         return "reality", settings
     if tls.get("enabled"):
         settings = {"serverName": tls.get("server_name") or host}
-        if tls.get("insecure"):
-            settings["allowInsecure"] = True
+        # Xray-core 26.2.6+ removed allowInsecure from its TLS config. Do not
+        # serialize this legacy flag. Connections use normal certificate
+        # verification unless an explicit certificate pin/name override is supplied.
         fingerprint = (tls.get("utls") or {}).get("fingerprint")
         if fingerprint:
             settings["fingerprint"] = fingerprint
@@ -106,6 +106,17 @@ def _stream_settings(normalized: dict[str, Any], uri: str, protocol: str) -> dic
         raise ValueError(f"xray_unsupported_transport:{net}")
 
     security, security_settings = _tls_parts(normalized, host)
+    if security == "tls":
+        # Current Xray uses certificate pinning / verification-name settings rather
+        # than the removed allowInsecure flag. Preserve explicit modern values if
+        # a source provides them; never translate allowInsecure=1 into an unsafe
+        # or semantically incorrect substitute.
+        pinned = _first(query, "pinnedPeerCertSha256", _first(query, "pinned_peer_cert_sha256", ""))
+        verify_name = _first(query, "verifyPeerCertByName", _first(query, "verify_peer_cert_by_name", ""))
+        if pinned:
+            security_settings["pinnedPeerCertSha256"] = pinned
+        if verify_name:
+            security_settings["verifyPeerCertByName"] = verify_name
     stream: dict[str, Any] = {"network": net or "tcp", "security": security}
     if security == "tls":
         stream["tlsSettings"] = security_settings
@@ -185,7 +196,10 @@ def _reject_public_ip_without_transport_security(host: str, protocol: str, strea
         address = ipaddress.ip_address(host)
     except ValueError:
         return  # Hostname endpoints are not rejected by this specific Xray rule.
-    if address.is_global:
+    # Xray only permits unencrypted VLESS/VMess/Trojan with a literal private
+    # IP or a domain name. Do not rely on is_global alone: reserved/public-looking
+    # address literals may not be globally routable but are not private either.
+    if not address.is_private:
         raise ValueError("xray_public_ip_requires_tls_or_reality")
 
 
