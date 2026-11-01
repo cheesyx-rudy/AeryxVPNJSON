@@ -9,13 +9,13 @@
     "subscription_url": "https://raw.githubusercontent.com/cheesyx-rudy/AeryxVPNJSON/main/AeryxVPN.json",
     "support_url": "https://t.me/cheesyx",
     "website_url": "https://t.me/AeryxVPN",
-    "generated_at": "2026-11-01T18:06:08Z",
-    "updated_at_local": "01.11.2026 19:06",
+    "generated_at": "2026-11-01T18:36:10Z",
+    "updated_at_local": "01.11.2026 19:36",
     "timezone": "Europe/Berlin",
     "update_interval_hours": 6,
-    "country_count": 36,
-    "validated_config_count": 520,
-    "profile_count": 37,
+    "country_count": 39,
+    "validated_config_count": 537,
+    "profile_count": 40,
     "auto_profile_included": true,
     "auto_profile_name": "🇪🇺 Автовыбор",
     "balancing": {
@@ -29,13 +29,22 @@
       "timeout": "2s",
       "method": "client-side; each profile measures its own nodes"
     },
-    "profile_sha256": "6adbda4bc88ef208867bd45df657428b118124d011f1503f78c420177695db21",
+    "profile_sha256": "5afc121a1f3343185e04a294cce28f97b518f498b724885574933bdd2bc6b4ac",
     "countries": [
       {
         "code": "NL",
         "name": "The Netherlands",
         "flag": "🇳🇱",
         "profile_name": "🇳🇱 Нидерланды",
+        "node_count": 100,
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
+      },
+      {
+        "code": "RU",
+        "name": "Russia",
+        "flag": "🇷🇺",
+        "profile_name": "🇷🇺 Россия",
         "node_count": 94,
         "balancer_tag": "balancer",
         "balancing": "burstObservatory+leastPing"
@@ -50,20 +59,11 @@
         "balancing": "burstObservatory+leastPing"
       },
       {
-        "code": "RU",
-        "name": "Russia",
-        "flag": "🇷🇺",
-        "profile_name": "🇷🇺 Россия",
-        "node_count": 86,
-        "balancer_tag": "balancer",
-        "balancing": "burstObservatory+leastPing"
-      },
-      {
         "code": "CA",
         "name": "Canada",
         "flag": "🇨🇦",
         "profile_name": "🇨🇦 Канада",
-        "node_count": 60,
+        "node_count": 62,
         "balancer_tag": "balancer",
         "balancing": "burstObservatory+leastPing"
       },
@@ -90,25 +90,7 @@
         "name": "Germany",
         "flag": "🇩🇪",
         "profile_name": "🇩🇪 Германия",
-        "node_count": 18,
-        "balancer_tag": "balancer",
-        "balancing": "burstObservatory+leastPing"
-      },
-      {
-        "code": "RS",
-        "name": "Serbia",
-        "flag": "🇷🇸",
-        "profile_name": "🇷🇸 Сербия",
-        "node_count": 13,
-        "balancer_tag": "balancer",
-        "balancing": "burstObservatory+leastPing"
-      },
-      {
-        "code": "IT",
-        "name": "Italy",
-        "flag": "🇮🇹",
-        "profile_name": "🇮🇹 Италия",
-        "node_count": 9,
+        "node_count": 17,
         "balancer_tag": "balancer",
         "balancing": "burstObservatory+leastPing"
       },
@@ -117,7 +99,16 @@
         "name": "Poland",
         "flag": "🇵🇱",
         "profile_name": "🇵🇱 Польша",
-        "node_count": 9,
+        "node_count": 11,
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
+      },
+      {
+        "code": "IT",
+        "name": "Italy",
+        "flag": "🇮🇹",
+        "profile_name": "🇮🇹 Италия",
+        "node_count": 10,
         "balancer_tag": "balancer",
         "balancing": "burstObservatory+leastPing"
       },
@@ -126,15 +117,24 @@
         "name": "Japan",
         "flag": "🇯🇵",
         "profile_name": "🇯🇵 Япония",
+        "node_count": 9,
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
+      },
+      {
+        "code": "FI",
+        "name": "Finland",
+        "flag": "🇫🇮",
+        "profile_name": "🇫🇮 Финляндия",
         "node_count": 8,
         "balancer_tag": "balancer",
         "balancing": "burstObservatory+leastPing"
       },
       {
-        "code": "ES",
-        "name": "Spain",
-        "flag": "🇪🇸",
-        "profile_name": "🇪🇸 Испания",
+        "code": "BG",
+        "name": "Bulgaria",
+        "flag": "🇧🇬",
+        "profile_name": "🇧🇬 Болгария",
         "node_count": 7,
         "balancer_tag": "balancer",
         "balancing": "burstObservatory+leastPing"
@@ -158,20 +158,29 @@
         "balancing": "burstObservatory+leastPing"
       },
       {
-        "code": "FI",
-        "name": "Finland",
-        "flag": "🇫🇮",
-        "profile_name": "🇫🇮 Финляндия",
+        "code": "RS",
+        "name": "Serbia",
+        "flag": "🇷🇸",
+        "profile_name": "🇷🇸 Сербия",
+        "node_count": 7,
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
+      },
+      {
+        "code": "ES",
+        "name": "Spain",
+        "flag": "🇪🇸",
+        "profile_name": "🇪🇸 Испания",
         "node_count": 6,
         "balancer_tag": "balancer",
         "balancing": "burstObservatory+leastPing"
       },
       {
-        "code": "CH",
-        "name": "Switzerland",
-        "flag": "🇨🇭",
-        "profile_name": "🇨🇭 Швейцария",
-        "node_count": 4,
+        "code": "FR",
+        "name": "France",
+        "flag": "🇫🇷",
+        "profile_name": "🇫🇷 Франция",
+        "node_count": 5,
         "balancer_tag": "balancer",
         "balancing": "burstObservatory+leastPing"
       },
@@ -185,42 +194,6 @@
         "balancing": "burstObservatory+leastPing"
       },
       {
-        "code": "SE",
-        "name": "Sweden",
-        "flag": "🇸🇪",
-        "profile_name": "🇸🇪 Швеция",
-        "node_count": 4,
-        "balancer_tag": "balancer",
-        "balancing": "burstObservatory+leastPing"
-      },
-      {
-        "code": "BG",
-        "name": "Bulgaria",
-        "flag": "🇧🇬",
-        "profile_name": "🇧🇬 Болгария",
-        "node_count": 3,
-        "balancer_tag": "balancer",
-        "balancing": "burstObservatory+leastPing"
-      },
-      {
-        "code": "FR",
-        "name": "France",
-        "flag": "🇫🇷",
-        "profile_name": "🇫🇷 Франция",
-        "node_count": 3,
-        "balancer_tag": "balancer",
-        "balancing": "burstObservatory+leastPing"
-      },
-      {
-        "code": "KR",
-        "name": "South Korea",
-        "flag": "🇰🇷",
-        "profile_name": "🇰🇷 Южная Корея",
-        "node_count": 3,
-        "balancer_tag": "balancer",
-        "balancing": "burstObservatory+leastPing"
-      },
-      {
         "code": "QA",
         "name": "Qatar",
         "flag": "🇶🇦",
@@ -230,10 +203,10 @@
         "balancing": "burstObservatory+leastPing"
       },
       {
-        "code": "CL",
-        "name": "Chile",
-        "flag": "🇨🇱",
-        "profile_name": "🇨🇱 Чили",
+        "code": "CH",
+        "name": "Switzerland",
+        "flag": "🇨🇭",
+        "profile_name": "🇨🇭 Швейцария",
         "node_count": 2,
         "balancer_tag": "balancer",
         "balancing": "burstObservatory+leastPing"
@@ -248,19 +221,19 @@
         "balancing": "burstObservatory+leastPing"
       },
       {
-        "code": "KZ",
-        "name": "Kazakhstan",
-        "flag": "🇰🇿",
-        "profile_name": "🇰🇿 Казахстан",
+        "code": "IN",
+        "name": "India",
+        "flag": "🇮🇳",
+        "profile_name": "🇮🇳 Индия",
         "node_count": 2,
         "balancer_tag": "balancer",
         "balancing": "burstObservatory+leastPing"
       },
       {
-        "code": "MX",
-        "name": "Mexico",
-        "flag": "🇲🇽",
-        "profile_name": "🇲🇽 Мексика",
+        "code": "KZ",
+        "name": "Kazakhstan",
+        "flag": "🇰🇿",
+        "profile_name": "🇰🇿 Казахстан",
         "node_count": 2,
         "balancer_tag": "balancer",
         "balancing": "burstObservatory+leastPing"
@@ -275,10 +248,46 @@
         "balancing": "burstObservatory+leastPing"
       },
       {
+        "code": "SE",
+        "name": "Sweden",
+        "flag": "🇸🇪",
+        "profile_name": "🇸🇪 Швеция",
+        "node_count": 2,
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
+      },
+      {
+        "code": "SI",
+        "name": "Slovenia",
+        "flag": "🇸🇮",
+        "profile_name": "🇸🇮 Словения",
+        "node_count": 2,
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
+      },
+      {
         "code": "AT",
         "name": "Austria",
         "flag": "🇦🇹",
         "profile_name": "🇦🇹 Австрия",
+        "node_count": 1,
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
+      },
+      {
+        "code": "BR",
+        "name": "Brazil",
+        "flag": "🇧🇷",
+        "profile_name": "🇧🇷 Бразилия",
+        "node_count": 1,
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
+      },
+      {
+        "code": "CL",
+        "name": "Chile",
+        "flag": "🇨🇱",
+        "profile_name": "🇨🇱 Чили",
         "node_count": 1,
         "balancer_tag": "balancer",
         "balancing": "burstObservatory+leastPing"
@@ -311,10 +320,10 @@
         "balancing": "burstObservatory+leastPing"
       },
       {
-        "code": "IN",
-        "name": "India",
-        "flag": "🇮🇳",
-        "profile_name": "🇮🇳 Индия",
+        "code": "KR",
+        "name": "South Korea",
+        "flag": "🇰🇷",
+        "profile_name": "🇰🇷 Южная Корея",
         "node_count": 1,
         "balancer_tag": "balancer",
         "balancing": "burstObservatory+leastPing"
@@ -324,6 +333,15 @@
         "name": "Latvia",
         "flag": "🇱🇻",
         "profile_name": "🇱🇻 Латвия",
+        "node_count": 1,
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
+      },
+      {
+        "code": "MX",
+        "name": "Mexico",
+        "flag": "🇲🇽",
+        "profile_name": "🇲🇽 Мексика",
         "node_count": 1,
         "balancer_tag": "balancer",
         "balancing": "burstObservatory+leastPing"
@@ -351,6 +369,15 @@
         "name": "Thailand",
         "flag": "🇹🇭",
         "profile_name": "🇹🇭 Таиланд",
+        "node_count": 1,
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
+      },
+      {
+        "code": "ZA",
+        "name": "South Africa",
+        "flag": "🇿🇦",
+        "profile_name": "🇿🇦 ЮАР",
         "node_count": 1,
         "balancer_tag": "balancer",
         "balancing": "burstObservatory+leastPing"
