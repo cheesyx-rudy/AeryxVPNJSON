@@ -1,9 +1,42 @@
-# AeryxVPN JSON Parser
+# AeryxVPN Core
 
-Генератор подписки AeryxVPN в формате JSON-массива для Happ/Xray. Каждый элемент `AeryxVPN.json` — отдельный профиль страны; дополнительный профиль `🇪🇺 Автовыбор` содержит все опубликованные узлы.
+Shared Python library for the AeryxVPN URI and JSON subscription parsers.
 
-Общий профиль собирается из `config/xray-profile-template.json`, основанного на предоставленных рабочих конфигурациях Happ. Основные детали устройства, диагностики и запуска находятся в [README_RU.md](README_RU.md).
+> **Status: `0.2.0` — shared input adapters are ready; validation migration is in progress.**
+> Core extracts share-URI subscriptions and parses Xray JSON, sing-box JSON, Clash JSON/YAML, and
+> SIP008. Shared country resolution and Happ routing utilities are also included. Production Xray/sing-box checks have not yet been migrated, so do not replace the
+> existing parser validation pipelines with this release.
 
-- Подписка: [`AeryxVPN.json`](AeryxVPN.json)
-- Метаданные: [`AeryxVPN.metadata.json`](AeryxVPN.metadata.json) — не импортировать в Happ
-- Тесты: `python -m unittest discover -s tests -v`
+## Architecture
+
+- **Input adapters** convert share URI, Xray JSON, sing-box JSON, Clash JSON/YAML, and SIP008
+  into `ProxyCandidate` objects.
+- **Validation Engine** dispatches candidates to protocol-aware validators.
+- **Output adapters** preserve each parser's output contract: ordinary share links for
+  the URI parser and the existing Happ-compatible JSON schema for the JSON parser.
+- **SourcePayload** retains original input data so unknown JSON fields are not silently
+  discarded during conversion.
+
+The Core is a library executed inside GitHub-hosted Actions runners. It is not a daemon,
+web service, or always-on server.
+
+## Development
+
+```bash
+python -m pip install -e '.[dev]'
+python -m pytest -q
+python -m ruff check .
+```
+
+## Versioning
+
+Parser workflows should pin a Core release tag (for example `v0.2.0`) rather than track
+`main`. Breaking public API changes require a major version once the integration API is
+stable.
+
+## Private repository access
+
+The JSON parser repository is public, so its workflow must retrieve this private repository
+using a narrowly scoped read-only credential stored as a GitHub Actions secret. Never put
+a token in source code, workflow literals, URLs committed to Git, artifacts, or logs.
+Do not expose the secret to workflows triggered by untrusted pull requests.
