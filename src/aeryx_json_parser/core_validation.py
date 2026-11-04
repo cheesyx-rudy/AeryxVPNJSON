@@ -57,7 +57,9 @@ def _core_status(result: object) -> tuple[str, str, str, int | None, int]:
     if status is ValidationStatus.WORKING:
         return f"proxy_ok_{confidence}", reason, confidence, elapsed_ms, result.score or 0
     if status is ValidationStatus.DEGRADED:
-        return f"proxy_ok_{confidence}", reason, confidence, elapsed_ms, result.score or 0
+        return f"proxy_degraded_{confidence}", reason, confidence, elapsed_ms, result.score or 0
+    if status is ValidationStatus.UNSTABLE:
+        return "proxy_unstable", reason, confidence, elapsed_ms, result.score or 0
     if status is ValidationStatus.UNSUPPORTED:
         return "not_checkable", reason, confidence, elapsed_ms, result.score or 0
     if status is ValidationStatus.NOT_CHECKED:
@@ -95,6 +97,7 @@ def validate_nodes_with_core(
             request_timeout_seconds=min(3.6, max(0.5, per_node_timeout / 2)),
         ),
         probe_targets=probe_targets,
+        preferred_core="xray",
         stability_policy=StabilityPolicy(
             sample_count=max(1, min(stability_samples, 5)),
             sample_interval_seconds=0.1,
@@ -154,10 +157,6 @@ def validate_nodes_with_core(
                     node.validation_score = score
                     node.validation_votes = {
                         "core_tunnel_validation": 1 if status.startswith("proxy_ok") else -1,
-                        "endpoint_tcp_reachability": (
-                            1 if node.tcp_precheck == "open"
-                            else (-1 if node.tcp_precheck in {"refused", "timeout"} else None)
-                        ),
                     }
                     checks = [
                         check for check in result.checks
