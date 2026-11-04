@@ -465,13 +465,13 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
                 continue
             info=endpoint_info.get(node.host, {})
             decision=blocklist_decision(info, node.check_status)
-            if decision == "blocked_unverified":
+            if decision in {"blocked_unverified", "blocked_non_global"}:
                 failed_blocklisted+=1
                 networks_found=sorted({
                     str(item.get("network")) for item in info.get("blocked_matches", [])
                     if item.get("network")
                 })
-                reasons=["denylist match"]
+                reasons=["non-global endpoint"] if decision == "blocked_non_global" else ["denylist match"]
                 if networks_found:
                     reasons.append("CIDR=" + ",".join(networks_found[:5]))
                 if info.get("non_global_ips"):
@@ -520,7 +520,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
                 # Unknown geolocation is not a proxy failure. Keep the node in a
                 # dedicated bucket instead of mislabeling it as Europe or dropping it.
                 from .geolocation import Country
-                country = Country("UNK", "Не определена", "fallback_unknown")
+                country = Country("ZZ", "Не определена", "fallback_unknown")
             set_node_name(node, country)
             located_candidate.append(node)
             location_counts[country.code] = location_counts.get(country.code, 0) + 1
@@ -542,7 +542,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
             # emit nameless records. Mark the uncertainty explicitly instead.
             for node in candidate:
                 from .geolocation import Country
-                set_node_name(node, Country("UNK", "Не определена", "fallback"))
+                set_node_name(node, Country("ZZ", "Не определена", "fallback"))
 
     if resolver is not None:
         resolver.close()
