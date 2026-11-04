@@ -121,5 +121,42 @@ class CoreValidationAdapterTests(unittest.TestCase):
         self.assertIn("duplicate_account_variant:", first.check_reason)
 
 
+    def test_degraded_core_result_is_not_publishable(self):
+        node = ProxyNode(
+            uri="vless://11111111-1111-4111-8111-111111111111@degraded.example:443?security=tls#node",
+            scheme="vless",
+            host="degraded.example",
+            port=443,
+        )
+
+        class DegradedEngine:
+            async def validate(self, candidate, context):
+                del context
+                return ValidationResult(
+                    fingerprint=candidate.fingerprint,
+                    status=ValidationStatus.DEGRADED,
+                    confidence=Confidence.MEDIUM,
+                    score=64,
+                    elapsed_ms=200,
+                )
+
+        counts = validate_nodes_with_core(
+            [node],
+            {"xray": "/tools/xray"},
+            workers=1,
+            deadline=time.monotonic() + 10,
+            per_node_timeout=5,
+            targets=[("https://health.example/ready", {200})],
+            minimum_successes=2,
+            require_independent_providers=True,
+            retry_single_success=True,
+            engine_factory=lambda **kwargs: DegradedEngine(),
+        )
+
+        self.assertEqual(counts, {"proxy_degraded": 1})
+        self.assertEqual(node.check_status, "proxy_degraded")
+        self.assertFalse(node.check_status.startswith("proxy_ok"))
+
+
 if __name__ == "__main__":
     unittest.main()
