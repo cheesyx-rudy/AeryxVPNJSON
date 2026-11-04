@@ -250,6 +250,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
     fetcher=Fetcher(fcfg); initial=load_sources(sources_path)
     progress.emit("start", "Запуск обработки подписки", {"sources":len(initial),"budget_seconds":runtime,"mode":mode})
     progress.emit("source_fetch", "Начат сбор и загрузка источников", {"configured_sources":len(initial),"max_total_sources":int(fcfg.get("max_total_sources",50)),"workers":int(fcfg.get("workers",12))})
+    progress.emit("fetch_and_parse", "Начат разбор содержимого источников", {"source_count":len(initial)})
 
     # Stage 1: parallel source download and bounded expansion of web panels/provider URLs.
     max_sources=max(1,min(int(fcfg.get("max_total_sources",50)),300)); max_depth=max(0,min(int(fcfg.get("follow_depth",2)),4))
@@ -293,6 +294,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
                              "raw_links":len(raw_links),"invalid_links":len(invalid),"elapsed_seconds":round(time.monotonic()-started,2)})
     progress.emit("fetch_and_parse", "Источники разобраны", {"fetched":len(source_results),"links":len(raw_links),"invalid":len(invalid),"errors":fetch_errors})
     # Exact dedupe (only remove remarks); auth and transport options remain part of identity.
+    progress.emit("deduplicate", "Начато удаление дубликатов", {"parsed_links":len(raw_links)})
     deduplicate_started=time.monotonic()
     nodes=[]; seen=set()
     for node in raw_links:
@@ -582,6 +584,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
                 from .geolocation import Country
                 set_node_name(node, Country("ZZ", "Не определена", "fallback"))
 
+    progress.emit("geolocation", "Определение стран завершено", {"named":len(candidate),"countries":location_counts})
     if resolver is not None:
         resolver.close()
 
