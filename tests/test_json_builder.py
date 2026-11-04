@@ -66,6 +66,16 @@ class UnifiedJSONBuilderTests(unittest.TestCase):
         )
         return out, report
 
+    def test_unknown_location_marker_is_preserved_as_its_own_country_bucket(self):
+        country = json_builder._get_country({
+            "uri": "vless://11111111-1111-4111-8111-111111111111@node.example:443",
+            "host": "node.example",
+            "name": "🌐 Не определена • AeryxVPN",
+        })
+        self.assertIsNotNone(country)
+        self.assertEqual(country.code, "UNK")
+        self.assertEqual(country.name, "Не определена")
+
     def test_workflow_prevalidates_each_node_with_installed_xray_before_build(self):
         workflow = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "update-json.yml"
         text = workflow.read_text(encoding="utf-8")
