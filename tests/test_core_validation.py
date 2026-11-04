@@ -82,7 +82,7 @@ class CoreValidationAdapterTests(unittest.TestCase):
         second = ProxyNode(
             uri=(
                 "vless://11111111-1111-4111-8111-111111111111@node.example:443"
-                "?security=reality&type=grpc&serviceName=edge#grpc"
+                "?security=tls&type=grpc&serviceName=edge#grpc"
             ),
             scheme="vless",
             host="node.example",
