@@ -1,0 +1,77 @@
+name: JSON Parser CI
+
+on:
+  push:
+    branches:
+      - main
+      - release/1.0.0
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout JSON parser
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Checkout pinned AeryxVPN Core 0.8.0
+        uses: actions/checkout@v5
+        with:
+          repository: cheesyx-rudy/AeryxVPN-Core
+          ref: 078af11d812ffbc6852120454d1e472aa2912fbc
+          token: ${{ secrets.AERYX_CORE_READ_TOKEN }}
+          path: .aeryx-core
+          persist-credentials: false
+
+      - name: Build and install Core wheel
+        shell: bash
+        run: |
+          set -euo pipefail
+          wheel_dir="$RUNNER_TEMP/aeryx-core-wheel"
+          mkdir -p "$wheel_dir"
+          python -m pip wheel --no-deps --wheel-dir "$wheel_dir" ./.aeryx-core
+          wheel="$(find "$wheel_dir" -maxdepth 1 -name 'aeryxvpn_core-0.8.0-*.whl' -print -quit)"
+          test -n "$wheel"
+          python -m pip install --no-cache-dir "$wheel"
+
+      - name: Install JSON parser and test dependencies
+        run: python -m pip install --disable-pip-version-check -e '.[dev]'
+
+      - name: Verify pinned Core package and public API
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from importlib import metadata
+          import aeryx_core
+          from aeryx_core import ShareURIAdapter, create_validation_engine
+
+          assert metadata.version("aeryxvpn-core") == "0.8.0"
+          assert aeryx_core.__version__ == "0.8.0"
+          assert ShareURIAdapter and callable(create_validation_engine)
+          print("AeryxVPN Core 0.8.0 import check passed")
+          PY
+
+      - name: Run complete offline test suite
+        run: python -m pytest -q -ra
+
+      - name: Compile parser modules
+        run: python -m compileall -q src
+
+      - name: Lint new Core integration files
+        run: python -m ruff check src/aeryx_json_parser/core_validation.py tests/test_core_validation.py

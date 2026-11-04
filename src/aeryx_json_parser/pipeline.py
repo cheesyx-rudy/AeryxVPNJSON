@@ -1,5 +1,6 @@
 from __future__ import annotations
 import json, time, hashlib, re
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,6 +14,7 @@ from .extract import extract_uri_strings, decode_layers
 from .adapters import extract_structured_nodes
 from .filtering import load_blocklists, NetworkIndex, evaluate_endpoint, parse_networks
 from .checks import (detect_cores, validate_nodes, precheck_endpoints, PROBE_URLS, DEFAULT_MIN_SUCCESSFUL_PROBES, DEFAULT_REQUIRE_INDEPENDENT_PROVIDERS)
+from .core_validation import validate_nodes_with_core
 from .progress import ProgressReporter
 from .routing import refresh_happ_routing
 from .geolocation import CountryResolver, set_node_name
@@ -243,7 +245,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
     deadline=started+runtime; out_dir=Path(ocfg.get("directory","output")); out_dir=out_dir if out_dir.is_absolute() else ROOT/out_dir; out_dir.mkdir(parents=True,exist_ok=True)
     cache=Path(bcfg.get("cache_path","output/blocklist_cache.json")); cache=cache if cache.is_absolute() else ROOT/cache
     progress=ProgressReporter(out_dir/"progress.jsonl")
-    report={"schema_version":1,"parser":"AeryxJSON-Parser","version":"1.4.3","started_at":datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    report={"schema_version":1,"parser":"AeryxJSON-Parser","version":"1.0.0","started_at":datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "check_mode":mode,"runtime_budget_seconds":runtime,"sources":[],"stages":[],"counts":{},"warnings":[]}
     fetcher=Fetcher(fcfg); initial=load_sources(sources_path)
     progress.emit("start", "Запуск обработки подписки", {"sources":len(initial),"budget_seconds":runtime,"mode":mode})
@@ -371,16 +373,30 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
             successful=sum(v for k,v in counts.items() if k.startswith("proxy_ok"))
             progress.emit("tunnel_validation", f"Туннельная проверка: {done}/{total}", {"passed":successful,"completed":done,"total":total,"statuses":counts}, summary=True)
     progress.emit("tunnel_validation", "Запущена проверка через sing-box/Xray", {"nodes":len(kept),"workers":check_workers,"targets":len(probe_targets),"timeout_per_node":float(ccfg.get("per_node_timeout_seconds",10))})
-    status_counts=validate_nodes(
-        kept, cores, mode, check_workers, deadline,
-        float(ccfg.get("per_node_timeout_seconds",10)), probe_targets,
-        minimum_successes, require_independent,
-        progress_callback=validation_progress,
-        retry_single_success=bool(ccfg.get("retry_single_success", True)),
-    )
+    if mode == "proxy":
+        status_counts = validate_nodes_with_core(
+            kept,
+            cores,
+            workers=check_workers,
+            deadline=deadline,
+            per_node_timeout=float(ccfg.get("per_node_timeout_seconds", 10)),
+            targets=probe_targets,
+            minimum_successes=minimum_successes,
+            require_independent_providers=require_independent,
+            retry_single_success=bool(ccfg.get("retry_single_success", True)),
+            stability_samples=int(ccfg.get("stability_samples", 2)),
+            progress_callback=validation_progress,
+        )
+    else:
+        status_counts = validate_nodes(
+            kept, cores, mode, check_workers, deadline,
+            float(ccfg.get("per_node_timeout_seconds", 10)), probe_targets,
+            minimum_successes, require_independent,
+            progress_callback=validation_progress,
+            retry_single_success=bool(ccfg.get("retry_single_success", True)),
+        )
     effective_mode = "proxy" if mode=="proxy" and cores else ("tcp" if mode=="proxy" else mode)
     # Aggregate probe observations so the next scheduled report explains why nodes passed/failed.
-    from collections import Counter
     probe_observations=Counter()
     failure_reasons=Counter()
     for node in kept:

@@ -66,7 +66,7 @@ class PipelineIntegrationTests(unittest.TestCase):
                  patch.object(pipeline,'evaluate_endpoint',side_effect=lambda host,*args:{'host':host,'resolved_ips':['8.8.8.8'],'resolve_status':'resolved','blocked_matches':[],'non_global_ips':[],'blocked':False}), \
                  patch.object(pipeline,'detect_cores',return_value={'sing-box':'/mock/sing-box'}), \
                  patch.object(pipeline,'precheck_endpoints',return_value={'open':1,'error_Gaierror':1}), \
-                 patch.object(pipeline,'validate_nodes',side_effect=mark_status):
+                 patch.object(pipeline,'validate_nodes_with_core',side_effect=lambda nodes, *args, **kwargs: mark_status(nodes, *args, **kwargs)):
                 report=pipeline.run_pipeline(config,sources,check_mode='proxy',skip_blocklist=True,refresh_routing=False)
             self.assertEqual(report['publish']['status'],'published')
             self.assertIs(captured_validation_kwargs.get('retry_single_success'), False)
