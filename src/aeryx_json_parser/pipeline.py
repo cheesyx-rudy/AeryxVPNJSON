@@ -631,12 +631,14 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
     metadata_lines = _subscription_metadata(cfg, len(candidate))
     effective_routing_link = routing_link if include_routing and routing_enabled else ""
     _write_subscription(candidate_path, candidate, effective_routing_link, metadata_lines)
-    # Automatic publication in proxy mode requires a usable validation core and at
-    # least one positive real tunnel check. Otherwise retain the previous final file;
-    # the candidate/report remain available for diagnostics or an explicit override.
-    validation_ready = True
-    if mode == "proxy":
-        validation_ready = bool(cores) and any(n.check_status.startswith("proxy_ok") for n in candidate)
+    # Automatic publication requires a positive end-to-end tunnel result.
+    # TCP-only and unchecked diagnostic modes never certify a subscription as working.
+    # Otherwise retain the previous final file; explicit force_publish remains an override.
+    validation_ready = (
+        mode == "proxy"
+        and bool(cores)
+        and any(n.check_status.startswith("proxy_ok") for n in candidate)
+    )
     safe=(validation_ready and routing_ready and len(candidate)>=min_count and ratio>=min_ratio) or force_publish
     if safe:
         _write_subscription(final_path, candidate, effective_routing_link, metadata_lines)
@@ -644,7 +646,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
     else:
         publish={"status":"safety_stop_existing_kept" if final_path.exists() else "safety_stop_candidate_only","subscription_file":str(final_path),"candidate_file":str(candidate_path)}
         details=[]
-        if not validation_ready: details.append("proxy validation unavailable or no successful tunnel check")
+        if not validation_ready: details.append("end-to-end proxy tunnel validation is required; TCP/none modes are diagnostic only")
         if not routing_ready: details.append("required Happ routing profile is missing or invalid")
         if len(candidate)<min_count: details.append(f"only {len(candidate)} candidates (minimum {min_count})")
         if ratio<min_ratio: details.append(f"candidate ratio {ratio:.1%} below {min_ratio:.1%}")
