@@ -192,11 +192,12 @@ class PipelineIntegrationTests(unittest.TestCase):
             self.assertEqual(final.read_text(encoding='utf-8'),'vless://old@old.example:443\n')
 
 
+
     def test_blocklist_match_is_advisory_until_tunnel_validation(self):
         with tempfile.TemporaryDirectory() as td:
             root=Path(td); out=root/'out'; cache=root/'cache.json'
             sources=root/'sources.txt'
-            sources.write_text('https://example.test/sub\\n',encoding='utf-8')
+            sources.write_text("https://example.test/sub" + chr(10),encoding='utf-8')
             config=root/'settings.yaml'
             config.write_text(yaml.safe_dump({
               'pipeline':{'max_runtime_seconds':20,'min_output_configs':1,'min_output_ratio':0.01},
@@ -207,10 +208,10 @@ class PipelineIntegrationTests(unittest.TestCase):
               'routing':{'happ_enabled':False},
               'outputs':{'directory':str(out),'subscription_file':'AeryxVPN','candidate_file':'candidate.txt','structured_file':'parsed.json','rejected_file':'rejected.txt'}
             }),encoding='utf-8')
-            content=(
-                f'vless://{UUID}@good.example:443?security=tls#Germany\\n'
-                f'vless://{UUID}@bad.example:443?security=tls#Germany'
-            )
+            content=chr(10).join((
+                f'vless://{UUID}@good.example:443?security=tls#Germany',
+                f'vless://{UUID}@bad.example:443?security=tls#Germany',
+            ))
             fake=FetchResult(
                 url='https://example.test/sub',final_url='https://example.test/sub',
                 status='ok',status_code=200,content_type='text/plain',
@@ -234,12 +235,13 @@ class PipelineIntegrationTests(unittest.TestCase):
                     node.check_reason='test_tunnel_result'
                     node.validation_confidence='high' if node.host=='good.example' else 'low'
                 return {'proxy_ok_high':1,'proxy_failed':1}
-            with patch.object(pipeline.Fetcher,'fetch',return_value=fake), \\
-                 patch.object(pipeline,'load_blocklists',return_value=([network],{'status':'fresh_or_cached','sources':[]})), \\
-                 patch.object(pipeline,'evaluate_endpoint',side_effect=endpoint), \\
-                 patch.object(pipeline,'detect_cores',return_value={'sing-box':'/mock/sing-box'}), \\
-                 patch.object(pipeline,'precheck_endpoints',return_value={'open':2}), \\
-                 patch.object(pipeline,'validate_nodes_with_core',side_effect=validate):
+            with __import__('contextlib').ExitStack() as stack:
+                stack.enter_context(patch.object(pipeline.Fetcher,'fetch',return_value=fake))
+                stack.enter_context(patch.object(pipeline,'load_blocklists',return_value=([network],{'status':'fresh_or_cached','sources':[]})))
+                stack.enter_context(patch.object(pipeline,'evaluate_endpoint',side_effect=endpoint))
+                stack.enter_context(patch.object(pipeline,'detect_cores',return_value={'sing-box':'/mock/sing-box'}))
+                stack.enter_context(patch.object(pipeline,'precheck_endpoints',return_value={'open':2}))
+                stack.enter_context(patch.object(pipeline,'validate_nodes_with_core',side_effect=validate))
                 report=pipeline.run_pipeline(
                     config,sources,check_mode='proxy',skip_blocklist=False,refresh_routing=False
                 )
