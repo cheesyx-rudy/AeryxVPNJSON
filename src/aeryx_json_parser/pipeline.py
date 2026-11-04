@@ -12,7 +12,7 @@ from .models import ProxyNode, FetchResult, parse_endpoint, SUPPORTED_SCHEMES
 from .fetch import Fetcher, redact_url
 from .extract import extract_uri_strings, decode_layers
 from .adapters import extract_structured_nodes
-from .filtering import load_blocklists, NetworkIndex, evaluate_endpoint, parse_networks
+from .filtering import blocklist_decision, load_blocklists, NetworkIndex, evaluate_endpoint, parse_networks
 from .checks import (detect_cores, validate_nodes, precheck_endpoints, PROBE_URLS, DEFAULT_MIN_SUCCESSFUL_PROBES, DEFAULT_REQUIRE_INDEPENDENT_PROVIDERS)
 from .core_validation import validate_nodes_with_core
 from .progress import ProgressReporter
@@ -316,20 +316,26 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
             host=futures[future]
             try: endpoint_info[host]=future.result()
             except Exception as exc: endpoint_info[host]={"host":host,"resolved_ips":[],"resolve_status":f"error:{type(exc).__name__}","blocked_matches":[],"non_global_ips":[],"blocked":False}
-    kept=[]; rejected=[]; unresolved=0
+    kept=[]; rejected=[]; unresolved=0; flagged=0
     for node in nodes:
         info=endpoint_info.get(node.host,{"resolved_ips":[],"resolve_status":"not_checked","blocked":False})
         node.endpoint_ip=(info.get("allowed_ips") or info.get("resolved_ips") or [None])[0]
         if info.get("resolve_status") not in {"resolved","literal"}: unresolved+=1
-        if info.get("blocked"):
-            node.check_status="blocked_ip"; reason=[]
-            if info.get("blocked_matches"): reason.append("CIDR denylist match")
-            if info.get("non_global_ips"): reason.append("non-global address")
-            rejected.append({"uri":node.uri,"stage":"blocklist","reason":", ".join(reason),"node":node})
-        else: kept.append(node)
-    report["blocklist"]={**bdetails,"network_count":len(networks),"filtered":len(nodes)-len(kept),"unresolved_hosts":unresolved}
-    report["stages"].append({"name":"ip_cidr_filter","input":len(nodes),"output":len(kept),"removed":len(nodes)-len(kept),"unresolved_hosts":unresolved,"elapsed_seconds":round(time.monotonic()-bstart,2)})
-    progress.emit("ip_cidr_filter", "Проверены DNS и IP/CIDR-блок-листы", {"input":len(nodes),"eligible":len(kept),"blocked":len(nodes)-len(kept),"unresolved_hosts":unresolved})
+        if info.get("blocked"): flagged+=1
+        # A feed match is advisory until Xray/sing-box validates the complete tunnel.
+        # Keep the candidate in the validation queue; a positive tunnel result wins.
+        kept.append(node)
+    report["blocklist"]={**bdetails,"network_count":len(networks),"filtered":0,
+                         "prevalidation_removed":0,"flagged_nodes":flagged,
+                         "unresolved_hosts":unresolved,
+                         "policy":"advisory_until_tunnel_validation"}
+    report["stages"].append({"name":"ip_cidr_filter","input":len(nodes),"output":len(kept),
+                             "removed":0,"flagged":flagged,"unresolved_hosts":unresolved,
+                             "elapsed_seconds":round(time.monotonic()-bstart,2)})
+    progress.emit("ip_cidr_filter", "Сопоставлены DNS и IP/CIDR-блок-листы", {
+        "input":len(nodes),"eligible_for_validation":len(kept),
+        "flagged_for_review":flagged,"unresolved_hosts":unresolved
+    })
 
     # Stage 3: quick endpoint reachability. This only prioritizes work; it never by itself rejects a node.
     check_start=time.monotonic(); cores=detect_cores(ROOT); report["cores"]={k:Path(v).name for k,v in cores.items()}
@@ -422,6 +428,11 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
             "tcp_precheck": n.tcp_precheck, "elapsed_ms": n.elapsed_ms,
             "validation_score": n.validation_score, "validation_votes": n.validation_votes,
             "successful_probes": n.successful_probe_count, "probe_targets": n.probe_target_count,
+            "blocklist_match": bool(endpoint_info.get(n.host, {}).get("blocked")),
+            "blocked_networks": sorted({
+                str(item.get("network")) for item in endpoint_info.get(n.host, {}).get("blocked_matches", [])
+                if item.get("network")
+            }),
             "reason_code": ((n.check_reason or n.check_status).split(";")[0])[:120],
         }
         for n in kept
@@ -440,15 +451,40 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
     report["stages"].append({"name":"parallel_validation","input":before,"status_counts":status_counts,"elapsed_seconds":round(time.monotonic()-check_start,2)})
     progress.emit("tunnel_validation", "Туннельная проверка завершена", {"input":before,"passed":sum(v for k,v in status_counts.items() if k.startswith("proxy_ok")),"confidence":confidence_counts,"statuses":status_counts,"elapsed_seconds":round(time.monotonic()-check_start,2)})
     if mode=="proxy" and cores:
-        # The scheduled publisher is deliberately strict: only a positive tunnel test
-        # can enter the public subscription. Unchecked or adapter-incompatible nodes
-        # remain visible in diagnostics but are never silently advertised as working.
+        # Only a positive end-to-end tunnel test enters the public subscription.
+        # A denylist match is never allowed to override a successful tunnel result.
         candidate=[n for n in kept if n.check_status.startswith("proxy_ok")]
         candidate_ids={id(n) for n in candidate}
-        rejected.extend(
-            {"uri":n.uri,"stage":"probe","reason":n.check_reason or n.check_status,"node":n}
-            for n in kept if id(n) not in candidate_ids
-        )
+        working_blocklisted=0
+        failed_blocklisted=0
+        for node in kept:
+            if id(node) in candidate_ids:
+                decision=blocklist_decision(endpoint_info.get(node.host, {}), node.check_status)
+                if decision == "working_retained":
+                    working_blocklisted+=1
+                continue
+            info=endpoint_info.get(node.host, {})
+            decision=blocklist_decision(info, node.check_status)
+            if decision == "blocked_unverified":
+                failed_blocklisted+=1
+                networks_found=sorted({
+                    str(item.get("network")) for item in info.get("blocked_matches", [])
+                    if item.get("network")
+                })
+                reasons=["denylist match"]
+                if networks_found:
+                    reasons.append("CIDR=" + ",".join(networks_found[:5]))
+                if info.get("non_global_ips"):
+                    reasons.append("non-global endpoint")
+                reasons.append("tunnel validation did not pass: " + (node.check_reason or node.check_status))
+                rejected.append({"uri":node.uri,"stage":"blocklist","reason":"; ".join(reasons),"node":node})
+            else:
+                rejected.append({"uri":node.uri,"stage":"probe","reason":node.check_reason or node.check_status,"node":node})
+        report["blocklist"].update({
+            "working_retained":working_blocklisted,
+            "blocked_not_tunnel_verified":failed_blocklisted,
+            "filtered":failed_blocklisted,
+        })
     else:
         # TCP is diagnostic only. Don't destroy a valid node solely because TCP was briefly refused.
         candidate=kept
