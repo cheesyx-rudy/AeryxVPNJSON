@@ -169,7 +169,10 @@ def validate_nodes_with_core(
                             details.get("successful_samples", details.get("successful_count", 0))
                         )
                         node.probe_target_count = int(
-                            details.get("planned_samples", details.get("target_count", len(probe_targets)))
+                            details.get(
+                                "planned_samples",
+                                details.get("target_count", len(probe_targets)),
+                            )
                         )
                 else:
                     node = candidate_nodes[fingerprint]
