@@ -34,6 +34,10 @@ class FilterTests(unittest.TestCase):
         self.assertEqual(blocklist_decision(endpoint, "proxy_ok_medium"), "working_retained")
         self.assertEqual(blocklist_decision(endpoint, "proxy_failed"), "blocked_unverified")
         self.assertEqual(blocklist_decision({"blocked": False}, "proxy_failed"), "not_listed")
+        self.assertEqual(
+            blocklist_decision({"blocked": True, "non_global_only": True}, "proxy_ok_high"),
+            "blocked_non_global",
+        )
 
     def test_mixed_dns_addresses_are_not_rejected_if_one_is_unblocked(self):
         index=NetworkIndex(parse_networks('1.2.3.0/24'))
