@@ -15,11 +15,13 @@ concurrency:
 
 jobs:
   build-happ-json-array:
+    name: AeryxJSON-Parser · сбор, проверка и формирование профилей
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
     env:
       PYTHONUNBUFFERED: '1'
+      AERYX_LOG_TIMEZONE: Europe/Moscow
       PYTHONPATH: src
       PANEL_TOKEN: ${{ secrets.PANEL_TOKEN }}
       PANEL_SESSION: ${{ secrets.PANEL_SESSION }}
