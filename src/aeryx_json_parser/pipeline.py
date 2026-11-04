@@ -517,11 +517,10 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
                 if require_country:
                     rejected.append({"uri": node.uri, "stage": "location", "reason": "country could not be determined from IP, source/config label, or host country suffix", "node": node})
                     continue
-                # In non-production diagnostic configurations, make uncertainty explicit
-                # rather than leaving the URI with no generated label. Production sets
-                # require_country=true, where this fallback is prohibited.
+                # Unknown geolocation is not a proxy failure. Keep the node in a
+                # dedicated bucket instead of mislabeling it as Europe or dropping it.
                 from .geolocation import Country
-                country = Country("EU", "Europe", "fallback_unknown")
+                country = Country("UNK", "Не определена", "fallback_unknown")
             set_node_name(node, country)
             located_candidate.append(node)
             location_counts[country.code] = location_counts.get(country.code, 0) + 1
@@ -543,7 +542,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
             # emit nameless records. Mark the uncertainty explicitly instead.
             for node in candidate:
                 from .geolocation import Country
-                set_node_name(node, Country("EU", "Europe", "fallback"))
+                set_node_name(node, Country("UNK", "Не определена", "fallback"))
 
     if resolver is not None:
         resolver.close()
