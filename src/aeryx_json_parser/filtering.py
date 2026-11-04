@@ -7,9 +7,20 @@ import requests
 
 NETWORK_RE = re.compile(r"(?<![\w:.])(?:[0-9]{1,3}(?:\.[0-9]{1,3}){3}(?:/[0-9]{1,2})?|[0-9a-fA-F:]{2,}(?:/[0-9]{1,3})?)(?![\w:.])")
 FEEDS = [
-  {"name":"AntiFilter aggregated list","url":"https://antifilter.download/list/allyouneed.lst","format":"text"},
-  {"name":"Russia blocked IPs aggregate","url":"https://raw.githubusercontent.com/eduard256/russia-blocked-ips/main/ip.txt","format":"text"},
+  {"name":"AntiFilter resolved IP list","url":"https://antifilter.download/list/ipresolve.lst","format":"text"},
+  {"name":"AntiFilter subnet list","url":"https://antifilter.download/list/subnet.lst","format":"text"},
+  {"name":"Re-filter IP and subnet list","url":"https://raw.githubusercontent.com/1andrevich/Re-filter-lists/main/ipsum.lst","format":"text"},
+  {"name":"AntiFilter community list","url":"https://community.antifilter.download/list/community.lst","format":"text"},
 ]
+
+
+def blocklist_decision(endpoint_info: dict[str, Any], validation_status: str) -> str:
+    """Never reject a tunnel-verified node solely because a public feed lists its IP."""
+    if not endpoint_info.get("blocked"):
+        return "not_listed"
+    if str(validation_status).startswith("proxy_ok"):
+        return "working_retained"
+    return "blocked_unverified"
 
 
 def parse_networks(text: str) -> list[ipaddress.IPv4Network|ipaddress.IPv6Network]:
@@ -113,9 +124,9 @@ def load_blocklists(config: dict[str,Any], cache_path: Path, workers: int = 6, d
                 if old.get("networks") and age<=cache_hours*3600:
                     nets=parse_networks("\n".join(str(x) for x in old["networks"])); merged.update(nets)
                     next_cache["feeds"][key]=old
-                    reports.append({"name":feed.get("name",key),"url":_redact(key),"status":"cache","network_count":len(nets),"age_hours":round(age/3600,1),"error":type(exc).__name__})
+                    reports.append({"name":feed.get("name",key),"url":_redact(raw_key),"status":"cache","network_count":len(nets),"age_hours":round(age/3600,1),"error":type(exc).__name__})
                 else:
-                    reports.append({"name":feed.get("name",key),"url":_redact(key),"status":"error","error":type(exc).__name__})
+                    reports.append({"name":feed.get("name",key),"url":_redact(raw_key),"status":"error","error":type(exc).__name__})
     if next_cache["feeds"]:
         tmp=cache_path.with_suffix(cache_path.suffix+".tmp")
         tmp.write_text(json.dumps(next_cache,ensure_ascii=False,separators=(",",":")),encoding="utf-8"); tmp.replace(cache_path)
