@@ -14,6 +14,10 @@ from aeryx_core import (
     ValidationStatus,
     create_validation_engine,
 )
+from aeryx_core.validation.redundancy import (
+    group_similar_candidates,
+    select_validated_candidates,
+)
 
 from .models import ProxyNode
 
@@ -192,8 +196,22 @@ def validate_nodes_with_core(
         ))
         return results
 
-    if candidates_by_fingerprint:
-        asyncio.run(run_validation())
+    results_by_fingerprint = asyncio.run(run_validation()) if candidates_by_fingerprint else {}
+
+    # JSON publication historically accepts both WORKING and DEGRADED Core
+    # statuses. Preserve that policy while choosing a single strongest sibling.
+    grouping = group_similar_candidates(list(candidates_by_fingerprint.values()))
+    selection = select_validated_candidates(
+        grouping,
+        results_by_fingerprint,
+        accepted_statuses=(ValidationStatus.WORKING, ValidationStatus.DEGRADED),
+    )
+    for fingerprint in selection.redundant_fingerprints:
+        node = candidate_nodes[fingerprint]
+        node.check_status = "proxy_duplicate_core"
+        node.check_reason = (
+            "duplicate_account_variant: a higher-quality validated sibling was retained"
+        )
 
     counts: Counter[str] = Counter(node.check_status for node in nodes)
     return dict(counts)
