@@ -73,7 +73,7 @@ class UnifiedJSONBuilderTests(unittest.TestCase):
             "name": "🌐 Не определена • AeryxVPN",
         })
         self.assertIsNotNone(country)
-        self.assertEqual(country.code, "UNK")
+        self.assertEqual(country.code, "ZZ")
         self.assertEqual(country.name, "Не определена")
 
     def test_workflow_prevalidates_each_node_with_installed_xray_before_build(self):
