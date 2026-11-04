@@ -80,7 +80,7 @@ def _get_country(node: dict[str, Any], resolver: CountryResolver | None = None) 
         for label in labels
         for marker in ("не определена", "unknown country", "unknown location")
     ):
-        return Country("UNK", "Не определена", "fallback_unknown")
+        return Country("ZZ", "Не определена", "fallback_unknown")
     return None
 
 
@@ -124,7 +124,8 @@ _RUSSIAN_COUNTRY_NAMES = {
 def _country_profile_name(country: Country) -> str:
     # The provided working Happ profiles use Russian labels; unknown names keep their source label.
     name = _RUSSIAN_COUNTRY_NAMES.get(country.name, country.name)
-    return f"{flag_for_code(country.code)} {name}"
+    flag = "🌐" if country.code.upper() == "ZZ" else flag_for_code(country.code)
+    return f"{flag} {name}"
 
 
 def _build_profiles(
@@ -157,7 +158,7 @@ def _build_profiles(
         country_rows.append({
             "code": code,
             "name": country.name,
-            "flag": flag_for_code(code),
+            "flag": "🌐" if code.upper() == "ZZ" else flag_for_code(code),
             "profile_name": name,
             "node_count": len(records),
             "balancer_tag": "balancer",
