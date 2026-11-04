@@ -5,7 +5,7 @@ import unittest
 
 from aeryx_core import Confidence, ValidationResult, ValidationStatus
 
-from aeryx_json_parser.core_validation import validate_nodes_with_core
+from aeryx_json_parser.core_validation import _core_status, validate_nodes_with_core
 from aeryx_json_parser.models import ProxyNode
 
 
@@ -66,6 +66,28 @@ class CoreValidationAdapterTests(unittest.TestCase):
         self.assertEqual(len(engines), 1)
         self.assertEqual(engines[0][1]["xray_binary"], "/tools/xray")
         self.assertEqual(engines[0][1]["sing_box_binary"], "/tools/sing-box")
+        self.assertEqual(engines[0][1]["preferred_core"], "xray")
+
+
+    def test_degraded_status_is_not_marked_as_verified_or_publishable(self):
+        result = ValidationResult(
+            fingerprint="node-degraded",
+            status=ValidationStatus.DEGRADED,
+            confidence=Confidence.MEDIUM,
+            reason_code="stability_below_working_threshold",
+        )
+
+        self.assertEqual(_core_status(result)[0], "proxy_degraded_medium")
+
+    def test_unstable_status_is_not_marked_as_verified_or_publishable(self):
+        result = ValidationResult(
+            fingerprint="node-unstable",
+            status=ValidationStatus.UNSTABLE,
+            confidence=Confidence.LOW,
+            reason_code="stability_inconsistent_samples",
+        )
+
+        self.assertEqual(_core_status(result)[0], "proxy_unstable")
 
 
 if __name__ == "__main__":
