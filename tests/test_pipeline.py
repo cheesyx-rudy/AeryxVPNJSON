@@ -1,4 +1,4 @@
-import tempfile,unittest,json
+import tempfile,unittest,json,ipaddress
 from pathlib import Path
 from unittest.mock import patch
 import yaml
@@ -191,6 +191,7 @@ class PipelineIntegrationTests(unittest.TestCase):
             self.assertEqual(report['counts']['unique_nodes'],0)
             self.assertEqual(final.read_text(encoding='utf-8'),'vless://old@old.example:443\n')
 
+
     def test_blocklist_match_is_advisory_until_tunnel_validation(self):
         with tempfile.TemporaryDirectory() as td:
             root=Path(td); out=root/'out'; cache=root/'cache.json'
@@ -224,6 +225,7 @@ class PipelineIntegrationTests(unittest.TestCase):
                     'resolve_status':'resolved',
                     'blocked_matches':[{'ip':'8.8.8.8','network':network.with_prefixlen}],
                     'non_global_ips':[],
+                    'non_global_only':False,
                     'blocked':True,
                 }
             def validate(nodes,*args,**kwargs):
