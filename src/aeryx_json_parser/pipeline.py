@@ -335,6 +335,10 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
     check_start=time.monotonic(); cores=detect_cores(ROOT); report["cores"]={k:Path(v).name for k,v in cores.items()}
     # Proxy mode is checked only by AeryxVPN Core through the native Xray runtime.
     # No raw TCP reachability pass is run or used to reorder candidates.
+    if mode == "proxy" and not cores:
+        report["warnings"].append(
+            "No Xray/sing-box binary detected. AeryxVPN Core could not perform native tunnel checks; all nodes remain unverified and publication is blocked."
+        )
     if mode=="proxy" and not cores:
         report["warnings"].append("No Xray/sing-box binary detected. Proxy mode fell back to TCP-only; no node is labelled as tunnel-validated. Run python tools/install_cores.py.")
     before=len(kept); probe_targets=[]
