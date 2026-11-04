@@ -29,11 +29,11 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Checkout pinned AeryxVPN Core 0.8.0
+      - name: Checkout pinned AeryxVPN Core 0.8.2
         uses: actions/checkout@v5
         with:
           repository: cheesyx-rudy/AeryxVPN-Core
-          ref: 078af11d812ffbc6852120454d1e472aa2912fbc
+          ref: 3079b3fa827fb6a78b0c2aa2fe74038d53e1c231
           token: ${{ secrets.AERYX_CORE_READ_TOKEN }}
           path: .aeryx-core
           persist-credentials: false
@@ -45,7 +45,7 @@ jobs:
           wheel_dir="$RUNNER_TEMP/aeryx-core-wheel"
           mkdir -p "$wheel_dir"
           python -m pip wheel --no-deps --wheel-dir "$wheel_dir" ./.aeryx-core
-          wheel="$(find "$wheel_dir" -maxdepth 1 -name 'aeryxvpn_core-0.8.0-*.whl' -print -quit)"
+          wheel="$(find "$wheel_dir" -maxdepth 1 -name 'aeryxvpn_core-0.8.2-*.whl' -print -quit)"
           test -n "$wheel"
           python -m pip install --no-cache-dir "$wheel"
 
@@ -61,10 +61,10 @@ jobs:
           import aeryx_core
           from aeryx_core import ShareURIAdapter, create_validation_engine
 
-          assert metadata.version("aeryxvpn-core") == "0.8.0"
-          assert aeryx_core.__version__ == "0.8.0"
+          assert metadata.version("aeryxvpn-core") == "0.8.2"
+          assert aeryx_core.__version__ == "0.8.2"
           assert ShareURIAdapter and callable(create_validation_engine)
-          print("AeryxVPN Core 0.8.0 import check passed")
+          print("AeryxVPN Core 0.8.2 import check passed")
           PY
 
       - name: Run complete offline test suite
