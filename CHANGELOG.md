@@ -6,6 +6,7 @@
 - Treat public-feed CIDR matches as validation flags: only nodes that fail tunnel validation are rejected for a blocklist match; a verified working tunnel is retained.
 - Keep non-global-only endpoints out of the public subscription even if a local runner can reach them.
 - Retain tunnel-verified candidates when geolocation is unavailable by assigning a dedicated `ZZ` / «Не определена» profile.
+- Require successful Xray/sing-box tunnel validation for automatic publication; TCP/none modes remain diagnostic unless force-published explicitly.
 - Skip the live subscription-generation job on pull requests; PRs run offline CI only.
 
 
