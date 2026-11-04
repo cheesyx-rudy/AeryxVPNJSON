@@ -1,24 +1,32 @@
-# AeryxVPN Core
+# AeryxVPN JSON Parser
 
-Shared Python library for the AeryxVPN URI and JSON subscription parsers.
+**Current release:** 1.0.0  
+**Validation engine:** AeryxVPN Core 0.8.0 (pinned immutable commit)
 
-> **Status: `0.2.0` — shared input adapters are ready; validation migration is in progress.**
-> Core extracts share-URI subscriptions and parses Xray JSON, sing-box JSON, Clash JSON/YAML, and
-> SIP008. Shared country resolution and Happ routing utilities are also included. Production Xray/sing-box checks have not yet been migrated, so do not replace the
-> existing parser validation pipelines with this release.
+The parser collects supported subscription sources, extracts and deduplicates share links, resolves endpoints, validates proxy tunnels with Xray/sing-box, and builds the Happ-compatible `AeryxVPN.json` profile array.
 
-## Architecture
+## IP and subnet lists
 
-- **Input adapters** convert share URI, Xray JSON, sing-box JSON, Clash JSON/YAML, and SIP008
-  into `ProxyCandidate` objects.
-- **Validation Engine** dispatches candidates to protocol-aware validators.
-- **Output adapters** preserve each parser's output contract: ordinary share links for
-  the URI parser and the existing Happ-compatible JSON schema for the JSON parser.
-- **SourcePayload** retains original input data so unknown JSON fields are not silently
-  discarded during conversion.
+The default feeds use focused address/subnet sources:
 
-The Core is a library executed inside GitHub-hosted Actions runners. It is not a daemon,
-web service, or always-on server.
+- AntiFilter resolved IP list: `ipresolve.lst`
+- AntiFilter subnet list: `subnet.lst`
+- Re-filter list: `ipsum.lst`
+- AntiFilter community list: `community.lst`
+
+Downloads are cached per feed. The default cache lifetime is 72 hours. IPv4 ranges broader than /24 and IPv6 ranges broader than /48 are ignored by default to reduce false positives from large hosting and CDN networks. Manual CIDRs can still be maintained in `config/manual-deny-cidrs.txt`.
+
+A public feed match is recorded in diagnostics but does not reject a candidate before tunnel testing. In proxy mode, a node is included only after a positive Xray/sing-box tunnel result. A feed match cannot discard a tunnel-verified node; a matching node that does not pass tunnel validation is rejected. Endpoints whose DNS results are exclusively private, loopback, link-local, or otherwise non-global remain excluded from public output.
+
+## Geolocation
+
+Country lookup uses the local database first, then source/config labels and supported country-code host suffixes. When no reliable country is available, a validated node is placed in a separate `ZZ` / «Не определена» profile instead of being mislabeled as Europe or silently removed.
+
+## Diagnostics and safety
+
+The pipeline writes `output/engine/validation_report.json`, including feed status, cache use, matched CIDRs, validation status and rejection reason codes. Do not share raw proxy credentials or subscription URLs publicly.
+
+The live subscription workflow is not run by pull requests. PRs execute offline tests; live generation remains an explicit workflow dispatch or main-branch release operation.
 
 ## Development
 
@@ -27,26 +35,3 @@ python -m pip install -e '.[dev]'
 python -m pytest -q
 python -m ruff check .
 ```
-
-## Versioning
-
-Parser workflows should pin a Core release tag (for example `v0.2.0`) rather than track
-`main`. Breaking public API changes require a major version once the integration API is
-stable.
-
-## Private repository access
-
-The JSON parser repository is public, so its workflow must retrieve this private repository
-using a narrowly scoped read-only credential stored as a GitHub Actions secret. Never put
-a token in source code, workflow literals, URLs committed to Git, artifacts, or logs.
-Do not expose the secret to workflows triggered by untrusted pull requests.
-
-
-## Release 1.0.0
-
-The JSON parser uses AeryxVPN Core 0.8.0 for protocol-aware tunnel validation. The
-existing Happ-compatible JSON-array builder remains the output authority; validation
-results do not reconstruct or rewrite source profile fields. The workflow pins the exact immutable AeryxVPN Core 0.8.0 commit by SHA and checks the installed wheel before running tests and generation.
-
-The Core repository is private. Configure `AERYX_CORE_READ_TOKEN` as a read-only
-Actions secret with access to `cheesyx-rudy/AeryxVPN-Core`.
