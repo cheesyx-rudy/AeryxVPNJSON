@@ -13,7 +13,7 @@ from .fetch import Fetcher, redact_url
 from .extract import extract_uri_strings, decode_layers
 from .adapters import extract_structured_nodes
 from .filtering import load_blocklists, NetworkIndex, evaluate_endpoint, parse_networks
-from .checks import (detect_cores, validate_nodes, precheck_endpoints, PROBE_URLS, DEFAULT_MIN_SUCCESSFUL_PROBES, DEFAULT_REQUIRE_INDEPENDENT_PROVIDERS)
+from .checks import (detect_cores, validate_nodes, PROBE_URLS, DEFAULT_MIN_SUCCESSFUL_PROBES, DEFAULT_REQUIRE_INDEPENDENT_PROVIDERS)
 from .core_validation import validate_nodes_with_core
 from .progress import ProgressReporter
 from .routing import refresh_happ_routing
@@ -333,19 +333,8 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
 
     # Stage 3: quick endpoint reachability. This only prioritizes work; it never by itself rejects a node.
     check_start=time.monotonic(); cores=detect_cores(ROOT); report["cores"]={k:Path(v).name for k,v in cores.items()}
-    tcp_counts={}
-    if mode == "proxy" and kept:
-        tcp_stride=max(1,len(kept)//10)
-        def tcp_progress(done,total,counts):
-            if done == 1 or done == total or done % tcp_stride == 0:
-                progress.emit("endpoint_precheck", f"Проверка TCP-адресов: {done}/{total}", counts)
-        tcp_counts=precheck_endpoints(kept, workers=int(ccfg.get("tcp_precheck_workers",64)),
-                                      timeout=float(ccfg.get("tcp_precheck_timeout_seconds",0.9)), progress_callback=tcp_progress)
-        # Positive endpoint checks first, UDP schemes next, failures last. Never drop a node here.
-        priority={"open":0,"not_applicable_udp":1}
-        kept.sort(key=lambda n:(priority.get(n.tcp_precheck,2),n.host,n.port))
-    report["endpoint_precheck"]={"counts":tcp_counts,"total":len(kept)}
-    progress.emit("endpoint_precheck", "Этап доступности конечных адресов завершён", tcp_counts or {"status":"skipped"})
+    # Proxy mode is checked only by AeryxVPN Core through the native Xray runtime.
+    # No raw TCP reachability pass is run or used to reorder candidates.
     if mode=="proxy" and not cores:
         report["warnings"].append("No Xray/sing-box binary detected. Proxy mode fell back to TCP-only; no node is labelled as tunnel-validated. Run python tools/install_cores.py.")
     before=len(kept); probe_targets=[]
@@ -372,7 +361,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
         if done == 1 or done == total or done % validation_stride == 0:
             successful=sum(v for k,v in counts.items() if k.startswith("proxy_ok"))
             progress.emit("tunnel_validation", f"Туннельная проверка: {done}/{total}", {"passed":successful,"completed":done,"total":total,"statuses":counts}, summary=True)
-    progress.emit("tunnel_validation", "Запущена проверка через sing-box/Xray", {"nodes":len(kept),"workers":check_workers,"targets":len(probe_targets),"timeout_per_node":float(ccfg.get("per_node_timeout_seconds",10))})
+    progress.emit("tunnel_validation", "Запущена проверка через AeryxVPN Core (Xray-first)", {"nodes":len(kept),"workers":check_workers,"targets":len(probe_targets),"timeout_per_node":float(ccfg.get("per_node_timeout_seconds",10))})
     if mode == "proxy":
         status_counts = validate_nodes_with_core(
             kept,
@@ -395,7 +384,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
             progress_callback=validation_progress,
             retry_single_success=bool(ccfg.get("retry_single_success", True)),
         )
-    effective_mode = "proxy" if mode=="proxy" and cores else ("tcp" if mode=="proxy" else mode)
+    effective_mode = mode
     # Aggregate probe observations so the next scheduled report explains why nodes passed/failed.
     probe_observations=Counter()
     failure_reasons=Counter()
@@ -419,15 +408,15 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
         {
             "scheme": n.scheme, "host": n.host, "port": n.port, "name": n.name,
             "status": n.check_status, "confidence": n.validation_confidence,
-            "tcp_precheck": n.tcp_precheck, "elapsed_ms": n.elapsed_ms,
+            "elapsed_ms": n.elapsed_ms,
             "validation_score": n.validation_score, "validation_votes": n.validation_votes,
             "successful_probes": n.successful_probe_count, "probe_targets": n.probe_target_count,
             "reason_code": ((n.check_reason or n.check_status).split(";")[0])[:120],
         }
         for n in kept
     ]
-    report["validation"]={"requested_mode":mode,"effective_mode":effective_mode,"status_counts":status_counts,
-                          "confidence_counts":confidence_counts,"endpoint_precheck_counts":tcp_counts,
+    report["validation"]={"requested_mode":mode,"effective_mode":effective_mode,"engine":"aeryx_core" if mode=="proxy" else "legacy","status_counts":status_counts,
+                          "confidence_counts":confidence_counts,
                           "elapsed_seconds":round(time.monotonic()-check_start,2),"workers":check_workers,
                           "stage_vote_totals":{"positive":vote_positive,"negative":vote_negative,"net":vote_positive-vote_negative},
                           "node_results":node_results,
@@ -450,7 +439,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
             for n in kept if id(n) not in candidate_ids
         )
     else:
-        # TCP is diagnostic only. Don't destroy a valid node solely because TCP was briefly refused.
+        # Explicit non-proxy modes are diagnostic only; they never publish a verified list.
         candidate=kept
         if mode=="tcp": report["warnings"].append("TCP mode is diagnostic, not a proxy-handshake test; structurally valid nodes are retained.")
 
