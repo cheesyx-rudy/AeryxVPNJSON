@@ -432,8 +432,8 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
                           "common_failure_reasons":[{"reason":k,"count":v} for k,v in failure_reasons.most_common(30)]}
     report["stages"].append({"name":"parallel_validation","input":before,"status_counts":status_counts,"elapsed_seconds":round(time.monotonic()-check_start,2)})
     progress.emit("tunnel_validation", "Туннельная проверка завершена", {"input":before,"passed":sum(v for k,v in status_counts.items() if k.startswith("proxy_ok")),"confidence":confidence_counts,"statuses":status_counts,"elapsed_seconds":round(time.monotonic()-check_start,2)})
-    if mode=="proxy" and cores:
-        # The scheduled publisher is deliberately strict: only a positive tunnel test
+    if mode=="proxy":
+        # The publisher is deliberately strict: only a positive tunnel test
         # can enter the public subscription. Unchecked or adapter-incompatible nodes
         # remain visible in diagnostics but are never silently advertised as working.
         candidate=[n for n in kept if n.check_status.startswith("proxy_ok")]
