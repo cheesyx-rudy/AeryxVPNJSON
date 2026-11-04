@@ -18,6 +18,8 @@ def blocklist_decision(endpoint_info: dict[str, Any], validation_status: str) ->
     """Never reject a tunnel-verified node solely because a public feed lists its IP."""
     if not endpoint_info.get("blocked"):
         return "not_listed"
+    if endpoint_info.get("non_global_only"):
+        return "blocked_non_global"
     if str(validation_status).startswith("proxy_ok"):
         return "working_retained"
     return "blocked_unverified"
@@ -160,7 +162,7 @@ def resolve_ips(host: str, timeout: float=1.5) -> tuple[list[str],str]:
 
 def evaluate_endpoint(host: str, index: NetworkIndex, config: dict[str,Any], deadline: float|None=None) -> dict[str,Any]:
     if deadline is not None and time.monotonic() >= deadline:
-        return {"host":host,"resolved_ips":[],"resolve_status":"global-runtime-budget","blocked_matches":[],"non_global_ips":[],"blocked":False}
+        return {"host":host,"resolved_ips":[],"resolve_status":"global-runtime-budget","blocked_matches":[],"non_global_ips":[],"non_global_only":False,"blocked":False}
     ips,resolve_status=resolve_ips(host,float(config.get("dns_timeout_seconds",1.5)))
     matches=[]; nonglobal=[]
     for value in ips:
@@ -178,5 +180,7 @@ def evaluate_endpoint(host: str, index: NetworkIndex, config: dict[str,Any], dea
     effectively_blocked=[ip for ip in ips if ip in matched_ips or (reject_private and ip in non_global_set)]
     all_addresses_blocked=bool(ips) and len(effectively_blocked)==len(ips)
     allowed_ips=[ip for ip in ips if ip not in effectively_blocked]
-    return {"host":host,"resolved_ips":ips,"allowed_ips":allowed_ips,"resolve_status":resolve_status,"blocked_matches":matches,"non_global_ips":nonglobal,
+    return {"host":host,"resolved_ips":ips,"allowed_ips":allowed_ips,"resolve_status":resolve_status,
+            "blocked_matches":matches,"non_global_ips":nonglobal,
+            "non_global_only":bool(ips) and len(nonglobal)==len(ips),
             "blocked":all_addresses_blocked}
