@@ -429,6 +429,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
             "validation_score": n.validation_score, "validation_votes": n.validation_votes,
             "successful_probes": n.successful_probe_count, "probe_targets": n.probe_target_count,
             "blocklist_match": bool(endpoint_info.get(n.host, {}).get("blocked")),
+            "non_global_only": bool(endpoint_info.get(n.host, {}).get("non_global_only")),
             "blocked_networks": sorted({
                 str(item.get("network")) for item in endpoint_info.get(n.host, {}).get("blocked_matches", [])
                 if item.get("network")
@@ -452,19 +453,29 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
     progress.emit("tunnel_validation", "Туннельная проверка завершена", {"input":before,"passed":sum(v for k,v in status_counts.items() if k.startswith("proxy_ok")),"confidence":confidence_counts,"statuses":status_counts,"elapsed_seconds":round(time.monotonic()-check_start,2)})
     if mode=="proxy" and cores:
         # Only a positive end-to-end tunnel test enters the public subscription.
-        # A denylist match is never allowed to override a successful tunnel result.
-        candidate=[n for n in kept if n.check_status.startswith("proxy_ok")]
-        candidate_ids={id(n) for n in candidate}
+        # Public feed matches never override a verified tunnel, but non-global-only
+        # endpoints are never published even if this runner can reach them.
+        candidate=[]
         working_blocklisted=0
         failed_blocklisted=0
         for node in kept:
-            if id(node) in candidate_ids:
-                decision=blocklist_decision(endpoint_info.get(node.host, {}), node.check_status)
+            info=endpoint_info.get(node.host, {})
+            decision=blocklist_decision(info, node.check_status)
+            if node.check_status.startswith("proxy_ok"):
+                if decision == "blocked_non_global":
+                    failed_blocklisted+=1
+                    rejected.append({
+                        "uri":node.uri,
+                        "stage":"blocklist",
+                        "reason":"non-global endpoint; private/reserved address is not suitable for public subscription",
+                        "node":node,
+                    })
+                    continue
+                candidate.append(node)
                 if decision == "working_retained":
                     working_blocklisted+=1
                 continue
-            info=endpoint_info.get(node.host, {})
-            decision=blocklist_decision(info, node.check_status)
+
             if decision in {"blocked_unverified", "blocked_non_global"}:
                 failed_blocklisted+=1
                 networks_found=sorted({
@@ -474,7 +485,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
                 reasons=["non-global endpoint"] if decision == "blocked_non_global" else ["denylist match"]
                 if networks_found:
                     reasons.append("CIDR=" + ",".join(networks_found[:5]))
-                if info.get("non_global_ips"):
+                if info.get("non_global_ips") and "non-global endpoint" not in reasons:
                     reasons.append("non-global endpoint")
                 reasons.append("tunnel validation did not pass: " + (node.check_reason or node.check_status))
                 rejected.append({"uri":node.uri,"stage":"blocklist","reason":"; ".join(reasons),"node":node})
@@ -486,10 +497,29 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
             "filtered":failed_blocklisted,
         })
     else:
-        # TCP is diagnostic only. Don't destroy a valid node solely because TCP was briefly refused.
-        candidate=kept
-        if mode=="tcp": report["warnings"].append("TCP mode is diagnostic, not a proxy-handshake test; structurally valid nodes are retained.")
-
+        # TCP is diagnostic only. Public-feed matches remain advisory without tunnel
+        # evidence, but non-global-only endpoints are still excluded from public output.
+        candidate=[]
+        non_global_filtered=0
+        for node in kept:
+            info=endpoint_info.get(node.host, {})
+            if blocklist_decision(info, node.check_status) == "blocked_non_global":
+                non_global_filtered+=1
+                rejected.append({
+                    "uri":node.uri,
+                    "stage":"blocklist",
+                    "reason":"non-global endpoint; private/reserved address is not suitable for public subscription",
+                    "node":node,
+                })
+            else:
+                candidate.append(node)
+        if non_global_filtered:
+            report["blocklist"].update({
+                "non_global_filtered":non_global_filtered,
+                "filtered":report["blocklist"].get("filtered",0)+non_global_filtered,
+            })
+        if mode=="tcp":
+            report["warnings"].append("TCP mode is diagnostic, not a proxy-handshake test; structurally valid public endpoints are retained.")
     # Resolve a country per candidate and replace all old/noisy labels with a stable name.
     # IP geolocation is preferred; existing config/source labels and ccTLDs are fallbacks.
     lcfg = cfg.get("location", {}) or {}
