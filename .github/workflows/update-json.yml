@@ -2,17 +2,6 @@ name: AeryxVPN Happ Xray JSON-array subscription
 
 on:
   workflow_dispatch:
-    inputs:
-      dry_run:
-        description: Run validation and upload reports without committing subscription files
-        required: false
-        default: true
-        type: boolean
-      publish_subscription:
-        description: Publish the generated subscription after reviewing the validation report
-        required: false
-        default: false
-        type: boolean
 
 permissions:
   contents: write
@@ -159,7 +148,7 @@ jobs:
           retention-days: 14
 
       - name: Publish the Happ JSON-array subscription and metadata
-        if: success() && steps.source_check.outputs.has_sources == 'true' && github.ref == 'refs/heads/main' && inputs.publish_subscription && !inputs.dry_run
+        if: success() && steps.source_check.outputs.has_sources == 'true' && github.ref == 'refs/heads/main'
         shell: bash
         run: |
           set -euo pipefail
@@ -179,5 +168,16 @@ jobs:
             echo 'AeryxVPN JSON subscription is unchanged; no commit needed.'
           else
             git commit -m 'Update unified AeryxVPN JSON subscription'
-            git push origin HEAD:main
+            for attempt in 1 2 3; do
+              git fetch origin main
+              git rebase origin/main
+              if git push origin HEAD:main; then
+                echo "JSON subscription published successfully."
+                exit 0
+              fi
+              echo "Push attempt ${attempt} failed; refreshing main."
+              sleep 2
+            done
+            echo '::error::Could not publish JSON subscription after three attempts.'
+            exit 1
           fi
