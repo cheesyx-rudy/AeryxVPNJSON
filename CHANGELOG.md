@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.0 - 2026-11-04
+
+- Integrated AeryxVPN Core 0.8.0 into proxy tunnel validation.
+- Added a dedicated Core adapter that maps Core statuses to existing parser diagnostics.
+- Kept the Happ JSON-array builder and publication schema unchanged.
+- Added regression coverage for Core result mapping and URI preservation.
+- Corrected package metadata to identify the JSON parser as its own distribution.
+
+
 ## 0.2.0 - 2026-11-04
 
 - Added shared URI extraction utilities migrated from both parser repositories.
