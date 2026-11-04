@@ -61,7 +61,7 @@ def _core_status(result: object) -> tuple[str, str, str, int | None, int]:
     if status is ValidationStatus.WORKING:
         return f"proxy_ok_{confidence}", reason, confidence, elapsed_ms, result.score or 0
     if status is ValidationStatus.DEGRADED:
-        return f"proxy_ok_{confidence}", reason, confidence, elapsed_ms, result.score or 0
+        return "proxy_degraded", reason, confidence, elapsed_ms, result.score or 0
     if status is ValidationStatus.UNSUPPORTED:
         return "not_checkable", reason, confidence, elapsed_ms, result.score or 0
     if status is ValidationStatus.NOT_CHECKED:
@@ -198,14 +198,10 @@ def validate_nodes_with_core(
 
     results_by_fingerprint = asyncio.run(run_validation()) if candidates_by_fingerprint else {}
 
-    # JSON publication historically accepts both WORKING and DEGRADED Core
-    # statuses. Preserve that policy while choosing a single strongest sibling.
+    # Match the strict publication policy used by the URI parser: only a fully
+    # WORKING tunnel may be selected for automatic publication.
     grouping = group_similar_candidates(list(candidates_by_fingerprint.values()))
-    selection = select_validated_candidates(
-        grouping,
-        results_by_fingerprint,
-        accepted_statuses=(ValidationStatus.WORKING, ValidationStatus.DEGRADED),
-    )
+    selection = select_validated_candidates(grouping, results_by_fingerprint)
     group_ids = {
         candidate.fingerprint: group.group_id
         for group in grouping.groups
