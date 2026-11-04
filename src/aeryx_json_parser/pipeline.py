@@ -1,5 +1,6 @@
 from __future__ import annotations
 import json, time, hashlib, re
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,7 +13,7 @@ from .fetch import Fetcher, redact_url
 from .extract import extract_uri_strings, decode_layers
 from .adapters import extract_structured_nodes
 from .filtering import load_blocklists, NetworkIndex, evaluate_endpoint, parse_networks
-from .checks import (detect_cores, precheck_endpoints, PROBE_URLS, DEFAULT_MIN_SUCCESSFUL_PROBES, DEFAULT_REQUIRE_INDEPENDENT_PROVIDERS)
+from .checks import (detect_cores, validate_nodes, precheck_endpoints, PROBE_URLS, DEFAULT_MIN_SUCCESSFUL_PROBES, DEFAULT_REQUIRE_INDEPENDENT_PROVIDERS)
 from .core_validation import validate_nodes_with_core
 from .progress import ProgressReporter
 from .routing import refresh_happ_routing
@@ -387,12 +388,15 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
             progress_callback=validation_progress,
         )
     else:
-        status_counts = {status: count for status, count in Counter(
-            node.check_status for node in kept
-        ).items()}
+        status_counts = validate_nodes(
+            kept, cores, mode, check_workers, deadline,
+            float(ccfg.get("per_node_timeout_seconds", 10)), probe_targets,
+            minimum_successes, require_independent,
+            progress_callback=validation_progress,
+            retry_single_success=bool(ccfg.get("retry_single_success", True)),
+        )
     effective_mode = "proxy" if mode=="proxy" and cores else ("tcp" if mode=="proxy" else mode)
     # Aggregate probe observations so the next scheduled report explains why nodes passed/failed.
-    from collections import Counter
     probe_observations=Counter()
     failure_reasons=Counter()
     for node in kept:
