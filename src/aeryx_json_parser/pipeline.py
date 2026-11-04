@@ -245,10 +245,11 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
     deadline=started+runtime; out_dir=Path(ocfg.get("directory","output")); out_dir=out_dir if out_dir.is_absolute() else ROOT/out_dir; out_dir.mkdir(parents=True,exist_ok=True)
     cache=Path(bcfg.get("cache_path","output/blocklist_cache.json")); cache=cache if cache.is_absolute() else ROOT/cache
     progress=ProgressReporter(out_dir/"progress.jsonl")
-    report={"schema_version":1,"parser":"AeryxJSON-Parser","version":"1.0.0","started_at":datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    report={"schema_version":1,"parser":"AeryxJSON-Parser","version":"1.0.0","started_at":datetime.now(timezone.utc).isoformat(timespec="seconds"),"started_at_local":progress.local_timestamp(),
             "check_mode":mode,"runtime_budget_seconds":runtime,"sources":[],"stages":[],"counts":{},"warnings":[]}
     fetcher=Fetcher(fcfg); initial=load_sources(sources_path)
     progress.emit("start", "Запуск обработки подписки", {"sources":len(initial),"budget_seconds":runtime,"mode":mode})
+    progress.emit("source_fetch", "Начат сбор и загрузка источников", {"configured_sources":len(initial),"max_total_sources":int(fcfg.get("max_total_sources",50)),"workers":int(fcfg.get("workers",12))})
 
     # Stage 1: parallel source download and bounded expansion of web panels/provider URLs.
     max_sources=max(1,min(int(fcfg.get("max_total_sources",50)),300)); max_depth=max(0,min(int(fcfg.get("follow_depth",2)),4))
@@ -301,9 +302,13 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
         report["counts"]={"configured_sources":len(initial),"fetched_sources":len(source_results),"unique_nodes":0,"accepted":0}
         report["warnings"].append("No valid proxy nodes were extracted; the previous final subscription was left unchanged.")
         progress.emit("stop", "Остановка: не найдено ни одной валидной конфигурации", {"accepted":0})
-        _write_report(out_dir,report,invalid,[]); return report
+        report["finished_at_local"]=progress.local_timestamp()
+        _write_report(out_dir,report,invalid,[])
+        progress.write_final_summary(report)
+        return report
 
     # Stage 2: IP/CIDR filtering. Feed failures are fail-open for external lists; private/non-global IPs stay blocked.
+    progress.emit("ip_cidr_filter", "Начата DNS- и IP/CIDR-проверка", {"unique_nodes":len(nodes),"external_lists_enabled":bool(bcfg.get("enabled",True) and not skip_blocklist)})
     bstart=time.monotonic(); networks=[]; bdetails={"status":"skipped","network_count":0,"sources":[]}
     if not skip_blocklist and bcfg.get("enabled",True):
         try: networks,bdetails=load_blocklists(bcfg,cache,workers=int(bcfg.get("workers",6)),deadline=deadline)
@@ -332,6 +337,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
     progress.emit("ip_cidr_filter", "Проверены DNS и IP/CIDR-блок-листы", {"input":len(nodes),"eligible":len(kept),"blocked":len(nodes)-len(kept),"unresolved_hosts":unresolved})
 
     # Stage 3: quick endpoint reachability. This only prioritizes work; it never by itself rejects a node.
+    progress.emit("endpoint_precheck", "Начата проверка доступности адресов", {"eligible_nodes":len(kept),"mode":mode})
     check_start=time.monotonic(); cores=detect_cores(ROOT); report["cores"]={k:Path(v).name for k,v in cores.items()}
     tcp_counts={}
     if mode == "proxy" and kept:
@@ -456,6 +462,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
 
     # Resolve a country per candidate and replace all old/noisy labels with a stable name.
     # IP geolocation is preferred; existing config/source labels and ccTLDs are fallbacks.
+    progress.emit("geolocation", "Начато определение стран для подтверждённых узлов", {"candidate_nodes":len(candidate)})
     lcfg = cfg.get("location", {}) or {}
     db_value = str(lcfg.get("database_path", "output/dbip-country-lite.mmdb"))
     db_path = Path(db_value)
@@ -559,6 +566,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
     report["routing"] = {"enabled": routing_enabled, "included_in_subscription": include_routing,
                           "ready": routing_ready, "profile_name": str(rcfg.get("profile_path", "routing/HAPP-ROUTING.JSON"))}
 
+    progress.emit("publication", "Начата подготовка итоговой подписки", {"candidate_nodes":len(candidate),"previous_nodes":previous_count})
     min_count=max(1,int(pcfg.get("min_output_configs",5))); min_ratio=max(0.0,min(1.0,float(pcfg.get("min_output_ratio",0.02))))
     ratio=len(candidate)/max(1,len(nodes)); final_path=out_dir/str(ocfg.get("subscription_file","AeryxVPN"))
     candidate_path=out_dir/str(ocfg.get("candidate_file","proxies.candidate.txt"))
@@ -592,7 +600,10 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
                        "candidate_nodes":len(candidate),"previous_subscription_nodes":previous_count,"total_elapsed_seconds":round(time.monotonic()-started,2)}
     publish.update({"previous_count":previous_count,"candidate_count":len(candidate),"ratio":round(ratio,4),"force_publish":force_publish})
     report["publish"]=publish
+    report["finished_at_local"]=progress.local_timestamp()
     progress.emit("publication", "Решение по публикации", {"status":publish.get("status"),"candidate_count":len(candidate),"previous_count":previous_count,"confidence":confidence_counts})
+    progress.emit("finish", "Рабочий процесс завершён", {"publication":publish.get("status"),"final_nodes":len(candidate),"elapsed_seconds":report["counts"]["total_elapsed_seconds"]})
     report["progress_file"]="output/progress.jsonl (runner artifact; not committed to the public subscription repository)"
     _write_report(out_dir,report,invalid,rejected)
+    progress.write_final_summary(report)
     return report
