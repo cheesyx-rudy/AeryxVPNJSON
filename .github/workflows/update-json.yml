@@ -2,6 +2,9 @@ name: AeryxVPN Happ Xray JSON-array subscription
 
 on:
   workflow_dispatch:
+  # Cloudflare Worker starts the JSON parser through GitHub repository_dispatch.
+  repository_dispatch:
+    types: [aeryxvpn-update]
 
 permissions:
   contents: write
