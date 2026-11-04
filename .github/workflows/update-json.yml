@@ -3,6 +3,11 @@ name: AeryxVPN Happ Xray JSON-array subscription
 on:
   workflow_dispatch:
     inputs:
+      dry_run:
+        description: Run validation and upload reports without committing subscription files
+        required: false
+        default: true
+        type: boolean
       publish_subscription:
         description: Publish the generated subscription after reviewing the validation report
         required: true
@@ -156,7 +161,7 @@ jobs:
           retention-days: 14
 
       - name: Publish the Happ JSON-array subscription and metadata
-        if: success() && steps.source_check.outputs.has_sources == 'true' && github.ref == 'refs/heads/main' && inputs.publish_subscription
+        if: success() && steps.source_check.outputs.has_sources == 'true' && github.ref == 'refs/heads/main' && inputs.publish_subscription && !inputs.dry_run
         shell: bash
         run: |
           set -euo pipefail
