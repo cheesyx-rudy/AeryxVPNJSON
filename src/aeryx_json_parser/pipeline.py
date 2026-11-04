@@ -455,7 +455,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
             for n in duplicate_variants
         )
         group_ids = {
-            (node.check_reason or "").split(":", 2)[1]
+            (node.check_reason or "").partition("duplicate_account_variant:")[2].rsplit(": ", 1)[0]
             for node in duplicate_variants
             if (node.check_reason or "").startswith("duplicate_account_variant:")
             and ":" in (node.check_reason or "")
