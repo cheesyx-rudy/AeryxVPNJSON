@@ -75,6 +75,12 @@ def _get_country(node: dict[str, Any], resolver: CountryResolver | None = None) 
         country = country_from_label(label, method="parser_label")
         if country:
             return country
+    if any(
+        marker in label.casefold()
+        for label in labels
+        for marker in ("не определена", "unknown country", "unknown location")
+    ):
+        return Country("UNK", "Не определена", "fallback_unknown")
     return None
 
 
