@@ -140,7 +140,7 @@ def validate_nodes_with_core(
                             engine.validate(candidate, context),
                             timeout=budget + 0.25,
                         )
-                    except (asyncio.TimeoutError, Exception) as exc:
+                    except Exception as exc:
                         result = None
                         node = candidate_nodes[fingerprint]
                         node.check_reason = f"core_validation_{type(exc).__name__.lower()}"
@@ -153,6 +153,13 @@ def validate_nodes_with_core(
                     node.validation_confidence = confidence
                     node.elapsed_ms = elapsed
                     node.validation_score = score
+                    node.validation_votes = {
+                        "core_tunnel_validation": 1 if status.startswith("proxy_ok") else -1,
+                        "endpoint_tcp_reachability": (
+                            1 if node.tcp_precheck == "open"
+                            else (-1 if node.tcp_precheck in {"refused", "timeout"} else None)
+                        ),
+                    }
                     checks = [
                         check for check in result.checks
                         if check.name in {"http_health_probes", "http_health_stability"}
