@@ -72,3 +72,6 @@ jobs:
 
       - name: Compile parser modules
         run: python -m compileall -q src
+
+      - name: Lint new Core integration files
+        run: python -m ruff check src/aeryx_json_parser/core_validation.py tests/test_core_validation.py
