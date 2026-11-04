@@ -55,11 +55,17 @@ blocklists:
   manual_cidrs: []
   manual_cidrs_file: config/manual-deny-cidrs.txt
   feeds:
-    - name: AntiFilter aggregated list
-      url: https://antifilter.download/list/allyouneed.lst
+    - name: AntiFilter resolved IP list
+      url: https://antifilter.download/list/ipresolve.lst
       format: text
-    - name: Russia blocked IPs
-      url: https://raw.githubusercontent.com/eduard256/russia-blocked-ips/main/ip.txt
+    - name: AntiFilter subnet list
+      url: https://antifilter.download/list/subnet.lst
+      format: text
+    - name: Re-filter IP and subnet list
+      url: https://raw.githubusercontent.com/1andrevich/Re-filter-lists/main/ipsum.lst
+      format: text
+    - name: AntiFilter community list
+      url: https://community.antifilter.download/list/community.lst
       format: text
 
 # This project emits native client JSON configs and does not embed Happ's text/URI routing profile.
@@ -71,7 +77,7 @@ routing:
 
 location:
   database_path: output/dbip-country-lite.mmdb
-  require_country: true
+  require_country: false
   prefer_ip_geolocation: true
   fallbacks:
     - existing_config_name
