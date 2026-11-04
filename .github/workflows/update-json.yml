@@ -26,6 +26,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
+    defaults:
+      run:
+        working-directory: parser
+
     env:
       PYTHONUNBUFFERED: '1'
       PYTHONPATH: src
@@ -36,15 +40,17 @@ jobs:
       WEP_SOURCE_URL: ${{ secrets.WEP_SOURCE_URL }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout parser repository
         uses: actions/checkout@v7
+        with:
+          path: parser
 
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
           python-version: '3.12'
           cache: pip
-          cache-dependency-path: pyproject.toml
+          cache-dependency-path: parser/pyproject.toml
 
       - name: Require read-only Core access token
         env:
@@ -60,17 +66,17 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: cheesyx-rudy/AeryxVPN-Core
-          ref: 078af11d812ffbc6852120454d1e472aa2912fbc
+          ref: CORE_COMMIT_PLACEHOLDER
           token: ${{ secrets.AERYX_CORE_READ_TOKEN }}
-          path: .aeryx-core
+          path: core
           persist-credentials: false
 
       - name: Verify Core source checkout
         shell: bash
         run: |
           set -euo pipefail
-          grep -Fq 'version = "0.8.0"' .aeryx-core/pyproject.toml
-          test -f .aeryx-core/src/aeryx_core/validation/core_validators.py
+          grep -Fq 'version = "0.8.1"' ../core/pyproject.toml
+          test -f ../core/src/aeryx_core/validation/core_validators.py
 
       - name: Build and install pinned Core wheel
         shell: bash
@@ -78,8 +84,8 @@ jobs:
           set -euo pipefail
           wheel_dir="$RUNNER_TEMP/aeryx-core-wheel"
           mkdir -p "$wheel_dir"
-          python -m pip wheel --no-deps --wheel-dir "$wheel_dir" ./.aeryx-core
-          wheel="$(find "$wheel_dir" -maxdepth 1 -name 'aeryxvpn_core-0.8.0-*.whl' -print -quit)"
+          python -m pip wheel --no-deps --wheel-dir "$wheel_dir" ../core
+          wheel="$(find "$wheel_dir" -maxdepth 1 -name 'aeryxvpn_core-0.8.1-*.whl' -print -quit)"
           test -n "$wheel"
           python -m pip install --no-cache-dir --force-reinstall "$wheel"
 
@@ -95,10 +101,10 @@ jobs:
           import aeryx_core
           from aeryx_core import ShareURIAdapter, create_validation_engine
 
-          assert metadata.version("aeryxvpn-core") == "0.8.0"
-          assert aeryx_core.__version__ == "0.8.0"
+          assert metadata.version("aeryxvpn-core") == "0.8.1"
+          assert aeryx_core.__version__ == "0.8.1"
           assert ShareURIAdapter and callable(create_validation_engine)
-          print("AeryxVPN Core 0.8.0: OK")
+          print("AeryxVPN Core 0.8.1: OK")
           PY
 
       - name: Run offline tests
@@ -134,7 +140,7 @@ jobs:
           GITHUB_REF_NAME: ${{ github.ref_name }}
         run: >-
           python -m aeryx_json_parser.json_builder
-          --input output/engine/parsed_proxies.json
+          --input parser/output/engine/parsed_proxies.json
           --output output/publish
           --repository "$GITHUB_REPOSITORY"
           --branch main
@@ -150,11 +156,11 @@ jobs:
         with:
           name: aeryxjson-build-report
           path: |
-            output/engine/validation_report.json
-            output/engine/progress.jsonl
-            output/publish/build-report.json
-            output/tools/core-versions.json
-            tools/core-versions.json
+            parser/output/engine/validation_report.json
+            parser/output/engine/progress.jsonl
+            parser/output/publish/build-report.json
+            parser/output/parser/tools/core-versions.json
+            parser/tools/core-versions.json
           if-no-files-found: warn
           retention-days: 14
 
@@ -163,11 +169,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -s output/publish/AeryxVPN.json
-          test -s output/publish/AeryxVPN.metadata.json
-          test -s output/publish/build-report.json
-          install -m 0644 output/publish/AeryxVPN.json AeryxVPN.json
-          install -m 0644 output/publish/AeryxVPN.metadata.json AeryxVPN.metadata.json
+          test -s parser/output/publish/AeryxVPN.json
+          test -s parser/output/publish/AeryxVPN.metadata.json
+          test -s parser/output/publish/build-report.json
+          install -m 0644 parser/output/publish/AeryxVPN.json AeryxVPN.json
+          install -m 0644 parser/output/publish/AeryxVPN.metadata.json AeryxVPN.metadata.json
 
           git rm -r --ignore-unmatch countries xray country-metadata
           git rm --ignore-unmatch index.json
