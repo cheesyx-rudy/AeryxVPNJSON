@@ -293,10 +293,11 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
                              "raw_links":len(raw_links),"invalid_links":len(invalid),"elapsed_seconds":round(time.monotonic()-started,2)})
     progress.emit("fetch_and_parse", "Источники разобраны", {"fetched":len(source_results),"links":len(raw_links),"invalid":len(invalid),"errors":fetch_errors})
     # Exact dedupe (only remove remarks); auth and transport options remain part of identity.
+    deduplicate_started=time.monotonic()
     nodes=[]; seen=set()
     for node in raw_links:
         if node.identity not in seen: seen.add(node.identity); nodes.append(node)
-    report["stages"].append({"name":"deduplicate","input":len(raw_links),"output":len(nodes),"removed":len(raw_links)-len(nodes),"elapsed_seconds":round(time.monotonic()-started,2)})
+    report["stages"].append({"name":"deduplicate","input":len(raw_links),"output":len(nodes),"removed":len(raw_links)-len(nodes),"elapsed_seconds":round(time.monotonic()-deduplicate_started,2)})
     progress.emit("deduplicate", "Дубликаты удалены", {"input":len(raw_links),"unique":len(nodes),"duplicates":len(raw_links)-len(nodes)})
     if not nodes:
         report["counts"]={"configured_sources":len(initial),"fetched_sources":len(source_results),"unique_nodes":0,"accepted":0}
