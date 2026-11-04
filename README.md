@@ -16,7 +16,9 @@ The default feeds use focused address/subnet sources:
 
 Downloads are cached per feed. The default cache lifetime is 72 hours. IPv4 ranges broader than /24 and IPv6 ranges broader than /48 are ignored by default to reduce false positives from large hosting and CDN networks. Manual CIDRs can still be maintained in `config/manual-deny-cidrs.txt`.
 
-A public feed match is recorded in diagnostics but does not reject a candidate before tunnel testing. In proxy mode, a node is included only after a positive Xray/sing-box tunnel result. A feed match cannot discard a tunnel-verified node; a matching node that does not pass tunnel validation is rejected. Endpoints whose DNS results are exclusively private, loopback, link-local, or otherwise non-global remain excluded from public output.
+A public feed match is recorded in diagnostics but does not reject a candidate before tunnel testing. In proxy mode, a node is included only after a positive Xray/sing-box tunnel result. A feed match cannot discard a tunnel-verified public endpoint; a matching node that does not pass tunnel validation is rejected. Endpoints whose DNS results are exclusively private, loopback, link-local, or otherwise non-global remain excluded from public output. TCP-only and no-check runs are diagnostic and cannot automatically replace the final subscription; `force_publish` is an explicit override.
+
+The Core repository is private. Configure `AERYX_CORE_READ_TOKEN` as a read-only GitHub Actions secret for `cheesyx-rudy/AeryxVPN-Core`.
 
 ## Geolocation
 
