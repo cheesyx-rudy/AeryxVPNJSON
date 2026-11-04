@@ -206,11 +206,17 @@ def validate_nodes_with_core(
         results_by_fingerprint,
         accepted_statuses=(ValidationStatus.WORKING, ValidationStatus.DEGRADED),
     )
+    group_ids = {
+        candidate.fingerprint: group.group_id
+        for group in grouping.groups
+        for candidate in group.candidates
+    }
     for fingerprint in selection.redundant_fingerprints:
         node = candidate_nodes[fingerprint]
         node.check_status = "proxy_duplicate_core"
         node.check_reason = (
-            "duplicate_account_variant: a higher-quality validated sibling was retained"
+            f"duplicate_account_variant:{group_ids[fingerprint]}: "
+            "a higher-quality accepted sibling was retained"
         )
 
     counts: Counter[str] = Counter(node.check_status for node in nodes)
