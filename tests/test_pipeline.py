@@ -24,7 +24,7 @@ class PipelineIntegrationTests(unittest.TestCase):
             with patch.object(pipeline.Fetcher,'fetch',return_value=fake), \
                  patch.object(pipeline,'evaluate_endpoint',return_value={'host':'node.example','resolved_ips':['8.8.8.8'],'resolve_status':'resolved','blocked_matches':[],'non_global_ips':[],'blocked':False}), \
                  patch.object(pipeline,'detect_cores',return_value={}):
-                report=pipeline.run_pipeline(config,sources,check_mode='none',skip_blocklist=True,force_publish=False,refresh_routing=False)
+                report=pipeline.run_pipeline(config,sources,check_mode='none',skip_blocklist=True,force_publish=True,refresh_routing=False)
             self.assertEqual(report['publish']['status'],'published')
             output=(out/'proxies.txt').read_text(encoding='utf-8').strip().splitlines()
             proxy_lines=[line for line in output if line.startswith(('vless://','vmess://','trojan://','ss://','ssr://','hysteria://','hysteria2://','hy2://','tuic://','anytls://','socks://','socks5://','http://','https://'))]
@@ -119,7 +119,7 @@ class PipelineIntegrationTests(unittest.TestCase):
                  patch.object(pipeline,'evaluate_endpoint',return_value={'host':'node.example','resolved_ips':['8.8.8.8'],'allowed_ips':['8.8.8.8'],'resolve_status':'resolved','blocked_matches':[],'non_global_ips':[],'blocked':False}), \
                  patch.object(pipeline,'detect_cores',return_value={}), \
                  patch.object(pipeline,'refresh_happ_routing',return_value=route_link):
-                report=pipeline.run_pipeline(config,sources,check_mode='none',skip_blocklist=True)
+                report=pipeline.run_pipeline(config,sources,check_mode='none',skip_blocklist=True,force_publish=True)
             self.assertEqual(report['publish']['status'],'published')
             lines=(out/'AeryxVPN').read_text(encoding='utf-8').splitlines()
             route_i=next(i for i,x in enumerate(lines) if x.startswith('happ://routing/onadd/'))
