@@ -66,7 +66,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: cheesyx-rudy/AeryxVPN-Core
-          ref: CORE_COMMIT_PLACEHOLDER
+          ref: 4f895a45a958ac3eaae8324fffe3ec891bd39a8f
           token: ${{ secrets.AERYX_CORE_READ_TOKEN }}
           path: core
           persist-credentials: false
@@ -140,7 +140,7 @@ jobs:
           GITHUB_REF_NAME: ${{ github.ref_name }}
         run: >-
           python -m aeryx_json_parser.json_builder
-          --input parser/output/engine/parsed_proxies.json
+          --input output/engine/parsed_proxies.json
           --output output/publish
           --repository "$GITHUB_REPOSITORY"
           --branch main
@@ -169,10 +169,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -s parser/output/publish/AeryxVPN.json
+          test -s output/publish/AeryxVPN.json
           test -s parser/output/publish/AeryxVPN.metadata.json
           test -s parser/output/publish/build-report.json
-          install -m 0644 parser/output/publish/AeryxVPN.json AeryxVPN.json
+          install -m 0644 output/publish/AeryxVPN.json AeryxVPN.json
           install -m 0644 parser/output/publish/AeryxVPN.metadata.json AeryxVPN.metadata.json
 
           git rm -r --ignore-unmatch countries xray country-metadata
