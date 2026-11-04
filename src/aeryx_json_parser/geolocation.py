@@ -94,6 +94,8 @@ def _country_name(code: str, preferred: str = "") -> str:
 
 def flag_for_code(code: str) -> str:
     code = code.upper()
+    if code == "ZZ":
+        return "🌐"
     if code == "EU":
         return "🇪🇺"
     if not re.fullmatch(r"[A-Z]{2}", code):
