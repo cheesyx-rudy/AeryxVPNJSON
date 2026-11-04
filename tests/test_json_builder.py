@@ -76,6 +76,44 @@ class UnifiedJSONBuilderTests(unittest.TestCase):
         self.assertEqual(country.code, "ZZ")
         self.assertEqual(country.name, "Не определена")
 
+    def test_unknown_location_bucket_survives_full_happ_profile_build(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            input_file = root / "parsed_proxies.json"
+            label = "🌐 Не определена • AeryxVPN"
+            uri = (
+                "vless://11111111-1111-4111-8111-111111111111@node.example:443"
+                "?encryption=none&security=tls&sni=node.example&type=tcp#"
+                + quote(label, safe="")
+            )
+            input_file.write_text(json.dumps([{
+                "uri": uri,
+                "host": "node.example",
+                "port": 443,
+                "scheme": "vless",
+                "name": label,
+                "check_status": "proxy_ok_high",
+                "validation_confidence": "high",
+            }]), encoding="utf-8")
+            config = root / "settings.yaml"
+            source_config = Path(__file__).resolve().parents[1] / "config" / "settings.yaml"
+            config_text = source_config.read_text(encoding="utf-8")
+            config.write_text(
+                config_text.replace("minimum_total_configs: 5", "minimum_total_configs: 1"),
+                encoding="utf-8",
+            )
+
+            out = root / "publish"
+            report = build_country_outputs(input_file, out, config)
+
+            profiles = json.loads((out / "AeryxVPN.json").read_text(encoding="utf-8"))
+            metadata = json.loads((out / "AeryxVPN.metadata.json").read_text(encoding="utf-8"))
+            self.assertEqual(report["published_config_count"], 1)
+            self.assertEqual(report["country_count"], 1)
+            self.assertEqual(profiles[0]["remarks"], "🌐 Не определена")
+            self.assertEqual(metadata["metadata"]["countries"][0]["code"], "ZZ")
+            self.assertEqual(metadata["metadata"]["countries"][0]["flag"], "🌐")
+
     def test_workflow_prevalidates_each_node_with_installed_xray_before_build(self):
         workflow = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "update-json.yml"
         text = workflow.read_text(encoding="utf-8")
