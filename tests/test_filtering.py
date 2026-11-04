@@ -1,7 +1,7 @@
 import tempfile, unittest, ipaddress
 from pathlib import Path
 from unittest.mock import patch
-from aeryx_json_parser.filtering import parse_networks, NetworkIndex, evaluate_endpoint, load_blocklists
+from aeryx_json_parser.filtering import blocklist_decision, parse_networks, NetworkIndex, evaluate_endpoint, load_blocklists
 
 class FilterTests(unittest.TestCase):
     def test_ipv4_ipv6_and_cidr_parser(self):
@@ -27,6 +27,13 @@ class FilterTests(unittest.TestCase):
         self.assertEqual({n.with_prefixlen for n in nets},{'203.0.112.0/24'})
         self.assertEqual(report['raw_network_count'],2)
         self.assertEqual(report['ignored_broad_prefix_count'],1)
+
+    def test_blocklist_match_does_not_override_a_verified_working_tunnel(self):
+        endpoint = {"blocked": True}
+        self.assertEqual(blocklist_decision(endpoint, "proxy_ok_high"), "working_retained")
+        self.assertEqual(blocklist_decision(endpoint, "proxy_ok_medium"), "working_retained")
+        self.assertEqual(blocklist_decision(endpoint, "proxy_failed"), "blocked_unverified")
+        self.assertEqual(blocklist_decision({"blocked": False}, "proxy_failed"), "not_listed")
 
     def test_mixed_dns_addresses_are_not_rejected_if_one_is_unblocked(self):
         index=NetworkIndex(parse_networks('1.2.3.0/24'))
