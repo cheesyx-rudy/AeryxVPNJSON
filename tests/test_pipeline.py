@@ -193,6 +193,48 @@ class PipelineIntegrationTests(unittest.TestCase):
 
 
 
+
+    def test_diagnostic_mode_does_not_replace_subscription_without_override(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td); out=root/'out'
+            out.mkdir()
+            final=out/'AeryxVPN'
+            previous='#profile-title: AeryxVPN' + chr(10) + 'vless://old@old.example:443' + chr(10)
+            final.write_text(previous,encoding='utf-8')
+            sources=root/'sources.txt'
+            sources.write_text('https://example.test/sub' + chr(10),encoding='utf-8')
+            config=root/'settings.yaml'
+            config.write_text(yaml.safe_dump({
+              'pipeline':{'max_runtime_seconds':20,'min_output_configs':1,'min_output_ratio':0.01},
+              'fetch':{'max_total_sources':10,'follow_depth':0,'workers':2},
+              'check':{'mode':'none','workers':2},
+              'blocklists':{'enabled':False,'manual_cidrs':[]},
+              'location':{'database_path':str(root/'missing.mmdb'),'require_country':False},
+              'routing':{'happ_enabled':False},
+              'outputs':{'directory':str(out),'subscription_file':'AeryxVPN','candidate_file':'candidate.txt','structured_file':'parsed.json','rejected_file':'rejected.txt'}
+            }),encoding='utf-8')
+            uri=f'vless://{UUID}@node.example:443?security=tls#Germany'
+            fake=FetchResult(
+                url='https://example.test/sub',final_url='https://example.test/sub',
+                status='ok',status_code=200,content_type='text/plain',
+                bytes_downloaded=len(uri),content=uri,source_name='example.test'
+            )
+            with patch.object(pipeline.Fetcher,'fetch',return_value=fake), \
+                 patch.object(pipeline,'evaluate_endpoint',return_value={
+                    'host':'node.example','resolved_ips':['8.8.8.8'],'allowed_ips':['8.8.8.8'],
+                    'resolve_status':'resolved','blocked_matches':[],'non_global_ips':[],
+                    'non_global_only':False,'blocked':False
+                 }), \
+                 patch.object(pipeline,'detect_cores',return_value={}):
+                report=pipeline.run_pipeline(
+                    config,sources,check_mode='none',skip_blocklist=True,force_publish=False,
+                    refresh_routing=False
+                )
+
+            self.assertEqual(report['publish']['status'],'safety_stop_existing_kept')
+            self.assertEqual(final.read_text(encoding='utf-8'),previous)
+            self.assertIn('end-to-end proxy tunnel validation is required', ' '.join(report['warnings']))
+
     def test_blocklist_match_is_advisory_until_tunnel_validation(self):
         with tempfile.TemporaryDirectory() as td:
             root=Path(td); out=root/'out'; cache=root/'cache.json'
