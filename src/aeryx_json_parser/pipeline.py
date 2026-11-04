@@ -440,15 +440,52 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
     report["stages"].append({"name":"parallel_validation","input":before,"status_counts":status_counts,"elapsed_seconds":round(time.monotonic()-check_start,2)})
     progress.emit("tunnel_validation", "Туннельная проверка завершена", {"input":before,"passed":sum(v for k,v in status_counts.items() if k.startswith("proxy_ok")),"confidence":confidence_counts,"statuses":status_counts,"elapsed_seconds":round(time.monotonic()-check_start,2)})
     if mode=="proxy" and cores:
-        # The scheduled publisher is deliberately strict: only a positive tunnel test
-        # can enter the public subscription. Unchecked or adapter-incompatible nodes
-        # remain visible in diagnostics but are never silently advertised as working.
+        # Core has already selected the strongest validated member of every
+        # account-equivalent group. Duplicate siblings are reported separately.
         candidate=[n for n in kept if n.check_status.startswith("proxy_ok")]
+        duplicate_variants=[n for n in kept if n.check_status == "proxy_duplicate_core"]
+        duplicate_ids={id(n) for n in duplicate_variants}
         candidate_ids={id(n) for n in candidate}
         rejected.extend(
             {"uri":n.uri,"stage":"probe","reason":n.check_reason or n.check_status,"node":n}
-            for n in kept if id(n) not in candidate_ids
+            for n in kept if id(n) not in candidate_ids and id(n) not in duplicate_ids
         )
+        rejected.extend(
+            {"uri":n.uri,"stage":"near_duplicate","reason":n.check_reason or "duplicate account variant","node":n}
+            for n in duplicate_variants
+        )
+        group_ids = {
+            (node.check_reason or "").split(":", 2)[1]
+            for node in duplicate_variants
+            if (node.check_reason or "").startswith("duplicate_account_variant:")
+            and ":" in (node.check_reason or "")
+        }
+        report["validation"]["redundancy"] = {
+            "engine": "aeryx_core",
+            "policy": "same_protocol_endpoint_and_strong_account_credentials",
+            "groups": len(group_ids),
+            "input_accepted_variants": len(candidate) + len(duplicate_variants),
+            "published_variants": len(candidate),
+            "removed_variants": len(duplicate_variants),
+        }
+        if duplicate_variants:
+            report["stages"].append({
+                "name": "core_redundancy_collapse",
+                "input": len(candidate) + len(duplicate_variants),
+                "output": len(candidate),
+                "removed": len(duplicate_variants),
+                "groups": len(group_ids),
+            })
+            progress.emit(
+                "redundancy_collapse",
+                "Core схлопнул подтверждённые варианты одного аккаунта",
+                {
+                    "input": len(candidate) + len(duplicate_variants),
+                    "kept": len(candidate),
+                    "removed": len(duplicate_variants),
+                    "groups": len(group_ids),
+                },
+            )
     else:
         # TCP is diagnostic only. Don't destroy a valid node solely because TCP was briefly refused.
         candidate=kept
