@@ -46,8 +46,7 @@ Do not expose the secret to workflows triggered by untrusted pull requests.
 
 The JSON parser uses AeryxVPN Core 0.8.0 for protocol-aware tunnel validation. The
 existing Happ-compatible JSON-array builder remains the output authority; validation
-results do not reconstruct or rewrite source profile fields. The workflow pins the
-Core release and checks the installed wheel before running tests and generation.
+results do not reconstruct or rewrite source profile fields. The workflow pins the exact immutable AeryxVPN Core 0.8.0 commit by SHA and checks the installed wheel before running tests and generation.
 
 The Core repository is private. Configure `AERYX_CORE_READ_TOKEN` as a read-only
 Actions secret with access to `cheesyx-rudy/AeryxVPN-Core`.
