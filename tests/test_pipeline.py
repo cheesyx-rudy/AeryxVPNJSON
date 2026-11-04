@@ -191,4 +191,69 @@ class PipelineIntegrationTests(unittest.TestCase):
             self.assertEqual(report['counts']['unique_nodes'],0)
             self.assertEqual(final.read_text(encoding='utf-8'),'vless://old@old.example:443\n')
 
+    def test_blocklist_match_is_advisory_until_tunnel_validation(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td); out=root/'out'; cache=root/'cache.json'
+            sources=root/'sources.txt'
+            sources.write_text('https://example.test/sub\\n',encoding='utf-8')
+            config=root/'settings.yaml'
+            config.write_text(yaml.safe_dump({
+              'pipeline':{'max_runtime_seconds':20,'min_output_configs':1,'min_output_ratio':0.01},
+              'fetch':{'max_total_sources':10,'follow_depth':0,'workers':2},
+              'check':{'mode':'proxy','workers':2,'test_urls':['https://www.gstatic.com/generate_204']},
+              'blocklists':{'enabled':True,'feeds':[],'manual_cidrs':[],'cache_path':str(cache)},
+              'location':{'database_path':str(root/'missing.mmdb'),'require_country':False},
+              'routing':{'happ_enabled':False},
+              'outputs':{'directory':str(out),'subscription_file':'AeryxVPN','candidate_file':'candidate.txt','structured_file':'parsed.json','rejected_file':'rejected.txt'}
+            }),encoding='utf-8')
+            content=(
+                f'vless://{UUID}@good.example:443?security=tls#Germany\\n'
+                f'vless://{UUID}@bad.example:443?security=tls#Germany'
+            )
+            fake=FetchResult(
+                url='https://example.test/sub',final_url='https://example.test/sub',
+                status='ok',status_code=200,content_type='text/plain',
+                bytes_downloaded=len(content),content=content,source_name='example.test'
+            )
+            network=ipaddress.ip_network('8.8.8.0/24')
+            def endpoint(host,*args):
+                return {
+                    'host':host,
+                    'resolved_ips':['8.8.8.8'],
+                    'allowed_ips':[],
+                    'resolve_status':'resolved',
+                    'blocked_matches':[{'ip':'8.8.8.8','network':network.with_prefixlen}],
+                    'non_global_ips':[],
+                    'blocked':True,
+                }
+            def validate(nodes,*args,**kwargs):
+                for node in nodes:
+                    node.check_status='proxy_ok_high' if node.host=='good.example' else 'proxy_failed'
+                    node.check_reason='test_tunnel_result'
+                    node.validation_confidence='high' if node.host=='good.example' else 'low'
+                return {'proxy_ok_high':1,'proxy_failed':1}
+            with patch.object(pipeline.Fetcher,'fetch',return_value=fake), \\
+                 patch.object(pipeline,'load_blocklists',return_value=([network],{'status':'fresh_or_cached','sources':[]})), \\
+                 patch.object(pipeline,'evaluate_endpoint',side_effect=endpoint), \\
+                 patch.object(pipeline,'detect_cores',return_value={'sing-box':'/mock/sing-box'}), \\
+                 patch.object(pipeline,'precheck_endpoints',return_value={'open':2}), \\
+                 patch.object(pipeline,'validate_nodes_with_core',side_effect=validate):
+                report=pipeline.run_pipeline(
+                    config,sources,check_mode='proxy',skip_blocklist=False,refresh_routing=False
+                )
+
+            self.assertEqual(report['publish']['status'],'published')
+            self.assertEqual(report['blocklist']['flagged_nodes'],2)
+            self.assertEqual(report['blocklist']['prevalidation_removed'],0)
+            self.assertEqual(report['blocklist']['working_retained'],1)
+            self.assertEqual(report['blocklist']['blocked_not_tunnel_verified'],1)
+            self.assertEqual(report['blocklist']['filtered'],1)
+            self.assertEqual(report['counts']['blocked'],1)
+            published=(out/'AeryxVPN').read_text(encoding='utf-8')
+            self.assertIn('good.example',published)
+            self.assertNotIn('bad.example',published)
+            rejected=(out/'rejected.txt').read_text(encoding='utf-8')
+            self.assertIn('bad.example',rejected)
+            self.assertNotIn('good.example',rejected)
+
 if __name__=='__main__': unittest.main()
