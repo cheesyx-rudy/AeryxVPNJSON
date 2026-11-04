@@ -2,9 +2,12 @@ name: AeryxVPN Happ Xray JSON-array subscription
 
 on:
   workflow_dispatch:
-  pull_request:
-    branches:
-      - main
+    inputs:
+      publish_subscription:
+        description: Publish the generated subscription after reviewing the validation report
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -153,7 +156,7 @@ jobs:
           retention-days: 14
 
       - name: Publish the Happ JSON-array subscription and metadata
-        if: success() && steps.source_check.outputs.has_sources == 'true' && github.ref == 'refs/heads/main'
+        if: success() && steps.source_check.outputs.has_sources == 'true' && github.ref == 'refs/heads/main' && inputs.publish_subscription
         shell: bash
         run: |
           set -euo pipefail
