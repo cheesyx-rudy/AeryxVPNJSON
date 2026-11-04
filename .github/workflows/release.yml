@@ -1,0 +1,55 @@
+name: Publish JSON Parser release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: aeryxvpn-json-parser-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Read package version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import re
+          import tomllib
+          from pathlib import Path
+
+          project = tomllib.loads(Path("pyproject.toml").read_text())["project"]
+          if project["name"] != "aeryxvpn-json-parser":
+              raise SystemExit("Unexpected project name")
+          version = project["version"]
+          if not re.fullmatch(r"\d+\.\d+\.\d+", version):
+              raise SystemExit(f"Invalid stable release version: {version}")
+          print(f"version={version}")
+          PY
+
+      - name: Create GitHub release if this version is not released yet
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="v${RELEASE_VERSION}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists; nothing to do."
+            exit 0
+          fi
+          gh release create "$tag"             --target "$GITHUB_SHA"             --title "AeryxVPN JSON Parser $tag"             --notes "AeryxVPN JSON Parser $RELEASE_VERSION. Shared AeryxVPN Core validation, Happ-compatible JSON profile generation, and Xray validation."
