@@ -35,11 +35,129 @@ jobs:
           cache: pip
           cache-dependency-path: requirements.txt
 
-      - name: Install dependencies
-        run: python -m pip install --disable-pip-version-check -e .
+      - name: Checkout pinned AeryxVPN Core
+        uses: actions/checkout@v7
+        with:
+          repository: cheesyx-rudy/AeryxVPN-Core
+          ref: v0.8.0
+          token: ${{ secrets.AERYX_CORE_READ_TOKEN }}
+          path: .aeryx-core
+          persist-credentials: false
+
+      - name: Verify Core source checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q '^version = "0.8.0"
+      - name: Check whether sources.txt has active URLs
+        id: source_check
+        shell: bash
+        run: |
+          if grep -Eq '^[[:space:]]*(https?://|\$\{[A-Za-z_][A-Za-z0-9_]*\})' sources.txt; then
+            echo 'has_sources=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'has_sources=false' >> "$GITHUB_OUTPUT"
+            echo 'No source URLs configured. Tests passed; generation is skipped without changing any published files.'
+          fi
+
+      - name: Download DB-IP Lite country database
+        if: steps.source_check.outputs.has_sources == 'true'
+        run: python tools/download_geoip.py --output output/dbip-country-lite.mmdb
+
+      - name: Install official stable Xray and sing-box cores
+        if: steps.source_check.outputs.has_sources == 'true'
+        run: python tools/install_cores.py --platform linux --arch amd64
+
+      - name: Fetch, parse, filter and tunnel-check source configs
+        if: steps.source_check.outputs.has_sources == 'true'
+        run: python -m aeryx_json_parser --check proxy --max-runtime 360
+
+      - name: "Build Happ JSON array: one balanced profile per country plus Auto"
+        if: steps.source_check.outputs.has_sources == 'true'
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: >-
+          python -m aeryx_json_parser.json_builder
+          --input output/engine/parsed_proxies.json
+          --output output/publish
+          --repository "$GITHUB_REPOSITORY"
+          --branch main
+          --xray tools/xray
+
+      - name: Validate every Happ profile with Xray-core
+        if: steps.source_check.outputs.has_sources == 'true'
+        run: python tools/validate_outputs.py --root output/publish --xray tools/xray
+
+      - name: Upload safe build diagnostics (not committed)
+        if: always() && steps.source_check.outputs.has_sources == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: aeryxjson-build-report
+          path: |
+            output/engine/validation_report.json
+            output/engine/progress.jsonl
+            output/publish/build-report.json
+            output/tools/core-versions.json
+            tools/core-versions.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Publish the Happ JSON-array subscription and metadata to this repository
+        if: success() && steps.source_check.outputs.has_sources == 'true' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s output/publish/AeryxVPN.json
+          test -s output/publish/AeryxVPN.metadata.json
+          test -s output/publish/build-report.json
+          install -m 0644 output/publish/AeryxVPN.json AeryxVPN.json
+          install -m 0644 output/publish/AeryxVPN.metadata.json AeryxVPN.metadata.json
+
+          # Remove files created by the previous country-per-file layout.
+          git rm -r --ignore-unmatch countries xray country-metadata
+          git rm --ignore-unmatch index.json
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo 'AeryxVPN JSON subscription is unchanged; no commit needed.'
+          else
+            git commit -m 'Update unified AeryxVPN JSON subscription'
+            git push origin HEAD:main
+          fi
+ .aeryx-core/pyproject.toml
+          test -f .aeryx-core/src/aeryx_core/validation/core_validators.py
+
+      - name: Build and install pinned Core wheel
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/aeryx-core-wheel"
+          python -m pip wheel --no-deps --wheel-dir "$RUNNER_TEMP/aeryx-core-wheel" ./.aeryx-core
+          python -m pip install --no-cache-dir --force-reinstall "$RUNNER_TEMP"/aeryx-core-wheel/aeryxvpn_core-0.8.0-*.whl
+
+      - name: Install parser and test dependencies
+        run: python -m pip install --disable-pip-version-check -e '.[dev]'
+
+      - name: Verify isolated Core installation
+        shell: bash
+        run: |
+          set -euo pipefail
+          env -u PYTHONPATH python -I - <<'PY'
+          from importlib import metadata
+          import aeryx_core
+          assert metadata.version("aeryxvpn-core") == "0.8.0"
+          assert aeryx_core.__version__ == "0.8.0"
+          from aeryx_core import ShareURIAdapter, create_validation_engine
+          assert ShareURIAdapter and callable(create_validation_engine)
+          print("AeryxVPN Core 0.8.0: OK")
+          PY
 
       - name: Run offline tests
-        run: python -m unittest discover -s tests -v
+        run: python -m pytest -q -ra
 
       - name: Check whether sources.txt has active URLs
         id: source_check
