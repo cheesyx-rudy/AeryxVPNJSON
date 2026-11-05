@@ -435,7 +435,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
         for n in kept
     ]
     report["validation"]={"requested_mode":mode,"effective_mode":effective_mode,"engine":"aeryx_core" if mode=="proxy" else "legacy","core_version":core_version,"status_counts":status_counts,
-                          "confidence_counts":confidence_counts,"endpoint_precheck_counts":tcp_counts,
+                          "confidence_counts":confidence_counts,"endpoint_diagnostics":report["endpoint_diagnostics"],
                           "elapsed_seconds":round(time.monotonic()-check_start,2),"workers":check_workers,
                           "stage_vote_totals":{"positive":vote_positive,"negative":vote_negative,"net":vote_positive-vote_negative},
                           "node_results":node_results,
