@@ -352,7 +352,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
                 "Candidates cannot be tunnel-validated and will not be published."
             )
     report["endpoint_diagnostics"]={
-        "handled_by":"aeryx_core",
+        "handled_by":"aeryx_core" if mode=="proxy" else "not_run",
         "separate_tcp_precheck":False,
         "total":len(kept),
     }
@@ -427,7 +427,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
         {
             "scheme": n.scheme, "host": n.host, "port": n.port, "name": n.name,
             "status": n.check_status, "confidence": n.validation_confidence,
-            "tcp_precheck": n.tcp_precheck, "elapsed_ms": n.elapsed_ms,
+            "elapsed_ms": n.elapsed_ms,
             "validation_score": n.validation_score, "validation_votes": n.validation_votes,
             "successful_probes": n.successful_probe_count, "probe_targets": n.probe_target_count,
             "reason_code": ((n.check_reason or n.check_status).split(";")[0])[:120],

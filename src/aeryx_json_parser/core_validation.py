@@ -158,10 +158,6 @@ def validate_nodes_with_core(
                     node.validation_score = score
                     node.validation_votes = {
                         "core_tunnel_validation": 1 if status.startswith("proxy_ok") else -1,
-                        "endpoint_tcp_reachability": (
-                            1 if node.tcp_precheck == "open"
-                            else (-1 if node.tcp_precheck in {"refused", "timeout"} else None)
-                        ),
                     }
                     checks = [
                         check for check in result.checks
