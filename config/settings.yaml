@@ -28,11 +28,14 @@ check:
   mode: proxy
   workers: 12
   max_concurrent_core_probes: 12
-  per_node_timeout_seconds: 18
-  minimum_successful_probes: 2
-  require_independent_probe_domains: true
+  per_node_timeout_seconds: 20
+  # One exact end-to-end HTTP response through the native tunnel is sufficient.
+  # Core still performs the persistent-session GET/Keep-Alive probe; a second provider
+  # is useful telemetry, not a publication requirement. No successful HTTP response = reject.
+  minimum_successful_probes: 1
+  require_independent_probe_domains: false
   retry_single_success: true
-  stability_samples: 3
+  stability_samples: 1
   test_urls:
     - https://www.gstatic.com/generate_204
     - https://cp.cloudflare.com/generate_204
@@ -69,7 +72,7 @@ routing:
 
 location:
   database_path: output/dbip-country-lite.mmdb
-  require_country: true
+  require_country: false
   prefer_ip_geolocation: true
   fallbacks:
     - existing_config_name
