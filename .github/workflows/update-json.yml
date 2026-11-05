@@ -93,6 +93,30 @@ jobs:
           print("AeryxVPN Core 0.9.0: OK")
           PY
 
+      - name: Verify parser runtime resolves AeryxVPN Core 0.9.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from importlib import metadata
+          from pathlib import Path
+          import aeryx_core
+          import aeryx_json_parser.core_validation as adapter
+
+          expected = "0.9.0"
+          actual = metadata.version("aeryxvpn-core")
+          if actual != expected or aeryx_core.__version__ != expected:
+              raise SystemExit(
+                  f"Expected Core {expected}; distribution={actual}, module={aeryx_core.__version__}"
+              )
+          module_path = Path(aeryx_core.__file__).resolve()
+          if ".aeryx-core" in module_path.parts:
+              raise SystemExit(f"Parser unexpectedly imports a source checkout instead of the installed wheel: {module_path}")
+          print(f"Parser Core version: {actual}")
+          print(f"Parser Core module: {module_path}")
+          print(f"Parser adapter: {Path(adapter.__file__).resolve()}")
+          PY
+
       - name: Run offline tests
         run: python -m pytest -q -ra
 
