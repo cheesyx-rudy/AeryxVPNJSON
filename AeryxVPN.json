@@ -125,11 +125,11 @@
         "settings": {
           "vnext": [
             {
-              "address": "finfastdowload.figmadownloader.study",
-              "port": 443,
+              "address": "95.129.234.113",
+              "port": 8443,
               "users": [
                 {
-                  "id": "42a64b9a-ab79-4094-8656-30366a7c2ea3",
+                  "id": "88281d02-b387-4fe3-918e-26ed331e6d08",
                   "encryption": "none",
                   "level": 8
                 }
@@ -141,30 +141,16 @@
           "network": "xhttp",
           "security": "tls",
           "tlsSettings": {
-            "serverName": "finfastdowload.figmadownloader.study",
-            "fingerprint": "edge",
+            "serverName": "tansy-wharf.cdn.cachefleet.com",
+            "fingerprint": "chrome",
             "alpn": [
-              "h2",
-              "http/1.1"
+              "h2"
             ]
           },
           "xhttpSettings": {
-            "path": "/api/22895/download/",
-            "mode": "packet-up",
-            "host": "finfastdowload.figmadownloader.study",
-            "extra": {
-              "path": "/api/22895/download/",
-              "scMaxEachPostBytes": "3072",
-              "scMinPostsIntervalMs": "10",
-              "uplinkDataKey": "X-Session-Token",
-              "uplinkDataPlacement": "header",
-              "uplinkHTTPMethod": "GET",
-              "xPaddingHeader": "X-Cache",
-              "xPaddingKey": "_dc",
-              "xPaddingMethod": "tokenish",
-              "xPaddingObfsMode": true,
-              "xPaddingPlacement": "queryInHeader"
-            }
+            "path": "/ccxf5snr06b8xxb6",
+            "mode": "auto",
+            "host": "is-tw-relay.cdn.cachefleet.com"
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
@@ -197,13 +183,10 @@
           "security": "tls",
           "tlsSettings": {
             "serverName": "tg1.cdnphotos.org",
-            "fingerprint": "firefox",
-            "alpn": [
-              "h2"
-            ]
+            "fingerprint": "random"
           },
           "xhttpSettings": {
-            "path": "/api/v1/",
+            "path": "/api/v1/?ed#",
             "mode": "auto",
             "host": "tg1.cdnphotos.org"
           },
@@ -659,6 +642,45 @@
         "settings": {
           "vnext": [
             {
+              "address": "104.17.77.77",
+              "port": 8443,
+              "users": [
+                {
+                  "id": "60441548-b68e-43b2-8191-e3b884be4b3c",
+                  "alterId": 0,
+                  "security": "none",
+                  "level": 8
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "ws",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "v2ray1.dozapp.xyz"
+          },
+          "wsSettings": {
+            "path": "/lMnsZUN4/",
+            "headers": {
+              "Host": "v2ray1.dozapp.xyz"
+            }
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-16",
+        "protocol": "vmess",
+        "settings": {
+          "vnext": [
+            {
               "address": "www.shopify.com",
               "port": 443,
               "users": [
@@ -693,86 +715,7 @@
         }
       },
       {
-        "tag": "proxy-16",
-        "protocol": "vmess",
-        "settings": {
-          "vnext": [
-            {
-              "address": "104.17.77.77",
-              "port": 8443,
-              "users": [
-                {
-                  "id": "60441548-b68e-43b2-8191-e3b884be4b3c",
-                  "alterId": 0,
-                  "security": "auto",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "ws",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "v2ray1.dozapp.xyz",
-            "fingerprint": "chrome"
-          },
-          "wsSettings": {
-            "path": "/lMnsZUN4/",
-            "headers": {
-              "Host": "v2ray1.dozapp.xyz"
-            }
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
         "tag": "proxy-17",
-        "protocol": "vmess",
-        "settings": {
-          "vnext": [
-            {
-              "address": "172.67.156.121",
-              "port": 443,
-              "users": [
-                {
-                  "id": "e70a5b70-f63c-4450-af8b-94990cdf80c0",
-                  "alterId": 0,
-                  "security": "auto",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "ws",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "www.gptcloudai.com"
-          },
-          "wsSettings": {
-            "path": "/truth",
-            "headers": {
-              "Host": "www.gptcloudai.com"
-            }
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-18",
         "protocol": "trojan",
         "settings": {
           "servers": [
@@ -799,7 +742,7 @@
         }
       },
       {
-        "tag": "proxy-19",
+        "tag": "proxy-18",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -839,7 +782,7 @@
         }
       },
       {
-        "tag": "proxy-20",
+        "tag": "proxy-19",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -877,7 +820,7 @@
         }
       },
       {
-        "tag": "proxy-21",
+        "tag": "proxy-20",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -917,7 +860,7 @@
         }
       },
       {
-        "tag": "proxy-22",
+        "tag": "proxy-21",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -953,7 +896,7 @@
         }
       },
       {
-        "tag": "proxy-23",
+        "tag": "proxy-22",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -989,7 +932,7 @@
         }
       },
       {
-        "tag": "proxy-24",
+        "tag": "proxy-23",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1389,11 +1332,11 @@
         "settings": {
           "vnext": [
             {
-              "address": "finfastdowload.figmadownloader.study",
-              "port": 443,
+              "address": "95.129.234.113",
+              "port": 8443,
               "users": [
                 {
-                  "id": "42a64b9a-ab79-4094-8656-30366a7c2ea3",
+                  "id": "88281d02-b387-4fe3-918e-26ed331e6d08",
                   "encryption": "none",
                   "level": 8
                 }
@@ -1405,30 +1348,16 @@
           "network": "xhttp",
           "security": "tls",
           "tlsSettings": {
-            "serverName": "finfastdowload.figmadownloader.study",
-            "fingerprint": "edge",
+            "serverName": "tansy-wharf.cdn.cachefleet.com",
+            "fingerprint": "chrome",
             "alpn": [
-              "h2",
-              "http/1.1"
+              "h2"
             ]
           },
           "xhttpSettings": {
-            "path": "/api/22895/download/",
-            "mode": "packet-up",
-            "host": "finfastdowload.figmadownloader.study",
-            "extra": {
-              "path": "/api/22895/download/",
-              "scMaxEachPostBytes": "3072",
-              "scMinPostsIntervalMs": "10",
-              "uplinkDataKey": "X-Session-Token",
-              "uplinkDataPlacement": "header",
-              "uplinkHTTPMethod": "GET",
-              "xPaddingHeader": "X-Cache",
-              "xPaddingKey": "_dc",
-              "xPaddingMethod": "tokenish",
-              "xPaddingObfsMode": true,
-              "xPaddingPlacement": "queryInHeader"
-            }
+            "path": "/ccxf5snr06b8xxb6",
+            "mode": "auto",
+            "host": "is-tw-relay.cdn.cachefleet.com"
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
@@ -1461,13 +1390,10 @@
           "security": "tls",
           "tlsSettings": {
             "serverName": "tg1.cdnphotos.org",
-            "fingerprint": "firefox",
-            "alpn": [
-              "h2"
-            ]
+            "fingerprint": "random"
           },
           "xhttpSettings": {
-            "path": "/api/v1/",
+            "path": "/api/v1/?ed#",
             "mode": "auto",
             "host": "tg1.cdnphotos.org"
           },
@@ -2282,6 +2208,45 @@
         "settings": {
           "vnext": [
             {
+              "address": "104.17.77.77",
+              "port": 8443,
+              "users": [
+                {
+                  "id": "60441548-b68e-43b2-8191-e3b884be4b3c",
+                  "alterId": 0,
+                  "security": "none",
+                  "level": 8
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "ws",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "v2ray1.dozapp.xyz"
+          },
+          "wsSettings": {
+            "path": "/lMnsZUN4/",
+            "headers": {
+              "Host": "v2ray1.dozapp.xyz"
+            }
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-3",
+        "protocol": "vmess",
+        "settings": {
+          "vnext": [
+            {
               "address": "www.shopify.com",
               "port": 443,
               "users": [
@@ -2305,85 +2270,6 @@
             "path": "/hls/cctv5phd.m3u8",
             "headers": {
               "Host": "guanwang.awsno.com"
-            }
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-3",
-        "protocol": "vmess",
-        "settings": {
-          "vnext": [
-            {
-              "address": "104.17.77.77",
-              "port": 8443,
-              "users": [
-                {
-                  "id": "60441548-b68e-43b2-8191-e3b884be4b3c",
-                  "alterId": 0,
-                  "security": "auto",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "ws",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "v2ray1.dozapp.xyz",
-            "fingerprint": "chrome"
-          },
-          "wsSettings": {
-            "path": "/lMnsZUN4/",
-            "headers": {
-              "Host": "v2ray1.dozapp.xyz"
-            }
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-4",
-        "protocol": "vmess",
-        "settings": {
-          "vnext": [
-            {
-              "address": "172.67.156.121",
-              "port": 443,
-              "users": [
-                {
-                  "id": "e70a5b70-f63c-4450-af8b-94990cdf80c0",
-                  "alterId": 0,
-                  "security": "auto",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "ws",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "www.gptcloudai.com"
-          },
-          "wsSettings": {
-            "path": "/truth",
-            "headers": {
-              "Host": "www.gptcloudai.com"
             }
           },
           "sockopt": {
