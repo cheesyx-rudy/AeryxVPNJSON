@@ -125,6 +125,61 @@
         "settings": {
           "vnext": [
             {
+              "address": "finfastdowload.figmadownloader.study",
+              "port": 443,
+              "users": [
+                {
+                  "id": "42a64b9a-ab79-4094-8656-30366a7c2ea3",
+                  "encryption": "none",
+                  "level": 8
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "xhttp",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "finfastdowload.figmadownloader.study",
+            "fingerprint": "edge",
+            "alpn": [
+              "h2",
+              "http/1.1"
+            ]
+          },
+          "xhttpSettings": {
+            "path": "/api/22895/download/",
+            "mode": "packet-up",
+            "host": "finfastdowload.figmadownloader.study",
+            "extra": {
+              "path": "/api/22895/download/",
+              "scMaxEachPostBytes": "3072",
+              "scMinPostsIntervalMs": "10",
+              "uplinkDataKey": "X-Session-Token",
+              "uplinkDataPlacement": "header",
+              "uplinkHTTPMethod": "GET",
+              "xPaddingHeader": "X-Cache",
+              "xPaddingKey": "_dc",
+              "xPaddingMethod": "tokenish",
+              "xPaddingObfsMode": true,
+              "xPaddingPlacement": "queryInHeader"
+            }
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-2",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
               "address": "tg1.cdnphotos.org",
               "port": 443,
               "users": [
@@ -142,10 +197,13 @@
           "security": "tls",
           "tlsSettings": {
             "serverName": "tg1.cdnphotos.org",
-            "fingerprint": "random"
+            "fingerprint": "firefox",
+            "alpn": [
+              "h2"
+            ]
           },
           "xhttpSettings": {
-            "path": "/api/v1/?ed#",
+            "path": "/api/v1/",
             "mode": "auto",
             "host": "tg1.cdnphotos.org"
           },
@@ -158,7 +216,7 @@
         }
       },
       {
-        "tag": "proxy-2",
+        "tag": "proxy-3",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -194,7 +252,7 @@
         }
       },
       {
-        "tag": "proxy-3",
+        "tag": "proxy-4",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -230,7 +288,7 @@
         }
       },
       {
-        "tag": "proxy-4",
+        "tag": "proxy-5",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -266,7 +324,7 @@
         }
       },
       {
-        "tag": "proxy-5",
+        "tag": "proxy-6",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -302,7 +360,7 @@
         }
       },
       {
-        "tag": "proxy-6",
+        "tag": "proxy-7",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -338,7 +396,7 @@
         }
       },
       {
-        "tag": "proxy-7",
+        "tag": "proxy-8",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -374,7 +432,7 @@
         }
       },
       {
-        "tag": "proxy-8",
+        "tag": "proxy-9",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -410,7 +468,7 @@
         }
       },
       {
-        "tag": "proxy-9",
+        "tag": "proxy-10",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -446,7 +504,7 @@
         }
       },
       {
-        "tag": "proxy-10",
+        "tag": "proxy-11",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -482,7 +540,7 @@
         }
       },
       {
-        "tag": "proxy-11",
+        "tag": "proxy-12",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -518,7 +576,7 @@
         }
       },
       {
-        "tag": "proxy-12",
+        "tag": "proxy-13",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -544,45 +602,6 @@
           },
           "grpcSettings": {
             "serviceName": "sync.v1"
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-13",
-        "protocol": "vmess",
-        "settings": {
-          "vnext": [
-            {
-              "address": "172.67.156.121",
-              "port": 443,
-              "users": [
-                {
-                  "id": "e70a5b70-f63c-4450-af8b-94990cdf80c0",
-                  "alterId": 0,
-                  "security": "auto",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "ws",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "www.gptcloudai.com"
-          },
-          "wsSettings": {
-            "path": "/truth",
-            "headers": {
-              "Host": "www.gptcloudai.com"
-            }
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
@@ -640,45 +659,6 @@
         "settings": {
           "vnext": [
             {
-              "address": "104.17.77.77",
-              "port": 8443,
-              "users": [
-                {
-                  "id": "60441548-b68e-43b2-8191-e3b884be4b3c",
-                  "alterId": 0,
-                  "security": "none",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "ws",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "v2ray1.dozapp.xyz"
-          },
-          "wsSettings": {
-            "path": "/lMnsZUN4/",
-            "headers": {
-              "Host": "v2ray1.dozapp.xyz"
-            }
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-16",
-        "protocol": "vmess",
-        "settings": {
-          "vnext": [
-            {
               "address": "www.shopify.com",
               "port": 443,
               "users": [
@@ -713,16 +693,16 @@
         }
       },
       {
-        "tag": "proxy-17",
+        "tag": "proxy-16",
         "protocol": "vmess",
         "settings": {
           "vnext": [
             {
-              "address": "www.windowssearchtools.com",
-              "port": 443,
+              "address": "104.17.77.77",
+              "port": 8443,
               "users": [
                 {
-                  "id": "ba1116e2-8c2f-4e3d-8e50-c954360cf970",
+                  "id": "60441548-b68e-43b2-8191-e3b884be4b3c",
                   "alterId": 0,
                   "security": "auto",
                   "level": 8
@@ -735,12 +715,52 @@
           "network": "ws",
           "security": "tls",
           "tlsSettings": {
-            "serverName": "www.windowssearchtools.com"
+            "serverName": "v2ray1.dozapp.xyz",
+            "fingerprint": "chrome"
+          },
+          "wsSettings": {
+            "path": "/lMnsZUN4/",
+            "headers": {
+              "Host": "v2ray1.dozapp.xyz"
+            }
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-17",
+        "protocol": "vmess",
+        "settings": {
+          "vnext": [
+            {
+              "address": "172.67.156.121",
+              "port": 443,
+              "users": [
+                {
+                  "id": "e70a5b70-f63c-4450-af8b-94990cdf80c0",
+                  "alterId": 0,
+                  "security": "auto",
+                  "level": 8
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "ws",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "www.gptcloudai.com"
           },
           "wsSettings": {
             "path": "/truth",
             "headers": {
-              "Host": "www.windowssearchtools.com"
+              "Host": "www.gptcloudai.com"
             }
           },
           "sockopt": {
@@ -824,6 +844,44 @@
         "settings": {
           "vnext": [
             {
+              "address": "8.35.211.242",
+              "port": 443,
+              "users": [
+                {
+                  "id": "fc7d2cfe-f5ef-40c8-a848-a0bdc11f6349",
+                  "encryption": "none",
+                  "level": 8
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "ws",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "vpn.cintaku.qzz.io"
+          },
+          "wsSettings": {
+            "path": "/vlessws",
+            "headers": {
+              "Host": "vpn.cintaku.qzz.io"
+            }
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-21",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
               "address": "pl1.obxodvpn.us",
               "port": 443,
               "users": [
@@ -849,44 +907,6 @@
             "path": "/xhttp",
             "mode": "packet-up",
             "host": "pl1.obxodvpn.us"
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-21",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "8.35.211.242",
-              "port": 443,
-              "users": [
-                {
-                  "id": "fc7d2cfe-f5ef-40c8-a848-a0bdc11f6349",
-                  "encryption": "none",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "ws",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "vpn.cintaku.qzz.io"
-          },
-          "wsSettings": {
-            "path": "/vlessws",
-            "headers": {
-              "Host": "vpn.cintaku.qzz.io"
-            }
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
@@ -1369,6 +1389,61 @@
         "settings": {
           "vnext": [
             {
+              "address": "finfastdowload.figmadownloader.study",
+              "port": 443,
+              "users": [
+                {
+                  "id": "42a64b9a-ab79-4094-8656-30366a7c2ea3",
+                  "encryption": "none",
+                  "level": 8
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "xhttp",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "finfastdowload.figmadownloader.study",
+            "fingerprint": "edge",
+            "alpn": [
+              "h2",
+              "http/1.1"
+            ]
+          },
+          "xhttpSettings": {
+            "path": "/api/22895/download/",
+            "mode": "packet-up",
+            "host": "finfastdowload.figmadownloader.study",
+            "extra": {
+              "path": "/api/22895/download/",
+              "scMaxEachPostBytes": "3072",
+              "scMinPostsIntervalMs": "10",
+              "uplinkDataKey": "X-Session-Token",
+              "uplinkDataPlacement": "header",
+              "uplinkHTTPMethod": "GET",
+              "xPaddingHeader": "X-Cache",
+              "xPaddingKey": "_dc",
+              "xPaddingMethod": "tokenish",
+              "xPaddingObfsMode": true,
+              "xPaddingPlacement": "queryInHeader"
+            }
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-2",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
               "address": "tg1.cdnphotos.org",
               "port": 443,
               "users": [
@@ -1386,10 +1461,13 @@
           "security": "tls",
           "tlsSettings": {
             "serverName": "tg1.cdnphotos.org",
-            "fingerprint": "random"
+            "fingerprint": "firefox",
+            "alpn": [
+              "h2"
+            ]
           },
           "xhttpSettings": {
-            "path": "/api/v1/?ed#",
+            "path": "/api/v1/",
             "mode": "auto",
             "host": "tg1.cdnphotos.org"
           },
@@ -1402,7 +1480,7 @@
         }
       },
       {
-        "tag": "proxy-2",
+        "tag": "proxy-3",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1438,7 +1516,7 @@
         }
       },
       {
-        "tag": "proxy-3",
+        "tag": "proxy-4",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1474,7 +1552,7 @@
         }
       },
       {
-        "tag": "proxy-4",
+        "tag": "proxy-5",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1510,7 +1588,7 @@
         }
       },
       {
-        "tag": "proxy-5",
+        "tag": "proxy-6",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1546,7 +1624,7 @@
         }
       },
       {
-        "tag": "proxy-6",
+        "tag": "proxy-7",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1582,7 +1660,7 @@
         }
       },
       {
-        "tag": "proxy-7",
+        "tag": "proxy-8",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1618,7 +1696,7 @@
         }
       },
       {
-        "tag": "proxy-8",
+        "tag": "proxy-9",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1654,7 +1732,7 @@
         }
       },
       {
-        "tag": "proxy-9",
+        "tag": "proxy-10",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1690,7 +1768,7 @@
         }
       },
       {
-        "tag": "proxy-10",
+        "tag": "proxy-11",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1726,7 +1804,7 @@
         }
       },
       {
-        "tag": "proxy-11",
+        "tag": "proxy-12",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1762,7 +1840,7 @@
         }
       },
       {
-        "tag": "proxy-12",
+        "tag": "proxy-13",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -2158,45 +2236,6 @@
     "outbounds": [
       {
         "tag": "proxy-1",
-        "protocol": "vmess",
-        "settings": {
-          "vnext": [
-            {
-              "address": "172.67.156.121",
-              "port": 443,
-              "users": [
-                {
-                  "id": "e70a5b70-f63c-4450-af8b-94990cdf80c0",
-                  "alterId": 0,
-                  "security": "auto",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "ws",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "www.gptcloudai.com"
-          },
-          "wsSettings": {
-            "path": "/truth",
-            "headers": {
-              "Host": "www.gptcloudai.com"
-            }
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-2",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -2238,46 +2277,7 @@
         }
       },
       {
-        "tag": "proxy-3",
-        "protocol": "vmess",
-        "settings": {
-          "vnext": [
-            {
-              "address": "104.17.77.77",
-              "port": 8443,
-              "users": [
-                {
-                  "id": "60441548-b68e-43b2-8191-e3b884be4b3c",
-                  "alterId": 0,
-                  "security": "none",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "ws",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "v2ray1.dozapp.xyz"
-          },
-          "wsSettings": {
-            "path": "/lMnsZUN4/",
-            "headers": {
-              "Host": "v2ray1.dozapp.xyz"
-            }
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-4",
+        "tag": "proxy-2",
         "protocol": "vmess",
         "settings": {
           "vnext": [
@@ -2316,16 +2316,16 @@
         }
       },
       {
-        "tag": "proxy-5",
+        "tag": "proxy-3",
         "protocol": "vmess",
         "settings": {
           "vnext": [
             {
-              "address": "www.windowssearchtools.com",
-              "port": 443,
+              "address": "104.17.77.77",
+              "port": 8443,
               "users": [
                 {
-                  "id": "ba1116e2-8c2f-4e3d-8e50-c954360cf970",
+                  "id": "60441548-b68e-43b2-8191-e3b884be4b3c",
                   "alterId": 0,
                   "security": "auto",
                   "level": 8
@@ -2338,12 +2338,52 @@
           "network": "ws",
           "security": "tls",
           "tlsSettings": {
-            "serverName": "www.windowssearchtools.com"
+            "serverName": "v2ray1.dozapp.xyz",
+            "fingerprint": "chrome"
+          },
+          "wsSettings": {
+            "path": "/lMnsZUN4/",
+            "headers": {
+              "Host": "v2ray1.dozapp.xyz"
+            }
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-4",
+        "protocol": "vmess",
+        "settings": {
+          "vnext": [
+            {
+              "address": "172.67.156.121",
+              "port": 443,
+              "users": [
+                {
+                  "id": "e70a5b70-f63c-4450-af8b-94990cdf80c0",
+                  "alterId": 0,
+                  "security": "auto",
+                  "level": 8
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "ws",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "www.gptcloudai.com"
           },
           "wsSettings": {
             "path": "/truth",
             "headers": {
-              "Host": "www.windowssearchtools.com"
+              "Host": "www.gptcloudai.com"
             }
           },
           "sockopt": {
@@ -3145,6 +3185,44 @@
         "settings": {
           "vnext": [
             {
+              "address": "8.35.211.242",
+              "port": 443,
+              "users": [
+                {
+                  "id": "fc7d2cfe-f5ef-40c8-a848-a0bdc11f6349",
+                  "encryption": "none",
+                  "level": 8
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "ws",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "vpn.cintaku.qzz.io"
+          },
+          "wsSettings": {
+            "path": "/vlessws",
+            "headers": {
+              "Host": "vpn.cintaku.qzz.io"
+            }
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-2",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
               "address": "pl1.obxodvpn.us",
               "port": 443,
               "users": [
@@ -3170,44 +3248,6 @@
             "path": "/xhttp",
             "mode": "packet-up",
             "host": "pl1.obxodvpn.us"
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-2",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "8.35.211.242",
-              "port": 443,
-              "users": [
-                {
-                  "id": "fc7d2cfe-f5ef-40c8-a848-a0bdc11f6349",
-                  "encryption": "none",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "ws",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "vpn.cintaku.qzz.io"
-          },
-          "wsSettings": {
-            "path": "/vlessws",
-            "headers": {
-              "Host": "vpn.cintaku.qzz.io"
-            }
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
