@@ -125,47 +125,6 @@
         "settings": {
           "vnext": [
             {
-              "address": "95.129.234.113",
-              "port": 8443,
-              "users": [
-                {
-                  "id": "88281d02-b387-4fe3-918e-26ed331e6d08",
-                  "encryption": "none",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "xhttp",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "tansy-wharf.cdn.cachefleet.com",
-            "fingerprint": "chrome",
-            "alpn": [
-              "h2"
-            ]
-          },
-          "xhttpSettings": {
-            "path": "/ccxf5snr06b8xxb6",
-            "mode": "auto",
-            "host": "is-tw-relay.cdn.cachefleet.com"
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-2",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
               "address": "tg1.cdnphotos.org",
               "port": 443,
               "users": [
@@ -182,10 +141,12 @@
           "network": "xhttp",
           "security": "tls",
           "tlsSettings": {
-            "serverName": "tg1.cdnphotos.org"
+            "serverName": "tg1.cdnphotos.org",
+            "fingerprint": "random"
           },
           "xhttpSettings": {
-            "path": "/api/v1/?ed",
+            "path": "/api/v1/?ed#",
+            "mode": "auto",
             "host": "tg1.cdnphotos.org"
           },
           "sockopt": {
@@ -197,7 +158,7 @@
         }
       },
       {
-        "tag": "proxy-3",
+        "tag": "proxy-2",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -233,7 +194,7 @@
         }
       },
       {
-        "tag": "proxy-4",
+        "tag": "proxy-3",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -269,7 +230,7 @@
         }
       },
       {
-        "tag": "proxy-5",
+        "tag": "proxy-4",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -305,7 +266,7 @@
         }
       },
       {
-        "tag": "proxy-6",
+        "tag": "proxy-5",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -341,7 +302,7 @@
         }
       },
       {
-        "tag": "proxy-7",
+        "tag": "proxy-6",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -377,7 +338,7 @@
         }
       },
       {
-        "tag": "proxy-8",
+        "tag": "proxy-7",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -413,7 +374,7 @@
         }
       },
       {
-        "tag": "proxy-9",
+        "tag": "proxy-8",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -449,7 +410,7 @@
         }
       },
       {
-        "tag": "proxy-10",
+        "tag": "proxy-9",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -485,7 +446,7 @@
         }
       },
       {
-        "tag": "proxy-11",
+        "tag": "proxy-10",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -521,7 +482,7 @@
         }
       },
       {
-        "tag": "proxy-12",
+        "tag": "proxy-11",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -557,7 +518,7 @@
         }
       },
       {
-        "tag": "proxy-13",
+        "tag": "proxy-12",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -593,7 +554,7 @@
         }
       },
       {
-        "tag": "proxy-14",
+        "tag": "proxy-13",
         "protocol": "vmess",
         "settings": {
           "vnext": [
@@ -632,7 +593,7 @@
         }
       },
       {
-        "tag": "proxy-15",
+        "tag": "proxy-14",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -674,7 +635,7 @@
         }
       },
       {
-        "tag": "proxy-16",
+        "tag": "proxy-15",
         "protocol": "vmess",
         "settings": {
           "vnext": [
@@ -685,7 +646,7 @@
                 {
                   "id": "60441548-b68e-43b2-8191-e3b884be4b3c",
                   "alterId": 0,
-                  "security": "auto",
+                  "security": "none",
                   "level": 8
                 }
               ]
@@ -713,7 +674,7 @@
         }
       },
       {
-        "tag": "proxy-17",
+        "tag": "proxy-16",
         "protocol": "vmess",
         "settings": {
           "vnext": [
@@ -752,7 +713,7 @@
         }
       },
       {
-        "tag": "proxy-18",
+        "tag": "proxy-17",
         "protocol": "vmess",
         "settings": {
           "vnext": [
@@ -791,7 +752,7 @@
         }
       },
       {
-        "tag": "proxy-19",
+        "tag": "proxy-18",
         "protocol": "trojan",
         "settings": {
           "servers": [
@@ -818,7 +779,7 @@
         }
       },
       {
-        "tag": "proxy-20",
+        "tag": "proxy-19",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -858,7 +819,7 @@
         }
       },
       {
-        "tag": "proxy-21",
+        "tag": "proxy-20",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -898,7 +859,7 @@
         }
       },
       {
-        "tag": "proxy-22",
+        "tag": "proxy-21",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -919,8 +880,7 @@
           "network": "ws",
           "security": "tls",
           "tlsSettings": {
-            "serverName": "vpn.cintaku.qzz.io",
-            "fingerprint": "chrome"
+            "serverName": "vpn.cintaku.qzz.io"
           },
           "wsSettings": {
             "path": "/vlessws",
@@ -937,7 +897,7 @@
         }
       },
       {
-        "tag": "proxy-23",
+        "tag": "proxy-22",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -973,7 +933,7 @@
         }
       },
       {
-        "tag": "proxy-24",
+        "tag": "proxy-23",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1009,7 +969,7 @@
         }
       },
       {
-        "tag": "proxy-25",
+        "tag": "proxy-24",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1409,47 +1369,6 @@
         "settings": {
           "vnext": [
             {
-              "address": "95.129.234.113",
-              "port": 8443,
-              "users": [
-                {
-                  "id": "88281d02-b387-4fe3-918e-26ed331e6d08",
-                  "encryption": "none",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "xhttp",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "tansy-wharf.cdn.cachefleet.com",
-            "fingerprint": "chrome",
-            "alpn": [
-              "h2"
-            ]
-          },
-          "xhttpSettings": {
-            "path": "/ccxf5snr06b8xxb6",
-            "mode": "auto",
-            "host": "is-tw-relay.cdn.cachefleet.com"
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-2",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
               "address": "tg1.cdnphotos.org",
               "port": 443,
               "users": [
@@ -1466,10 +1385,12 @@
           "network": "xhttp",
           "security": "tls",
           "tlsSettings": {
-            "serverName": "tg1.cdnphotos.org"
+            "serverName": "tg1.cdnphotos.org",
+            "fingerprint": "random"
           },
           "xhttpSettings": {
-            "path": "/api/v1/?ed",
+            "path": "/api/v1/?ed#",
+            "mode": "auto",
             "host": "tg1.cdnphotos.org"
           },
           "sockopt": {
@@ -1481,7 +1402,7 @@
         }
       },
       {
-        "tag": "proxy-3",
+        "tag": "proxy-2",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1517,7 +1438,7 @@
         }
       },
       {
-        "tag": "proxy-4",
+        "tag": "proxy-3",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1553,7 +1474,7 @@
         }
       },
       {
-        "tag": "proxy-5",
+        "tag": "proxy-4",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1589,7 +1510,7 @@
         }
       },
       {
-        "tag": "proxy-6",
+        "tag": "proxy-5",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1625,7 +1546,7 @@
         }
       },
       {
-        "tag": "proxy-7",
+        "tag": "proxy-6",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1661,7 +1582,7 @@
         }
       },
       {
-        "tag": "proxy-8",
+        "tag": "proxy-7",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1697,7 +1618,7 @@
         }
       },
       {
-        "tag": "proxy-9",
+        "tag": "proxy-8",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1733,7 +1654,7 @@
         }
       },
       {
-        "tag": "proxy-10",
+        "tag": "proxy-9",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1769,7 +1690,7 @@
         }
       },
       {
-        "tag": "proxy-11",
+        "tag": "proxy-10",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1805,7 +1726,7 @@
         }
       },
       {
-        "tag": "proxy-12",
+        "tag": "proxy-11",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1841,7 +1762,7 @@
         }
       },
       {
-        "tag": "proxy-13",
+        "tag": "proxy-12",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -2328,7 +2249,7 @@
                 {
                   "id": "60441548-b68e-43b2-8191-e3b884be4b3c",
                   "alterId": 0,
-                  "security": "auto",
+                  "security": "none",
                   "level": 8
                 }
               ]
@@ -3280,8 +3201,7 @@
           "network": "ws",
           "security": "tls",
           "tlsSettings": {
-            "serverName": "vpn.cintaku.qzz.io",
-            "fingerprint": "chrome"
+            "serverName": "vpn.cintaku.qzz.io"
           },
           "wsSettings": {
             "path": "/vlessws",
