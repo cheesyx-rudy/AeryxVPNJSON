@@ -125,11 +125,11 @@
         "settings": {
           "vnext": [
             {
-              "address": "188.114.98.0",
-              "port": 443,
+              "address": "95.129.234.113",
+              "port": 8443,
               "users": [
                 {
-                  "id": "4e4f1f70-5e56-4a76-bb9d-db087f4690c4",
+                  "id": "88281d02-b387-4fe3-918e-26ed331e6d08",
                   "encryption": "none",
                   "level": 8
                 }
@@ -138,20 +138,19 @@
           ]
         },
         "streamSettings": {
-          "network": "ws",
+          "network": "xhttp",
           "security": "tls",
           "tlsSettings": {
-            "serverName": "jp3.yohototo.top",
-            "fingerprint": "unsafe",
+            "serverName": "tansy-wharf.cdn.cachefleet.com",
+            "fingerprint": "chrome",
             "alpn": [
-              "http/1.1"
+              "h2"
             ]
           },
-          "wsSettings": {
-            "path": "/tyxyws",
-            "headers": {
-              "Host": "jp3.yohototo.top"
-            }
+          "xhttpSettings": {
+            "path": "/ccxf5snr06b8xxb6",
+            "mode": "auto",
+            "host": "is-tw-relay.cdn.cachefleet.com"
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
@@ -163,17 +162,16 @@
       },
       {
         "tag": "proxy-2",
-        "protocol": "vmess",
+        "protocol": "vless",
         "settings": {
           "vnext": [
             {
-              "address": "104.17.77.77",
-              "port": 8443,
+              "address": "91.215.43.80",
+              "port": 443,
               "users": [
                 {
-                  "id": "60441548-b68e-43b2-8191-e3b884be4b3c",
-                  "alterId": 0,
-                  "security": "none",
+                  "id": "e9b117e4-8be9-4105-9354-a5e0663294f0",
+                  "encryption": "none",
                   "level": 8
                 }
               ]
@@ -184,12 +182,13 @@
           "network": "ws",
           "security": "tls",
           "tlsSettings": {
-            "serverName": "v2ray1.dozapp.xyz"
+            "serverName": "metrics.api.downloader-pet.xyz",
+            "fingerprint": "firefox"
           },
           "wsSettings": {
-            "path": "/lMnsZUN4/",
+            "path": "/gateway/v1/ws/a901ed17102fc3090ca1ab052c672f47",
             "headers": {
-              "Host": "v2ray1.dozapp.xyz"
+              "Host": "metrics.api.downloader-pet.xyz"
             }
           },
           "sockopt": {
@@ -202,34 +201,31 @@
       },
       {
         "tag": "proxy-3",
-        "protocol": "vmess",
+        "protocol": "vless",
         "settings": {
           "vnext": [
             {
-              "address": "www.shopify.com",
-              "port": 443,
+              "address": "80.249.150.90",
+              "port": 3088,
               "users": [
                 {
-                  "id": "6a89a215-22bf-4bd7-9642-b95b2e09583a",
-                  "alterId": 0,
-                  "security": "auto",
-                  "level": 8
+                  "id": "2f6c70f3-206a-4bc1-ac1f-6b70153f9c73",
+                  "encryption": "none",
+                  "level": 8,
+                  "flow": "xtls-rprx-vision"
                 }
               ]
             }
           ]
         },
         "streamSettings": {
-          "network": "ws",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "guanwang.awsno.com"
-          },
-          "wsSettings": {
-            "path": "/hls/cctv5phd.m3u8",
-            "headers": {
-              "Host": "guanwang.awsno.com"
-            }
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "cdnjs.com",
+            "fingerprint": "firefox",
+            "publicKey": "CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko",
+            "shortId": "b0d8c9a285c70f6f"
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
@@ -321,16 +317,17 @@
       },
       {
         "tag": "proxy-6",
-        "protocol": "vless",
+        "protocol": "vmess",
         "settings": {
           "vnext": [
             {
-              "address": "91.215.43.80",
-              "port": 443,
+              "address": "104.17.77.77",
+              "port": 8443,
               "users": [
                 {
-                  "id": "e9b117e4-8be9-4105-9354-a5e0663294f0",
-                  "encryption": "none",
+                  "id": "60441548-b68e-43b2-8191-e3b884be4b3c",
+                  "alterId": 0,
+                  "security": "none",
                   "level": 8
                 }
               ]
@@ -341,13 +338,12 @@
           "network": "ws",
           "security": "tls",
           "tlsSettings": {
-            "serverName": "metrics.api.downloader-pet.xyz",
-            "fingerprint": "firefox"
+            "serverName": "v2ray1.dozapp.xyz"
           },
           "wsSettings": {
-            "path": "/gateway/v1/ws/a901ed17102fc3090ca1ab052c672f47",
+            "path": "/lMnsZUN4/",
             "headers": {
-              "Host": "metrics.api.downloader-pet.xyz"
+              "Host": "v2ray1.dozapp.xyz"
             }
           },
           "sockopt": {
@@ -360,31 +356,34 @@
       },
       {
         "tag": "proxy-7",
-        "protocol": "vless",
+        "protocol": "vmess",
         "settings": {
           "vnext": [
             {
-              "address": "80.249.150.90",
-              "port": 3088,
+              "address": "www.shopify.com",
+              "port": 443,
               "users": [
                 {
-                  "id": "2f6c70f3-206a-4bc1-ac1f-6b70153f9c73",
-                  "encryption": "none",
-                  "level": 8,
-                  "flow": "xtls-rprx-vision"
+                  "id": "6a89a215-22bf-4bd7-9642-b95b2e09583a",
+                  "alterId": 0,
+                  "security": "auto",
+                  "level": 8
                 }
               ]
             }
           ]
         },
         "streamSettings": {
-          "network": "tcp",
-          "security": "reality",
-          "realitySettings": {
-            "serverName": "cdnjs.com",
-            "fingerprint": "firefox",
-            "publicKey": "CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko",
-            "shortId": "b0d8c9a285c70f6f"
+          "network": "ws",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "guanwang.awsno.com"
+          },
+          "wsSettings": {
+            "path": "/hls/cctv5phd.m3u8",
+            "headers": {
+              "Host": "guanwang.awsno.com"
+            }
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
@@ -922,11 +921,11 @@
         "settings": {
           "vnext": [
             {
-              "address": "188.114.98.0",
-              "port": 443,
+              "address": "95.129.234.113",
+              "port": 8443,
               "users": [
                 {
-                  "id": "4e4f1f70-5e56-4a76-bb9d-db087f4690c4",
+                  "id": "88281d02-b387-4fe3-918e-26ed331e6d08",
                   "encryption": "none",
                   "level": 8
                 }
@@ -935,20 +934,19 @@
           ]
         },
         "streamSettings": {
-          "network": "ws",
+          "network": "xhttp",
           "security": "tls",
           "tlsSettings": {
-            "serverName": "jp3.yohototo.top",
-            "fingerprint": "unsafe",
+            "serverName": "tansy-wharf.cdn.cachefleet.com",
+            "fingerprint": "chrome",
             "alpn": [
-              "http/1.1"
+              "h2"
             ]
           },
-          "wsSettings": {
-            "path": "/tyxyws",
-            "headers": {
-              "Host": "jp3.yohototo.top"
-            }
+          "xhttpSettings": {
+            "path": "/ccxf5snr06b8xxb6",
+            "mode": "auto",
+            "host": "is-tw-relay.cdn.cachefleet.com"
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
@@ -960,17 +958,16 @@
       },
       {
         "tag": "proxy-2",
-        "protocol": "vmess",
+        "protocol": "vless",
         "settings": {
           "vnext": [
             {
-              "address": "104.17.77.77",
-              "port": 8443,
+              "address": "91.215.43.80",
+              "port": 443,
               "users": [
                 {
-                  "id": "60441548-b68e-43b2-8191-e3b884be4b3c",
-                  "alterId": 0,
-                  "security": "none",
+                  "id": "e9b117e4-8be9-4105-9354-a5e0663294f0",
+                  "encryption": "none",
                   "level": 8
                 }
               ]
@@ -981,12 +978,13 @@
           "network": "ws",
           "security": "tls",
           "tlsSettings": {
-            "serverName": "v2ray1.dozapp.xyz"
+            "serverName": "metrics.api.downloader-pet.xyz",
+            "fingerprint": "firefox"
           },
           "wsSettings": {
-            "path": "/lMnsZUN4/",
+            "path": "/gateway/v1/ws/a901ed17102fc3090ca1ab052c672f47",
             "headers": {
-              "Host": "v2ray1.dozapp.xyz"
+              "Host": "metrics.api.downloader-pet.xyz"
             }
           },
           "sockopt": {
@@ -999,34 +997,31 @@
       },
       {
         "tag": "proxy-3",
-        "protocol": "vmess",
+        "protocol": "vless",
         "settings": {
           "vnext": [
             {
-              "address": "www.shopify.com",
-              "port": 443,
+              "address": "80.249.150.90",
+              "port": 3088,
               "users": [
                 {
-                  "id": "6a89a215-22bf-4bd7-9642-b95b2e09583a",
-                  "alterId": 0,
-                  "security": "auto",
-                  "level": 8
+                  "id": "2f6c70f3-206a-4bc1-ac1f-6b70153f9c73",
+                  "encryption": "none",
+                  "level": 8,
+                  "flow": "xtls-rprx-vision"
                 }
               ]
             }
           ]
         },
         "streamSettings": {
-          "network": "ws",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "guanwang.awsno.com"
-          },
-          "wsSettings": {
-            "path": "/hls/cctv5phd.m3u8",
-            "headers": {
-              "Host": "guanwang.awsno.com"
-            }
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "cdnjs.com",
+            "fingerprint": "firefox",
+            "publicKey": "CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko",
+            "shortId": "b0d8c9a285c70f6f"
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
@@ -1080,7 +1075,7 @@
         "statsOutboundUplink": true
       }
     },
-    "remarks": "🇨🇦 Канада",
+    "remarks": "🇷🇺 Россия",
     "routing": {
       "balancers": [
         {
@@ -1836,16 +1831,17 @@
     "outbounds": [
       {
         "tag": "proxy-1",
-        "protocol": "vless",
+        "protocol": "vmess",
         "settings": {
           "vnext": [
             {
-              "address": "91.215.43.80",
-              "port": 443,
+              "address": "104.17.77.77",
+              "port": 8443,
               "users": [
                 {
-                  "id": "e9b117e4-8be9-4105-9354-a5e0663294f0",
-                  "encryption": "none",
+                  "id": "60441548-b68e-43b2-8191-e3b884be4b3c",
+                  "alterId": 0,
+                  "security": "none",
                   "level": 8
                 }
               ]
@@ -1856,13 +1852,12 @@
           "network": "ws",
           "security": "tls",
           "tlsSettings": {
-            "serverName": "metrics.api.downloader-pet.xyz",
-            "fingerprint": "firefox"
+            "serverName": "v2ray1.dozapp.xyz"
           },
           "wsSettings": {
-            "path": "/gateway/v1/ws/a901ed17102fc3090ca1ab052c672f47",
+            "path": "/lMnsZUN4/",
             "headers": {
-              "Host": "metrics.api.downloader-pet.xyz"
+              "Host": "v2ray1.dozapp.xyz"
             }
           },
           "sockopt": {
@@ -1875,31 +1870,34 @@
       },
       {
         "tag": "proxy-2",
-        "protocol": "vless",
+        "protocol": "vmess",
         "settings": {
           "vnext": [
             {
-              "address": "80.249.150.90",
-              "port": 3088,
+              "address": "www.shopify.com",
+              "port": 443,
               "users": [
                 {
-                  "id": "2f6c70f3-206a-4bc1-ac1f-6b70153f9c73",
-                  "encryption": "none",
-                  "level": 8,
-                  "flow": "xtls-rprx-vision"
+                  "id": "6a89a215-22bf-4bd7-9642-b95b2e09583a",
+                  "alterId": 0,
+                  "security": "auto",
+                  "level": 8
                 }
               ]
             }
           ]
         },
         "streamSettings": {
-          "network": "tcp",
-          "security": "reality",
-          "realitySettings": {
-            "serverName": "cdnjs.com",
-            "fingerprint": "firefox",
-            "publicKey": "CQBmePak1QN5SsSmK_KTOSLjsCTaiaM4Jtxt7jLheko",
-            "shortId": "b0d8c9a285c70f6f"
+          "network": "ws",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "guanwang.awsno.com"
+          },
+          "wsSettings": {
+            "path": "/hls/cctv5phd.m3u8",
+            "headers": {
+              "Host": "guanwang.awsno.com"
+            }
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
@@ -1953,7 +1951,7 @@
         "statsOutboundUplink": true
       }
     },
-    "remarks": "🇷🇺 Россия",
+    "remarks": "🇨🇦 Канада",
     "routing": {
       "balancers": [
         {
