@@ -246,6 +246,122 @@
         "settings": {
           "vnext": [
             {
+              "address": "95.129.234.113",
+              "port": 8443,
+              "users": [
+                {
+                  "id": "88281d02-b387-4fe3-918e-26ed331e6d08",
+                  "encryption": "none",
+                  "level": 8
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "xhttp",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "tansy-wharf.cdn.cachefleet.com",
+            "fingerprint": "chrome",
+            "alpn": [
+              "h2"
+            ]
+          },
+          "xhttpSettings": {
+            "path": "/ccxf5snr06b8xxb6",
+            "mode": "auto",
+            "host": "is-tw-relay.cdn.cachefleet.com"
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-5",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "du-rov.secureservice.top",
+              "port": 8443,
+              "users": [
+                {
+                  "id": "c53ea5e9-ed8b-4990-805d-7f1d6451426c",
+                  "encryption": "none",
+                  "level": 8,
+                  "flow": "xtls-rprx-vision"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "du-rov.secureservice.top",
+            "fingerprint": "firefox",
+            "publicKey": "fSVfR9NB-6J6smrZlavi0GWd8JfDh0aXuEkKbtuFzUI",
+            "shortId": "3cbc3d737fb9c4af"
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-6",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "91.215.43.80",
+              "port": 443,
+              "users": [
+                {
+                  "id": "e9b117e4-8be9-4105-9354-a5e0663294f0",
+                  "encryption": "none",
+                  "level": 8
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "ws",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "metrics.api.downloader-pet.xyz",
+            "fingerprint": "firefox"
+          },
+          "wsSettings": {
+            "path": "/gateway/v1/ws/a901ed17102fc3090ca1ab052c672f47",
+            "headers": {
+              "Host": "metrics.api.downloader-pet.xyz"
+            }
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-7",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
               "address": "157.22.240.224",
               "port": 443,
               "users": [
@@ -281,7 +397,7 @@
         }
       },
       {
-        "tag": "proxy-5",
+        "tag": "proxy-8",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -321,87 +437,7 @@
         }
       },
       {
-        "tag": "proxy-6",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "95.129.234.113",
-              "port": 8443,
-              "users": [
-                {
-                  "id": "88281d02-b387-4fe3-918e-26ed331e6d08",
-                  "encryption": "none",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "xhttp",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "tansy-wharf.cdn.cachefleet.com",
-            "fingerprint": "chrome",
-            "alpn": [
-              "h2"
-            ]
-          },
-          "xhttpSettings": {
-            "path": "/ccxf5snr06b8xxb6",
-            "mode": "auto",
-            "host": "is-tw-relay.cdn.cachefleet.com"
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-7",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "91.215.43.80",
-              "port": 443,
-              "users": [
-                {
-                  "id": "e9b117e4-8be9-4105-9354-a5e0663294f0",
-                  "encryption": "none",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "ws",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "metrics.api.downloader-pet.xyz",
-            "fingerprint": "firefox"
-          },
-          "wsSettings": {
-            "path": "/gateway/v1/ws/a901ed17102fc3090ca1ab052c672f47",
-            "headers": {
-              "Host": "metrics.api.downloader-pet.xyz"
-            }
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-8",
+        "tag": "proxy-9",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -439,7 +475,7 @@
         }
       },
       {
-        "tag": "proxy-9",
+        "tag": "proxy-10",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -479,7 +515,7 @@
         }
       },
       {
-        "tag": "proxy-10",
+        "tag": "proxy-11",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -514,7 +550,7 @@
         }
       },
       {
-        "tag": "proxy-11",
+        "tag": "proxy-12",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -550,7 +586,7 @@
         }
       },
       {
-        "tag": "proxy-12",
+        "tag": "proxy-13",
         "protocol": "shadowsocks",
         "settings": {
           "servers": [
@@ -1408,11 +1444,11 @@
         "settings": {
           "vnext": [
             {
-              "address": "157.22.240.224",
-              "port": 443,
+              "address": "95.129.234.113",
+              "port": 8443,
               "users": [
                 {
-                  "id": "f2917208-c70b-459e-9ca3-e9cda431c867",
+                  "id": "88281d02-b387-4fe3-918e-26ed331e6d08",
                   "encryption": "none",
                   "level": 8
                 }
@@ -1422,17 +1458,18 @@
         },
         "streamSettings": {
           "network": "xhttp",
-          "security": "reality",
-          "realitySettings": {
-            "serverName": "altra.qikbro.com",
-            "fingerprint": "firefox",
-            "publicKey": "4u0r-1AewRpOQOJuezX8VMSLkspgm2C_wxVLcUd_xWo",
-            "shortId": "49a886a8e72becf5"
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "tansy-wharf.cdn.cachefleet.com",
+            "fingerprint": "chrome",
+            "alpn": [
+              "h2"
+            ]
           },
           "xhttpSettings": {
-            "path": "/assets/js/app.2ba1396c.js",
+            "path": "/ccxf5snr06b8xxb6",
             "mode": "auto",
-            "host": "altra.qikbro.com"
+            "host": "is-tw-relay.cdn.cachefleet.com"
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
@@ -1448,11 +1485,47 @@
         "settings": {
           "vnext": [
             {
-              "address": "157.22.240.224",
+              "address": "du-rov.secureservice.top",
+              "port": 8443,
+              "users": [
+                {
+                  "id": "c53ea5e9-ed8b-4990-805d-7f1d6451426c",
+                  "encryption": "none",
+                  "level": 8,
+                  "flow": "xtls-rprx-vision"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "du-rov.secureservice.top",
+            "fingerprint": "firefox",
+            "publicKey": "fSVfR9NB-6J6smrZlavi0GWd8JfDh0aXuEkKbtuFzUI",
+            "shortId": "3cbc3d737fb9c4af"
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-3",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "91.215.43.80",
               "port": 443,
               "users": [
                 {
-                  "id": "293c982c-7d4e-44ac-bb11-72eacee55cd3",
+                  "id": "e9b117e4-8be9-4105-9354-a5e0663294f0",
                   "encryption": "none",
                   "level": 8
                 }
@@ -1461,18 +1534,17 @@
           ]
         },
         "streamSettings": {
-          "network": "xhttp",
-          "security": "reality",
-          "realitySettings": {
-            "serverName": "altra.qikbro.com",
-            "fingerprint": "firefox",
-            "publicKey": "4u0r-1AewRpOQOJuezX8VMSLkspgm2C_wxVLcUd_xWo",
-            "shortId": "49a886a8e72becf5"
+          "network": "ws",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "metrics.api.downloader-pet.xyz",
+            "fingerprint": "firefox"
           },
-          "xhttpSettings": {
-            "path": "/assets/js/app.2ba1396c.js",
-            "mode": "stream-one",
-            "host": "altra.qikbro.com"
+          "wsSettings": {
+            "path": "/gateway/v1/ws/a901ed17102fc3090ca1ab052c672f47",
+            "headers": {
+              "Host": "metrics.api.downloader-pet.xyz"
+            }
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
@@ -1526,7 +1598,7 @@
         "statsOutboundUplink": true
       }
     },
-    "remarks": "🇦🇱 Albania",
+    "remarks": "🇷🇺 Россия",
     "routing": {
       "balancers": [
         {
@@ -1847,11 +1919,11 @@
         "settings": {
           "vnext": [
             {
-              "address": "95.129.234.113",
-              "port": 8443,
+              "address": "157.22.240.224",
+              "port": 443,
               "users": [
                 {
-                  "id": "88281d02-b387-4fe3-918e-26ed331e6d08",
+                  "id": "f2917208-c70b-459e-9ca3-e9cda431c867",
                   "encryption": "none",
                   "level": 8
                 }
@@ -1861,18 +1933,17 @@
         },
         "streamSettings": {
           "network": "xhttp",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "tansy-wharf.cdn.cachefleet.com",
-            "fingerprint": "chrome",
-            "alpn": [
-              "h2"
-            ]
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "altra.qikbro.com",
+            "fingerprint": "firefox",
+            "publicKey": "4u0r-1AewRpOQOJuezX8VMSLkspgm2C_wxVLcUd_xWo",
+            "shortId": "49a886a8e72becf5"
           },
           "xhttpSettings": {
-            "path": "/ccxf5snr06b8xxb6",
+            "path": "/assets/js/app.2ba1396c.js",
             "mode": "auto",
-            "host": "is-tw-relay.cdn.cachefleet.com"
+            "host": "altra.qikbro.com"
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
@@ -1888,11 +1959,11 @@
         "settings": {
           "vnext": [
             {
-              "address": "91.215.43.80",
+              "address": "157.22.240.224",
               "port": 443,
               "users": [
                 {
-                  "id": "e9b117e4-8be9-4105-9354-a5e0663294f0",
+                  "id": "293c982c-7d4e-44ac-bb11-72eacee55cd3",
                   "encryption": "none",
                   "level": 8
                 }
@@ -1901,17 +1972,18 @@
           ]
         },
         "streamSettings": {
-          "network": "ws",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "metrics.api.downloader-pet.xyz",
-            "fingerprint": "firefox"
+          "network": "xhttp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "altra.qikbro.com",
+            "fingerprint": "firefox",
+            "publicKey": "4u0r-1AewRpOQOJuezX8VMSLkspgm2C_wxVLcUd_xWo",
+            "shortId": "49a886a8e72becf5"
           },
-          "wsSettings": {
-            "path": "/gateway/v1/ws/a901ed17102fc3090ca1ab052c672f47",
-            "headers": {
-              "Host": "metrics.api.downloader-pet.xyz"
-            }
+          "xhttpSettings": {
+            "path": "/assets/js/app.2ba1396c.js",
+            "mode": "stream-one",
+            "host": "altra.qikbro.com"
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
@@ -1965,7 +2037,7 @@
         "statsOutboundUplink": true
       }
     },
-    "remarks": "🇷🇺 Россия",
+    "remarks": "🇦🇱 Albania",
     "routing": {
       "balancers": [
         {
