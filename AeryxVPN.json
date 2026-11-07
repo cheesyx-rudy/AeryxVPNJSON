@@ -166,70 +166,6 @@
         "settings": {
           "vnext": [
             {
-              "address": "lte.maxlink.online",
-              "port": 443,
-              "users": [
-                {
-                  "id": "67713176-e0ef-4a0e-93fd-7ad0d0db2cfe",
-                  "encryption": "none",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "xhttp",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "lte.maxlink.online",
-            "fingerprint": "firefox",
-            "alpn": [
-              "h2",
-              "http/1.1"
-            ]
-          },
-          "xhttpSettings": {
-            "path": "/",
-            "mode": "packet-up",
-            "host": "lte.maxlink.online",
-            "extra": {
-              "host": "",
-              "mode": "packet-up",
-              "path": "/",
-              "scMaxBufferedPosts": 512,
-              "scMaxEachPostBytes": "12000-24000",
-              "scMinPostsIntervalMs": "10",
-              "serverMaxHeaderBytes": 65536,
-              "sessionIDKey": "X-Upload-Token",
-              "sessionIDPlacement": "path",
-              "uplinkDataKey": "X-Playback-Token",
-              "uplinkDataPlacement": "header",
-              "uplinkHTTPMethod": "GET",
-              "xPaddingHeader": "X-Cache",
-              "xPaddingKey": "_dc",
-              "xPaddingMethod": "tokenish",
-              "xPaddingObfsMode": true,
-              "xPaddingPlacement": "queryInHeader",
-              "xmux": {
-                "maxConnections": "3"
-              }
-            }
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-3",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
               "address": "tg1.cdnphotos.org",
               "port": 443,
               "users": [
@@ -250,7 +186,7 @@
             "fingerprint": "random"
           },
           "xhttpSettings": {
-            "path": "/api/v1/?ed#",
+            "path": "/api/v1/?ed#Telegram---",
             "mode": "auto",
             "host": "tg1.cdnphotos.org"
           },
@@ -263,7 +199,7 @@
         }
       },
       {
-        "tag": "proxy-4",
+        "tag": "proxy-3",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -302,7 +238,7 @@
         }
       },
       {
-        "tag": "proxy-5",
+        "tag": "proxy-4",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -328,6 +264,48 @@
             "fingerprint": "firefox",
             "publicKey": "3Kgy_0tHtOzEn9_mEylNsBVlAHNngT6S4AuYy5wEOSU",
             "shortId": "0c37b64d1935ebc1"
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-5",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "188.114.98.0",
+              "port": 443,
+              "users": [
+                {
+                  "id": "4e4f1f70-5e56-4a76-bb9d-db087f4690c4",
+                  "encryption": "none",
+                  "level": 8
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "ws",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "jp3.yohototo.top",
+            "fingerprint": "unsafe",
+            "alpn": [
+              "http/1.1"
+            ]
+          },
+          "wsSettings": {
+            "path": "/tyxyws",
+            "headers": {
+              "Host": "jp3.yohototo.top"
+            }
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
@@ -960,70 +938,6 @@
         "settings": {
           "vnext": [
             {
-              "address": "lte.maxlink.online",
-              "port": 443,
-              "users": [
-                {
-                  "id": "67713176-e0ef-4a0e-93fd-7ad0d0db2cfe",
-                  "encryption": "none",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "xhttp",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "lte.maxlink.online",
-            "fingerprint": "firefox",
-            "alpn": [
-              "h2",
-              "http/1.1"
-            ]
-          },
-          "xhttpSettings": {
-            "path": "/",
-            "mode": "packet-up",
-            "host": "lte.maxlink.online",
-            "extra": {
-              "host": "",
-              "mode": "packet-up",
-              "path": "/",
-              "scMaxBufferedPosts": 512,
-              "scMaxEachPostBytes": "12000-24000",
-              "scMinPostsIntervalMs": "10",
-              "serverMaxHeaderBytes": 65536,
-              "sessionIDKey": "X-Upload-Token",
-              "sessionIDPlacement": "path",
-              "uplinkDataKey": "X-Playback-Token",
-              "uplinkDataPlacement": "header",
-              "uplinkHTTPMethod": "GET",
-              "xPaddingHeader": "X-Cache",
-              "xPaddingKey": "_dc",
-              "xPaddingMethod": "tokenish",
-              "xPaddingObfsMode": true,
-              "xPaddingPlacement": "queryInHeader",
-              "xmux": {
-                "maxConnections": "3"
-              }
-            }
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-3",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
               "address": "tg1.cdnphotos.org",
               "port": 443,
               "users": [
@@ -1044,7 +958,7 @@
             "fingerprint": "random"
           },
           "xhttpSettings": {
-            "path": "/api/v1/?ed#",
+            "path": "/api/v1/?ed#Telegram---",
             "mode": "auto",
             "host": "tg1.cdnphotos.org"
           },
@@ -1057,7 +971,7 @@
         }
       },
       {
-        "tag": "proxy-4",
+        "tag": "proxy-3",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1096,7 +1010,7 @@
         }
       },
       {
-        "tag": "proxy-5",
+        "tag": "proxy-4",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1492,6 +1406,48 @@
     "outbounds": [
       {
         "tag": "proxy-1",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "188.114.98.0",
+              "port": 443,
+              "users": [
+                {
+                  "id": "4e4f1f70-5e56-4a76-bb9d-db087f4690c4",
+                  "encryption": "none",
+                  "level": 8
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "ws",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "jp3.yohototo.top",
+            "fingerprint": "unsafe",
+            "alpn": [
+              "http/1.1"
+            ]
+          },
+          "wsSettings": {
+            "path": "/tyxyws",
+            "headers": {
+              "Host": "jp3.yohototo.top"
+            }
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-2",
         "protocol": "vmess",
         "settings": {
           "vnext": [
@@ -1530,7 +1486,7 @@
         }
       },
       {
-        "tag": "proxy-2",
+        "tag": "proxy-3",
         "protocol": "vmess",
         "settings": {
           "vnext": [
