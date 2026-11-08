@@ -29,11 +29,11 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Checkout pinned AeryxVPN Core 0.9.0
+      - name: Checkout pinned AeryxVPN Core 0.10.0
         uses: actions/checkout@v5
         with:
           repository: cheesyx-rudy/AeryxVPN-Core
-          ref: 796688c142f78c65107bcd9da46f89cb6da6b821
+          ref: c67ba94bd2d92c8dadca6a16b99a0cd64b244315
           token: ${{ secrets.AERYX_CORE_READ_TOKEN }}
           path: .aeryx-core
           persist-credentials: false
@@ -45,7 +45,7 @@ jobs:
           wheel_dir="$RUNNER_TEMP/aeryx-core-wheel"
           mkdir -p "$wheel_dir"
           python -m pip wheel --no-deps --wheel-dir "$wheel_dir" ./.aeryx-core
-          wheel="$(find "$wheel_dir" -maxdepth 1 -name 'aeryxvpn_core-0.9.0-*.whl' -print -quit)"
+          wheel="$(find "$wheel_dir" -maxdepth 1 -name 'aeryxvpn_core-0.10.0-*.whl' -print -quit)"
           test -n "$wheel"
           python -m pip install --no-cache-dir "$wheel"
 
@@ -59,12 +59,18 @@ jobs:
           python - <<'PY'
           from importlib import metadata
           import aeryx_core
-          from aeryx_core import ShareURIAdapter, create_validation_engine
+          from aeryx_core import (
+              MihomoConfigBuilder,
+              MihomoProtocolValidator,
+              ShareURIAdapter,
+              create_validation_engine,
+          )
 
-          assert metadata.version("aeryxvpn-core") == "0.9.0"
-          assert aeryx_core.__version__ == "0.9.0"
+          assert metadata.version("aeryxvpn-core") == "0.10.0"
+          assert aeryx_core.__version__ == "0.10.0"
           assert ShareURIAdapter and callable(create_validation_engine)
-          print("AeryxVPN Core 0.9.0 import check passed")
+          assert MihomoConfigBuilder and MihomoProtocolValidator
+          print("AeryxVPN Core 0.10.0 import check passed")
           PY
 
       - name: Run complete offline test suite
@@ -73,7 +79,7 @@ jobs:
       - name: Compile parser modules
         run: python -m compileall -q src
 
-      - name: Live smoke-test official Xray and sing-box downloads
+      - name: Live smoke-test official Xray, sing-box, and Mihomo downloads
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -82,6 +88,7 @@ jobs:
           python tools/install_cores.py --platform linux --arch amd64
           test -s tools/xray
           test -s tools/sing-box
+          test -s tools/mihomo
           ./tools/xray version
           ./tools/sing-box version
 
