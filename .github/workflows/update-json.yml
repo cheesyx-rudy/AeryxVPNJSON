@@ -161,7 +161,7 @@ jobs:
           import yaml
           from aeryx_core import MihomoConfigBuilder, ShareURIAdapter
 
-          public_key = base64.b64encode(b"\\x01" * 32).decode()
+          public_key = base64.b64encode(bytes([1]) * 32).decode()
           samples = [
               (
                   "vless://11111111-1111-1111-1111-111111111111@127.0.0.1:443?"
@@ -204,11 +204,11 @@ jobs:
                   )
                   if result.returncode:
                       raise SystemExit(
-                          f"Mihomo rejected sample {index}:\\n{result.stdout}\\n{result.stderr}"
+                          f"Mihomo rejected sample {index}: "
+                          f"{result.stdout!r}; {result.stderr!r}"
                       )
           print("Mihomo accepted generated VLESS-Reality, Hysteria2 and Trojan configs.")
           PY
-
       - name: Fetch, parse, filter and tunnel-check source configs
         if: steps.source_check.outputs.has_sources == 'true'
         run: python -m aeryx_json_parser --check proxy --max-runtime 360
