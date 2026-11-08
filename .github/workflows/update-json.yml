@@ -137,6 +137,8 @@ jobs:
 
       - name: Install official stable Xray and sing-box cores
         if: steps.source_check.outputs.has_sources == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: python tools/install_cores.py --platform linux --arch amd64
 
       - name: Fetch, parse, filter and tunnel-check source configs
