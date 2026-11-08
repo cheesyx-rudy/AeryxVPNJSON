@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import json
 import os
@@ -242,7 +243,7 @@ def install_archive(
             ]
         else:
             patterns = []
-    else:
+    elif tool == "sing-box":
         platform_arch = {
             "windows": {
                 "amd64": "windows-amd64",
@@ -265,6 +266,24 @@ def install_archive(
             if suffix
             else []
         )
+    else:
+        asset_platform = {
+            "windows": {
+                "amd64": [r"^mihomo-windows-amd64-compatible-.*\.zip$"],
+                "arm64": [r"^mihomo-windows-arm64-.*\.zip$"],
+                "386": [r"^mihomo-windows-386-.*\.zip$"],
+            },
+            "linux": {
+                "amd64": [r"^mihomo-linux-amd64-compatible-.*\.gz$"],
+                "arm64": [r"^mihomo-linux-arm64-.*\.gz$"],
+                "386": [r"^mihomo-linux-386-softfloat-.*\.gz$", r"^mihomo-linux-386-.*\.gz$"],
+            },
+            "darwin": {
+                "amd64": [r"^mihomo-darwin-amd64-compatible-.*\.gz$"],
+                "arm64": [r"^mihomo-darwin-arm64-.*\.gz$"],
+            },
+        }
+        patterns = asset_platform.get(os_name, {}).get(arch, [])
 
     asset = asset_by_patterns(assets, patterns)
     if asset is None:
@@ -273,14 +292,15 @@ def install_archive(
             candidate
             for candidate in assets
             if needle in candidate.get("name", "").lower()
-            and candidate.get("name", "").lower().endswith((".zip", ".tar.gz"))
+            and candidate.get("name", "").lower().endswith((".zip", ".tar.gz", ".gz"))
         ]
-        if tool == "xray":
-            matches = [
-                candidate
-                for candidate in matches
-                if candidate.get("name", "").lower().startswith("xray-")
-            ]
+        prefixes = {"xray": "xray-", "sing-box": "sing-box-", "mihomo": "mihomo-"}
+        prefix = prefixes[tool]
+        matches = [
+            candidate
+            for candidate in matches
+            if candidate.get("name", "").lower().startswith(prefix)
+        ]
         asset = matches[0] if matches else None
 
     if asset is None:
@@ -297,7 +317,13 @@ def install_archive(
         raise RuntimeError(f"Release asset {name} has no downloadable URL or asset ID")
 
     tools_dir.mkdir(parents=True, exist_ok=True)
-    suffix = ".zip" if name.lower().endswith(".zip") else ".tar.gz"
+    suffix = (
+        ".zip"
+        if name.lower().endswith(".zip")
+        else ".tar.gz"
+        if name.lower().endswith(".tar.gz")
+        else ".gz"
+    )
     archive = tools_dir / f"{tool}-download{suffix}"
     digest = asset.get("digest")
     print(f"Resolving {tool}: {owner_repo} {tag} / {name}")
@@ -344,18 +370,25 @@ def install_archive(
                     if staging.resolve() not in target.parents and target != staging.resolve():
                         raise ValueError("unsafe archive path")
                 zip_file.extractall(staging)
-        else:
+        elif suffix == ".tar.gz":
             with tarfile.open(archive, "r:gz") as tar_file:
                 for item in tar_file.getmembers():
                     target = (staging / item.name).resolve()
                     if staging.resolve() not in target.parents and target != staging.resolve():
                         raise ValueError("unsafe archive path")
                 tar_file.extractall(staging, filter="data")
+        else:
+            # Mihomo publishes the executable as a standalone gzip stream.
+            binary_path = staging / ("mihomo.exe" if os_name == "windows" else "mihomo")
+            with gzip.open(archive, "rb") as compressed, binary_path.open("wb") as output:
+                shutil.copyfileobj(compressed, output)
 
         binary_names = (
             {"xray", "xray.exe"}
             if tool == "xray"
             else {"sing-box", "sing-box.exe"}
+            if tool == "sing-box"
+            else {"mihomo", "mihomo.exe"}
         )
         binary = next(
             (path for path in staging.rglob("*") if path.is_file() and path.name in binary_names),
@@ -364,13 +397,12 @@ def install_archive(
         if binary is None:
             raise RuntimeError(f"{tool} executable not found in {name}")
 
-        destination = tools_dir / (
-            "xray.exe"
-            if os_name == "windows" and tool == "xray"
-            else "sing-box.exe"
-            if os_name == "windows"
-            else tool
-        )
+        destination_name = {
+            "xray": "xray.exe" if os_name == "windows" else "xray",
+            "sing-box": "sing-box.exe" if os_name == "windows" else "sing-box",
+            "mihomo": "mihomo.exe" if os_name == "windows" else "mihomo",
+        }[tool]
+        destination = tools_dir / destination_name
         shutil.copy2(binary, destination)
         if os_name != "windows":
             destination.chmod(
@@ -396,7 +428,7 @@ def install_archive(
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
-            "Install stable Xray-core and sing-box binaries from official GitHub releases"
+            "Install stable Xray-core, sing-box, and Mihomo binaries from official GitHub releases"
         )
     )
     parser.add_argument("--platform", choices=("windows", "linux", "darwin"), default=None)
@@ -418,14 +450,20 @@ def main() -> None:
 
     metadata = {}
     failures = []
-    targets = (("xray", "XTLS/Xray-core"), ("sing-box", "SagerNet/sing-box"))
+    targets = (
+        ("xray", "XTLS/Xray-core"),
+        ("sing-box", "SagerNet/sing-box"),
+        ("mihomo", "MetaCubeX/mihomo"),
+    )
 
     for key, repository in targets:
         expected = args.tools_dir / (
             "xray.exe"
             if os_name == "windows" and key == "xray"
             else "sing-box.exe"
-            if os_name == "windows"
+            if os_name == "windows" and key == "sing-box"
+            else "mihomo.exe"
+            if os_name == "windows" and key == "mihomo"
             else key
         )
         try:
@@ -460,6 +498,7 @@ def main() -> None:
     required_binaries = {
         "xray": args.tools_dir / ("xray.exe" if os_name == "windows" else "xray"),
         "sing-box": args.tools_dir / ("sing-box.exe" if os_name == "windows" else "sing-box"),
+        "mihomo": args.tools_dir / ("mihomo.exe" if os_name == "windows" else "mihomo"),
     }
     missing = [
         name for name, path in required_binaries.items() if not path.is_file() or path.stat().st_size == 0
@@ -469,7 +508,7 @@ def main() -> None:
         raise SystemExit(
             "Required official core binary/binaries missing or empty: "
             + ", ".join(missing)
-            + ". Stopping before parsing; both Xray and sing-box are required. "
+            + ". Stopping before parsing; Xray, sing-box, and Mihomo are required. "
             + details
         )
     if failures:
