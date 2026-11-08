@@ -370,6 +370,51 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
         probe_targets=PROBE_URLS
     minimum_successes=max(1,int(ccfg.get("minimum_successful_probes",DEFAULT_MIN_SUCCESSFUL_PROBES)))
     require_independent=bool(ccfg.get("require_independent_probe_domains",DEFAULT_REQUIRE_INDEPENDENT_PROVIDERS))
+    moshub_request_path = out_dir / "moshub-request.json"
+    if mode == "proxy":
+        moshub_nodes = [
+            {
+                "candidate_id": hashlib.sha256(node.identity.encode("utf-8")).hexdigest(),
+                "uri": node.uri,
+                "source": node.source,
+                "name": node.name,
+            }
+            for node in kept
+        ]
+        moshub_payload = {
+            "schema_version": 1,
+            "parser_kind": "json",
+            "core_version": "0.10.0",
+            "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "validation": {
+                "per_node_timeout_seconds": float(ccfg.get("per_node_timeout_seconds", 10)),
+                "minimum_successful_probes": minimum_successes,
+                "require_independent_probe_domains": require_independent,
+                "retry_single_success": bool(ccfg.get("retry_single_success", True)),
+                "stability_samples": int(ccfg.get("stability_samples", 3)),
+                "stability_interval_seconds": float(ccfg.get("stability_interval_seconds", 0.2)),
+                "probe_targets": [
+                    {"url": url, "accepted_statuses": sorted(accepted)}
+                    for url, accepted in probe_targets
+                ],
+            },
+            "nodes": moshub_nodes,
+        }
+        moshub_request_path.write_text(
+            json.dumps(moshub_payload, ensure_ascii=False, separators=(",", ":")),
+            encoding="utf-8",
+        )
+        report["moshub_export"] = {
+            "status": "ready",
+            "request_file": str(moshub_request_path.relative_to(ROOT)),
+            "candidate_count": len(moshub_nodes),
+            "stage": "after_ip_filter_before_local_tunnel_validation",
+        }
+        progress.emit(
+            "moshub_export",
+            "Подготовлен пакет для независимой проверки Mos.Hub",
+            {"candidates": len(moshub_nodes), "core_version": "0.10.0"},
+        )
     if len(probe_targets) < minimum_successes:
         report["warnings"].append(
             f"Only {len(probe_targets)} health target(s) configured. High-confidence quorum is {minimum_successes}; a single exact response will be retried and assigned lower confidence instead of being discarded."
@@ -425,6 +470,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
     vote_negative = sum(1 for n in kept for v in n.validation_votes.values() if v is not None and v < 0)
     node_results = [
         {
+            "candidate_id": hashlib.sha256(n.identity.encode("utf-8")).hexdigest(),
             "scheme": n.scheme, "host": n.host, "port": n.port, "name": n.name,
             "status": n.check_status, "confidence": n.validation_confidence,
             "elapsed_ms": n.elapsed_ms,
