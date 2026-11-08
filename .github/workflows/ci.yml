@@ -73,5 +73,17 @@ jobs:
       - name: Compile parser modules
         run: python -m compileall -q src
 
+      - name: Live smoke-test official Xray and sing-box downloads
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python tools/install_cores.py --platform linux --arch amd64
+          test -s tools/xray
+          test -s tools/sing-box
+          ./tools/xray version
+          ./tools/sing-box version
+
       - name: Lint new Core integration files
         run: python -m ruff check src/aeryx_json_parser/core_validation.py tests/test_core_validation.py
