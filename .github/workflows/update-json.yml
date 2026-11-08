@@ -216,11 +216,11 @@ jobs:
 
       - name: Upload Mos.Hub candidate package
         id: moshub_input
-        if: ${{ success() && hashFiles('output/moshub-request.json') != '' }}
+        if: ${{ success() && hashFiles('output/engine/moshub-request.json') != '' }}
         uses: actions/upload-artifact@v7
         with:
           name: moshub-input-json-${{ github.run_id }}-${{ github.run_attempt }}
-          path: output/moshub-request.json
+          path: output/engine/moshub-request.json
           if-no-files-found: error
           retention-days: 1
 
