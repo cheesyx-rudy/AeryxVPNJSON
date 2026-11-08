@@ -404,9 +404,14 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
             json.dumps(moshub_payload, ensure_ascii=False, separators=(",", ":")),
             encoding="utf-8",
         )
+        try:
+            moshub_request_display_path = moshub_request_path.relative_to(ROOT).as_posix()
+        except ValueError:
+            # Test suites may provide an output directory outside the repository.
+            moshub_request_display_path = str(moshub_request_path)
         report["moshub_export"] = {
             "status": "ready",
-            "request_file": str(moshub_request_path.relative_to(ROOT)),
+            "request_file": moshub_request_display_path,
             "candidate_count": len(moshub_nodes),
             "stage": "after_ip_filter_before_local_tunnel_validation",
         }
