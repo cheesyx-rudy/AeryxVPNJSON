@@ -214,33 +214,6 @@ jobs:
         if: steps.source_check.outputs.has_sources == 'true'
         run: python -m aeryx_json_parser --check proxy --max-runtime 360
 
-      - name: Upload Mos.Hub candidate package
-        id: moshub_input
-        if: ${{ success() && hashFiles('output/engine/moshub-request.json') != '' }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: moshub-input-json-${{ github.run_id }}-${{ github.run_attempt }}
-          path: output/engine/moshub-request.json
-          if-no-files-found: error
-          retention-days: 1
-
-      - name: Request secondary validation on Mos.Hub
-        if: ${{ success() && steps.moshub_input.outputs['artifact-id'] != '' }}
-        continue-on-error: true
-        env:
-          MOSHUB_API_URL: ${{ secrets.MOSHUB_API_URL }}
-          MOSHUB_PROJECT_ID: ${{ secrets.MOSHUB_PROJECT_ID }}
-          MOSHUB_TRIGGER_TOKEN: ${{ secrets.MOSHUB_TRIGGER_TOKEN }}
-          MOSHUB_READ_API_TOKEN: ${{ secrets.MOSHUB_READ_API_TOKEN }}
-          MOSHUB_ARTIFACT_ID: ${{ steps.moshub_input.outputs['artifact-id'] }}
-          MOSHUB_ARTIFACT_NAME: moshub-input-json-${{ github.run_id }}-${{ github.run_attempt }}
-          MOSHUB_REQUEST_ID: ${{ github.run_id }}-${{ github.run_attempt }}
-          MOSHUB_PARSER_KIND: json
-          MOSHUB_LOCAL_REPORT: output/engine/validation_report.json
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
-        run: python tools/moshub_bridge.py
-
       - name: Build Happ JSON array
         if: steps.source_check.outputs.has_sources == 'true'
         env:
