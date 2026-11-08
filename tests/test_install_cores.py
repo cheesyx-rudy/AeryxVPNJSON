@@ -166,6 +166,54 @@ class DownloadRetryTests(unittest.TestCase):
             request.assert_called_once()
             self.assertFalse(destination.exists())
 
+class MihomoInstallerTests(unittest.TestCase):
+    def test_installs_official_mihomo_gzip_binary(self) -> None:
+        import gzip
+
+        payload = b"mihomo-test-binary"
+        archive_bytes = gzip.compress(payload)
+        digest = "sha256:" + hashlib.sha256(archive_bytes).hexdigest()
+        asset = {
+            "name": "mihomo-linux-amd64-compatible-v1.19.33.gz",
+            "id": 12345,
+            "digest": digest,
+            "browser_download_url": (
+                "https://github.com/MetaCubeX/mihomo/releases/download/"
+                "v1.19.33/mihomo-linux-amd64-compatible-v1.19.33.gz"
+            ),
+        }
+
+        def fake_download(url: str, destination: Path, **kwargs: object) -> None:
+            self.assertEqual(url, "https://api.github.com/repos/MetaCubeX/mihomo/releases/assets/12345")
+            self.assertEqual(kwargs.get("expected_digest"), digest)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(archive_bytes)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            tools_dir = Path(temp_dir)
+            with (
+                patch.object(
+                    install_cores,
+                    "get_json",
+                    return_value={"tag_name": "v1.19.33", "assets": [asset]},
+                ),
+                patch.object(install_cores, "download", side_effect=fake_download),
+                patch.dict(os.environ, {"GITHUB_TOKEN": "ghs-test-token"}),
+            ):
+                result = install_cores.install_archive(
+                    "MetaCubeX/mihomo",
+                    "mihomo",
+                    "linux",
+                    "amd64",
+                    tools_dir,
+                )
+
+            binary = tools_dir / "mihomo"
+            self.assertEqual(result["version"], "v1.19.33")
+            self.assertEqual(result["asset"], asset["name"])
+            self.assertEqual(binary.read_bytes(), payload)
+            self.assertTrue(binary.stat().st_mode & 0o100)
+
 
 if __name__ == "__main__":
     unittest.main()
