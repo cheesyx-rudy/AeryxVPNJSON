@@ -655,6 +655,7 @@ def detect_cores(root: Path) -> dict[str,str]:
     candidates={
         "sing-box":[os.getenv("SINGBOX_BINARY"),str(root/"tools"/"sing-box.exe"),str(root/"tools"/"sing-box"),"sing-box"],
         "xray":[os.getenv("XRAY_BINARY"),str(root/"tools"/"xray.exe"),str(root/"tools"/"xray"),"xray"],
+        "mihomo":[os.getenv("MIHOMO_BINARY"),str(root/"tools"/"mihomo.exe"),str(root/"tools"/"mihomo"),"mihomo"],
     }
     import shutil
     for key,values in candidates.items():
