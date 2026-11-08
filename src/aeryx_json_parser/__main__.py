@@ -7,7 +7,7 @@ def main() -> int:
     p=argparse.ArgumentParser(prog="AeryxJSON-Parser",description="AeryxVPN single JSON subscription parser with country groups and native balancers")
     p.add_argument("--config",type=Path,default=DEFAULT_CONFIG,help="settings YAML")
     p.add_argument("--sources",type=Path,default=DEFAULT_SOURCES,help="source list (TXT: URL per line, optional | Header: value) or legacy YAML")
-    p.add_argument("--check",choices=("proxy","tcp","none"),default=None,help="proxy=tunnel test (requires Xray/sing-box), tcp=diagnostic only, none=parse only")
+    p.add_argument("--check",choices=("proxy","tcp","none"),default=None,help="proxy=tunnel test (uses Mihomo/sing-box/Xray), tcp=diagnostic only, none=parse only")
     p.add_argument("--workers",type=int,default=None,help="validation workers (1..96)")
     p.add_argument("--max-runtime",type=int,default=None,help="hard global runtime budget in seconds")
     p.add_argument("--skip-blocklist",action="store_true",help="skip optional external CIDR feeds; non-public IPs remain filtered")
