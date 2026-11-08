@@ -121,6 +121,250 @@
     "outbounds": [
       {
         "tag": "proxy-1",
+        "protocol": "shadowsocks",
+        "settings": {
+          "servers": [
+            {
+              "address": "88.216.254.18",
+              "port": 1080,
+              "method": "chacha20-ietf-poly1305",
+              "password": "V7WLaYdujkwnj6xxXq-2BSxGWEcSJtTA"
+            }
+          ]
+        }
+      },
+      {
+        "tag": "proxy-2",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "8.35.211.87",
+              "port": 443,
+              "users": [
+                {
+                  "id": "56e4896e-90a9-4fe0-8480-90d3d68b9928",
+                  "encryption": "none",
+                  "level": 8
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "ws",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "go.iranfree.de5.net",
+            "fingerprint": "chrome"
+          },
+          "wsSettings": {
+            "path": "/",
+            "headers": {
+              "Host": "go.iranfree.de5.net"
+            }
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-3",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "8.6.112.242",
+              "port": 443,
+              "users": [
+                {
+                  "id": "64726966-0000-4000-8000-740000000000",
+                  "encryption": "none",
+                  "level": 8
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "ws",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "parsa-panel-dy55x.railway1385-2a46.workers.dev",
+            "fingerprint": "firefox"
+          },
+          "wsSettings": {
+            "path": "/",
+            "headers": {
+              "Host": "parsa-panel-dy55x.railway1385-2a46.workers.dev"
+            }
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-4",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "8.35.211.87",
+              "port": 2096,
+              "users": [
+                {
+                  "id": "56e4896e-90a9-4fe0-8480-90d3d68b9928",
+                  "encryption": "none",
+                  "level": 8
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "ws",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "go.iranfree.de5.net",
+            "fingerprint": "firefox"
+          },
+          "wsSettings": {
+            "path": "/fp=chromefp=chrome",
+            "headers": {
+              "Host": "go.iranfree.de5.net"
+            }
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-5",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "8.35.211.43",
+              "port": 2053,
+              "users": [
+                {
+                  "id": "56e4896e-90a9-4fe0-8480-90d3d68b9928",
+                  "encryption": "none",
+                  "level": 8
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "ws",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "go.iranfree.de5.net"
+          },
+          "wsSettings": {
+            "path": "/fp=chrome",
+            "headers": {
+              "Host": "go.iranfree.de5.net"
+            }
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-6",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "91.215.43.80",
+              "port": 443,
+              "users": [
+                {
+                  "id": "e9b117e4-8be9-4105-9354-a5e0663294f0",
+                  "encryption": "none",
+                  "level": 8
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "ws",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "metrics.api.downloader-pet.xyz",
+            "fingerprint": "firefox"
+          },
+          "wsSettings": {
+            "path": "/gateway/v1/ws/a901ed17102fc3090ca1ab052c672f47",
+            "headers": {
+              "Host": "metrics.api.downloader-pet.xyz"
+            }
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-7",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "5.129.249.155",
+              "port": 443,
+              "users": [
+                {
+                  "id": "7ad63b26-bf70-4872-8fab-ebaf73a1e19d",
+                  "encryption": "none",
+                  "level": 8,
+                  "flow": "xtls-rprx-vision"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "assets-59.topp-con.xyz",
+            "fingerprint": "firefox",
+            "publicKey": "LEziyH-E4k9hehGRJkVi1FadVObB_NZJy8U7oUCVWXU",
+            "shortId": "b9120cd53ffd7bba"
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-8",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -156,7 +400,7 @@
         }
       },
       {
-        "tag": "proxy-2",
+        "tag": "proxy-9",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -197,287 +441,7 @@
         }
       },
       {
-        "tag": "proxy-3",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "91.215.43.80",
-              "port": 443,
-              "users": [
-                {
-                  "id": "e9b117e4-8be9-4105-9354-a5e0663294f0",
-                  "encryption": "none",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "ws",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "metrics.api.downloader-pet.xyz",
-            "fingerprint": "firefox"
-          },
-          "wsSettings": {
-            "path": "/gateway/v1/ws/a901ed17102fc3090ca1ab052c672f47",
-            "headers": {
-              "Host": "metrics.api.downloader-pet.xyz"
-            }
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-4",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "168.113.190.113",
-              "port": 443,
-              "users": [
-                {
-                  "id": "45ef6d0c-df92-4328-afa3-d6af1806fb3c",
-                  "encryption": "none",
-                  "level": 8,
-                  "flow": "xtls-rprx-vision"
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "reality",
-          "realitySettings": {
-            "serverName": "13.143.195.113.sslip.io",
-            "fingerprint": "firefox",
-            "publicKey": "p0M6RumtfcATPNPUIFnFcgWy2rzk2gGVWx21sql1hV0",
-            "shortId": "8238d76df92c2560"
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-5",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "5.129.249.155",
-              "port": 443,
-              "users": [
-                {
-                  "id": "7ad63b26-bf70-4872-8fab-ebaf73a1e19d",
-                  "encryption": "none",
-                  "level": 8,
-                  "flow": "xtls-rprx-vision"
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "reality",
-          "realitySettings": {
-            "serverName": "assets-59.topp-con.xyz",
-            "fingerprint": "firefox",
-            "publicKey": "LEziyH-E4k9hehGRJkVi1FadVObB_NZJy8U7oUCVWXU",
-            "shortId": "b9120cd53ffd7bba"
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-6",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "8.35.211.87",
-              "port": 443,
-              "users": [
-                {
-                  "id": "56e4896e-90a9-4fe0-8480-90d3d68b9928",
-                  "encryption": "none",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "ws",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "go.iranfree.de5.net",
-            "fingerprint": "chrome"
-          },
-          "wsSettings": {
-            "path": "/",
-            "headers": {
-              "Host": "go.iranfree.de5.net"
-            }
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-7",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "8.6.112.242",
-              "port": 443,
-              "users": [
-                {
-                  "id": "64726966-0000-4000-8000-740000000000",
-                  "encryption": "none",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "ws",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "parsa-panel-dy55x.railway1385-2a46.workers.dev",
-            "fingerprint": "firefox"
-          },
-          "wsSettings": {
-            "path": "/",
-            "headers": {
-              "Host": "parsa-panel-dy55x.railway1385-2a46.workers.dev"
-            }
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-8",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "8.35.211.87",
-              "port": 2096,
-              "users": [
-                {
-                  "id": "56e4896e-90a9-4fe0-8480-90d3d68b9928",
-                  "encryption": "none",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "ws",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "go.iranfree.de5.net",
-            "fingerprint": "firefox"
-          },
-          "wsSettings": {
-            "path": "/fp=chromefp=chrome",
-            "headers": {
-              "Host": "go.iranfree.de5.net"
-            }
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-9",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "8.35.211.43",
-              "port": 2053,
-              "users": [
-                {
-                  "id": "56e4896e-90a9-4fe0-8480-90d3d68b9928",
-                  "encryption": "none",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "ws",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "go.iranfree.de5.net"
-          },
-          "wsSettings": {
-            "path": "/fp=chrome",
-            "headers": {
-              "Host": "go.iranfree.de5.net"
-            }
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
         "tag": "proxy-10",
-        "protocol": "shadowsocks",
-        "settings": {
-          "servers": [
-            {
-              "address": "88.216.254.18",
-              "port": 1080,
-              "method": "chacha20-ietf-poly1305",
-              "password": "V7WLaYdujkwnj6xxXq-2BSxGWEcSJtTA"
-            }
-          ]
-        }
-      },
-      {
-        "tag": "proxy-11",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -519,7 +483,7 @@
         }
       },
       {
-        "tag": "proxy-12",
+        "tag": "proxy-11",
         "protocol": "vmess",
         "settings": {
           "vnext": [
@@ -558,43 +522,7 @@
         }
       },
       {
-        "tag": "proxy-13",
-        "protocol": "trojan",
-        "settings": {
-          "servers": [
-            {
-              "address": "104.17.147.22",
-              "port": 2083,
-              "password": "uFepQ5r4JSusbY"
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "ws",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "floral-grass-aa1e.dianawpewpek1.workers.dev",
-            "fingerprint": "chrome",
-            "alpn": [
-              "http/1.1"
-            ]
-          },
-          "wsSettings": {
-            "path": "/",
-            "headers": {
-              "Host": "floral-grass-aa1e.dianawpewpek1.workers.dev"
-            }
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-14",
+        "tag": "proxy-12",
         "protocol": "vmess",
         "settings": {
           "vnext": [
@@ -633,7 +561,7 @@
         }
       },
       {
-        "tag": "proxy-15",
+        "tag": "proxy-13",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -671,7 +599,7 @@
         }
       },
       {
-        "tag": "proxy-16",
+        "tag": "proxy-14",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -711,7 +639,7 @@
         }
       },
       {
-        "tag": "proxy-17",
+        "tag": "proxy-15",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -747,7 +675,7 @@
         }
       },
       {
-        "tag": "proxy-18",
+        "tag": "proxy-16",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -783,7 +711,7 @@
         }
       },
       {
-        "tag": "proxy-19",
+        "tag": "proxy-17",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1178,38 +1106,16 @@
     "outbounds": [
       {
         "tag": "proxy-1",
-        "protocol": "vless",
+        "protocol": "shadowsocks",
         "settings": {
-          "vnext": [
+          "servers": [
             {
-              "address": "du-rov.secureservice.top",
-              "port": 8443,
-              "users": [
-                {
-                  "id": "c53ea5e9-ed8b-4990-805d-7f1d6451426c",
-                  "encryption": "none",
-                  "level": 8,
-                  "flow": "xtls-rprx-vision"
-                }
-              ]
+              "address": "88.216.254.18",
+              "port": 1080,
+              "method": "chacha20-ietf-poly1305",
+              "password": "V7WLaYdujkwnj6xxXq-2BSxGWEcSJtTA"
             }
           ]
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "reality",
-          "realitySettings": {
-            "serverName": "du-rov.secureservice.top",
-            "fingerprint": "chrome",
-            "publicKey": "fSVfR9NB-6J6smrZlavi0GWd8JfDh0aXuEkKbtuFzUI",
-            "shortId": "3cbc3d737fb9c4af"
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
         }
       },
       {
@@ -1218,11 +1124,11 @@
         "settings": {
           "vnext": [
             {
-              "address": "95.129.234.113",
-              "port": 8443,
+              "address": "8.35.211.87",
+              "port": 443,
               "users": [
                 {
-                  "id": "88281d02-b387-4fe3-918e-26ed331e6d08",
+                  "id": "56e4896e-90a9-4fe0-8480-90d3d68b9928",
                   "encryption": "none",
                   "level": 8
                 }
@@ -1231,19 +1137,17 @@
           ]
         },
         "streamSettings": {
-          "network": "xhttp",
+          "network": "ws",
           "security": "tls",
           "tlsSettings": {
-            "serverName": "tansy-wharf.cdn.cachefleet.com",
-            "fingerprint": "chrome",
-            "alpn": [
-              "h2"
-            ]
+            "serverName": "go.iranfree.de5.net",
+            "fingerprint": "chrome"
           },
-          "xhttpSettings": {
-            "path": "/ccxf5snr06b8xxb6",
-            "mode": "auto",
-            "host": "is-tw-relay.cdn.cachefleet.com"
+          "wsSettings": {
+            "path": "/",
+            "headers": {
+              "Host": "go.iranfree.de5.net"
+            }
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
@@ -1259,11 +1163,11 @@
         "settings": {
           "vnext": [
             {
-              "address": "91.215.43.80",
+              "address": "8.6.112.242",
               "port": 443,
               "users": [
                 {
-                  "id": "e9b117e4-8be9-4105-9354-a5e0663294f0",
+                  "id": "64726966-0000-4000-8000-740000000000",
                   "encryption": "none",
                   "level": 8
                 }
@@ -1275,13 +1179,13 @@
           "network": "ws",
           "security": "tls",
           "tlsSettings": {
-            "serverName": "metrics.api.downloader-pet.xyz",
+            "serverName": "parsa-panel-dy55x.railway1385-2a46.workers.dev",
             "fingerprint": "firefox"
           },
           "wsSettings": {
-            "path": "/gateway/v1/ws/a901ed17102fc3090ca1ab052c672f47",
+            "path": "/",
             "headers": {
-              "Host": "metrics.api.downloader-pet.xyz"
+              "Host": "parsa-panel-dy55x.railway1385-2a46.workers.dev"
             }
           },
           "sockopt": {
@@ -1298,27 +1202,30 @@
         "settings": {
           "vnext": [
             {
-              "address": "168.113.190.113",
-              "port": 443,
+              "address": "8.35.211.87",
+              "port": 2096,
               "users": [
                 {
-                  "id": "45ef6d0c-df92-4328-afa3-d6af1806fb3c",
+                  "id": "56e4896e-90a9-4fe0-8480-90d3d68b9928",
                   "encryption": "none",
-                  "level": 8,
-                  "flow": "xtls-rprx-vision"
+                  "level": 8
                 }
               ]
             }
           ]
         },
         "streamSettings": {
-          "network": "tcp",
-          "security": "reality",
-          "realitySettings": {
-            "serverName": "13.143.195.113.sslip.io",
-            "fingerprint": "firefox",
-            "publicKey": "p0M6RumtfcATPNPUIFnFcgWy2rzk2gGVWx21sql1hV0",
-            "shortId": "8238d76df92c2560"
+          "network": "ws",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "go.iranfree.de5.net",
+            "fingerprint": "firefox"
+          },
+          "wsSettings": {
+            "path": "/fp=chromefp=chrome",
+            "headers": {
+              "Host": "go.iranfree.de5.net"
+            }
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
@@ -1334,27 +1241,29 @@
         "settings": {
           "vnext": [
             {
-              "address": "5.129.249.155",
-              "port": 443,
+              "address": "8.35.211.43",
+              "port": 2053,
               "users": [
                 {
-                  "id": "7ad63b26-bf70-4872-8fab-ebaf73a1e19d",
+                  "id": "56e4896e-90a9-4fe0-8480-90d3d68b9928",
                   "encryption": "none",
-                  "level": 8,
-                  "flow": "xtls-rprx-vision"
+                  "level": 8
                 }
               ]
             }
           ]
         },
         "streamSettings": {
-          "network": "tcp",
-          "security": "reality",
-          "realitySettings": {
-            "serverName": "assets-59.topp-con.xyz",
-            "fingerprint": "firefox",
-            "publicKey": "LEziyH-E4k9hehGRJkVi1FadVObB_NZJy8U7oUCVWXU",
-            "shortId": "b9120cd53ffd7bba"
+          "network": "ws",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "go.iranfree.de5.net"
+          },
+          "wsSettings": {
+            "path": "/fp=chrome",
+            "headers": {
+              "Host": "go.iranfree.de5.net"
+            }
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
@@ -1408,7 +1317,7 @@
         "statsOutboundUplink": true
       }
     },
-    "remarks": "🇷🇺 Россия",
+    "remarks": "🇺🇸 США",
     "routing": {
       "balancers": [
         {
@@ -1729,11 +1638,11 @@
         "settings": {
           "vnext": [
             {
-              "address": "8.35.211.87",
+              "address": "91.215.43.80",
               "port": 443,
               "users": [
                 {
-                  "id": "56e4896e-90a9-4fe0-8480-90d3d68b9928",
+                  "id": "e9b117e4-8be9-4105-9354-a5e0663294f0",
                   "encryption": "none",
                   "level": 8
                 }
@@ -1745,13 +1654,13 @@
           "network": "ws",
           "security": "tls",
           "tlsSettings": {
-            "serverName": "go.iranfree.de5.net",
-            "fingerprint": "chrome"
+            "serverName": "metrics.api.downloader-pet.xyz",
+            "fingerprint": "firefox"
           },
           "wsSettings": {
-            "path": "/",
+            "path": "/gateway/v1/ws/a901ed17102fc3090ca1ab052c672f47",
             "headers": {
-              "Host": "go.iranfree.de5.net"
+              "Host": "metrics.api.downloader-pet.xyz"
             }
           },
           "sockopt": {
@@ -1768,30 +1677,27 @@
         "settings": {
           "vnext": [
             {
-              "address": "8.6.112.242",
+              "address": "5.129.249.155",
               "port": 443,
               "users": [
                 {
-                  "id": "64726966-0000-4000-8000-740000000000",
+                  "id": "7ad63b26-bf70-4872-8fab-ebaf73a1e19d",
                   "encryption": "none",
-                  "level": 8
+                  "level": 8,
+                  "flow": "xtls-rprx-vision"
                 }
               ]
             }
           ]
         },
         "streamSettings": {
-          "network": "ws",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "parsa-panel-dy55x.railway1385-2a46.workers.dev",
-            "fingerprint": "firefox"
-          },
-          "wsSettings": {
-            "path": "/",
-            "headers": {
-              "Host": "parsa-panel-dy55x.railway1385-2a46.workers.dev"
-            }
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "assets-59.topp-con.xyz",
+            "fingerprint": "firefox",
+            "publicKey": "LEziyH-E4k9hehGRJkVi1FadVObB_NZJy8U7oUCVWXU",
+            "shortId": "b9120cd53ffd7bba"
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
@@ -1807,30 +1713,27 @@
         "settings": {
           "vnext": [
             {
-              "address": "8.35.211.87",
-              "port": 2096,
+              "address": "du-rov.secureservice.top",
+              "port": 8443,
               "users": [
                 {
-                  "id": "56e4896e-90a9-4fe0-8480-90d3d68b9928",
+                  "id": "c53ea5e9-ed8b-4990-805d-7f1d6451426c",
                   "encryption": "none",
-                  "level": 8
+                  "level": 8,
+                  "flow": "xtls-rprx-vision"
                 }
               ]
             }
           ]
         },
         "streamSettings": {
-          "network": "ws",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "go.iranfree.de5.net",
-            "fingerprint": "firefox"
-          },
-          "wsSettings": {
-            "path": "/fp=chromefp=chrome",
-            "headers": {
-              "Host": "go.iranfree.de5.net"
-            }
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "du-rov.secureservice.top",
+            "fingerprint": "chrome",
+            "publicKey": "fSVfR9NB-6J6smrZlavi0GWd8JfDh0aXuEkKbtuFzUI",
+            "shortId": "3cbc3d737fb9c4af"
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
@@ -1846,11 +1749,11 @@
         "settings": {
           "vnext": [
             {
-              "address": "8.35.211.43",
-              "port": 2053,
+              "address": "95.129.234.113",
+              "port": 8443,
               "users": [
                 {
-                  "id": "56e4896e-90a9-4fe0-8480-90d3d68b9928",
+                  "id": "88281d02-b387-4fe3-918e-26ed331e6d08",
                   "encryption": "none",
                   "level": 8
                 }
@@ -1859,16 +1762,19 @@
           ]
         },
         "streamSettings": {
-          "network": "ws",
+          "network": "xhttp",
           "security": "tls",
           "tlsSettings": {
-            "serverName": "go.iranfree.de5.net"
+            "serverName": "tansy-wharf.cdn.cachefleet.com",
+            "fingerprint": "chrome",
+            "alpn": [
+              "h2"
+            ]
           },
-          "wsSettings": {
-            "path": "/fp=chrome",
-            "headers": {
-              "Host": "go.iranfree.de5.net"
-            }
+          "xhttpSettings": {
+            "path": "/ccxf5snr06b8xxb6",
+            "mode": "auto",
+            "host": "is-tw-relay.cdn.cachefleet.com"
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
@@ -1876,20 +1782,6 @@
             "tcpKeepAliveInterval": 15,
             "tcpNoDelay": true
           }
-        }
-      },
-      {
-        "tag": "proxy-5",
-        "protocol": "shadowsocks",
-        "settings": {
-          "servers": [
-            {
-              "address": "88.216.254.18",
-              "port": 1080,
-              "method": "chacha20-ietf-poly1305",
-              "password": "V7WLaYdujkwnj6xxXq-2BSxGWEcSJtTA"
-            }
-          ]
         }
       },
       {
@@ -1936,7 +1828,7 @@
         "statsOutboundUplink": true
       }
     },
-    "remarks": "🇺🇸 США",
+    "remarks": "🇷🇺 Россия",
     "routing": {
       "balancers": [
         {
@@ -2334,42 +2226,6 @@
       },
       {
         "tag": "proxy-3",
-        "protocol": "trojan",
-        "settings": {
-          "servers": [
-            {
-              "address": "104.17.147.22",
-              "port": 2083,
-              "password": "uFepQ5r4JSusbY"
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "ws",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "floral-grass-aa1e.dianawpewpek1.workers.dev",
-            "fingerprint": "chrome",
-            "alpn": [
-              "http/1.1"
-            ]
-          },
-          "wsSettings": {
-            "path": "/",
-            "headers": {
-              "Host": "floral-grass-aa1e.dianawpewpek1.workers.dev"
-            }
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-4",
         "protocol": "vmess",
         "settings": {
           "vnext": [
