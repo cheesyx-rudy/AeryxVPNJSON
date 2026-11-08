@@ -341,14 +341,14 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
     if mode == "proxy":
         import aeryx_core
         core_version=metadata.version("aeryxvpn-core")
-        if core_version != "0.9.0" or getattr(aeryx_core, "__version__", None) != core_version:
+        if core_version != "0.10.0" or getattr(aeryx_core, "__version__", None) != core_version:
             raise RuntimeError(
-                f"Expected AeryxVPN Core 0.9.0 at runtime; "
+                f"Expected AeryxVPN Core 0.10.0 at runtime; "
                 f"distribution={core_version}, module={getattr(aeryx_core, '__version__', 'unknown')}"
             )
         if not cores:
             report["warnings"].append(
-                "AeryxVPN Core 0.9.0 is loaded, but neither Xray nor sing-box binary is available. "
+                "AeryxVPN Core 0.10.0 is loaded, but no Xray, sing-box, or Mihomo binary is available. "
                 "Candidates cannot be tunnel-validated and will not be published."
             )
     report["endpoint_diagnostics"]={
@@ -380,7 +380,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
         if done == 1 or done == total or done % validation_stride == 0:
             successful=sum(v for k,v in counts.items() if k.startswith("proxy_ok"))
             progress.emit("tunnel_validation", f"Туннельная проверка: {done}/{total}", {"passed":successful,"completed":done,"total":total,"statuses":counts}, summary=True)
-    progress.emit("tunnel_validation", "Запущена проверка через sing-box/Xray", {"nodes":len(kept),"workers":check_workers,"targets":len(probe_targets),"timeout_per_node":float(ccfg.get("per_node_timeout_seconds",10))})
+    progress.emit("tunnel_validation", "Запущена проверка через Mihomo/sing-box/Xray", {"nodes":len(kept),"workers":check_workers,"targets":len(probe_targets),"timeout_per_node":float(ccfg.get("per_node_timeout_seconds",10))})
     if mode == "proxy":
         status_counts = validate_nodes_with_core(
             kept,
