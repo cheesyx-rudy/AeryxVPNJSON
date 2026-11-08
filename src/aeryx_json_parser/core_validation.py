@@ -92,6 +92,7 @@ def validate_nodes_with_core(
     engine = engine_factory(
         xray_binary=cores.get("xray"),
         sing_box_binary=cores.get("sing-box"),
+        mihomo_binary=cores.get("mihomo"),
         probe_policy=ProbePolicy(
             minimum_successes=minimum_successes,
             require_independent_providers=require_independent_providers,
