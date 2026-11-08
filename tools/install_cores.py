@@ -1,5 +1,5 @@
 from __future__ import annotations
-import argparse, json, os, platform, re, shutil, stat, sys, tarfile, tempfile, time, urllib.request, zipfile
+import argparse, json, os, platform, re, shutil, stat, sys, tarfile, tempfile, time, urllib.error, urllib.request, zipfile
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -11,16 +11,44 @@ def get_json(url: str):
     with urllib.request.urlopen(req,timeout=20) as r: return json.loads(r.read().decode("utf-8"))
 
 
-def download(url: str, dest: Path, max_bytes: int=250*1024*1024):
-    req=urllib.request.Request(url,headers={"User-Agent":"AeryxParser-core-installer/2.0"})
-    with urllib.request.urlopen(req,timeout=30) as r, dest.open("wb") as f:
-        total=0
-        while True:
-            chunk=r.read(1024*1024)
-            if not chunk: break
-            total+=len(chunk)
-            if total>max_bytes: raise ValueError(f"download exceeds safety limit ({max_bytes} bytes)")
-            f.write(chunk)
+def download(url: str, dest: Path, max_bytes: int=250*1024*1024, attempts: int=4):
+    """Download a release asset atomically, retrying transient GitHub/CDN failures."""
+    partial=dest.with_name(dest.name+".part")
+    headers={"User-Agent":"AeryxParser-core-installer/2.1","Accept":"application/octet-stream"}
+    for attempt in range(1, attempts+1):
+        req=urllib.request.Request(url,headers=headers)
+        try:
+            total=0
+            with urllib.request.urlopen(req,timeout=45) as r, partial.open("wb") as f:
+                while True:
+                    chunk=r.read(1024*1024)
+                    if not chunk: break
+                    total+=len(chunk)
+                    if total>max_bytes: raise ValueError(f"download exceeds safety limit ({max_bytes} bytes)")
+                    f.write(chunk)
+            if total == 0:
+                raise ValueError("downloaded release asset is empty")
+            os.replace(partial,dest)
+            return
+        except urllib.error.HTTPError as exc:
+            try: partial.unlink()
+            except OSError: pass
+            retryable=exc.code in {403,408,425,429,500,502,503,504}
+            if not retryable or attempt>=attempts:
+                raise
+            retry_after=exc.headers.get("Retry-After") if exc.headers else None
+            try: delay=max(1,min(20,int(retry_after))) if retry_after else min(2**(attempt-1),8)
+            except (TypeError,ValueError): delay=min(2**(attempt-1),8)
+            print(f"[WARN] HTTP {exc.code} while downloading release asset; retry {attempt}/{attempts} in {delay}s",file=sys.stderr)
+            time.sleep(delay)
+        except (urllib.error.URLError, TimeoutError) as exc:
+            try: partial.unlink()
+            except OSError: pass
+            if attempt>=attempts:
+                raise
+            delay=min(2**(attempt-1),8)
+            print(f"[WARN] Network error while downloading release asset ({type(exc).__name__}); retry {attempt}/{attempts} in {delay}s",file=sys.stderr)
+            time.sleep(delay)
 
 
 def detect_target():
@@ -109,17 +137,33 @@ def main():
         try:
             metadata[key]=install_archive(repo,key,osname,arch,args.tools_dir)
         except Exception as exc:
-            failures.append(f"{key}: {type(exc).__name__}")
+            if isinstance(exc,urllib.error.HTTPError):
+                detail=f"HTTP {exc.code} {exc.reason}"
+            elif isinstance(exc,urllib.error.URLError):
+                detail=f"network error: {exc.reason}"
+            else:
+                detail=f"{type(exc).__name__}: {exc}"
+            failures.append(f"{key}: {detail}")
             # An already installed official binary can still be used when updating it
             # fails due to a transient network/API error.
             if expected.is_file():
-                metadata[key]={"binary":expected.name,"version":"existing_not_updated","warning":type(exc).__name__}
-            print(f"[WARN] Could not update {key} from its official release page: {type(exc).__name__}",file=sys.stderr)
+                metadata[key]={"binary":expected.name,"version":"existing_not_updated","warning":detail}
+            print(f"[WARN] Could not update {key} from its official release page: {detail}",file=sys.stderr)
     args.tools_dir.mkdir(parents=True,exist_ok=True)
     (args.tools_dir/"core-versions.json").write_text(json.dumps(metadata,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print(json.dumps(metadata,ensure_ascii=False,indent=2))
-    if not any((args.tools_dir/("xray.exe" if osname=="windows" else "xray")).is_file() or (args.tools_dir/("sing-box.exe" if osname=="windows" else "sing-box")).is_file() for _ in [0]):
-        raise SystemExit("Could not install either official core. Check the internet connection and run again.")
+    required_binaries={
+        "xray":args.tools_dir/("xray.exe" if osname=="windows" else "xray"),
+        "sing-box":args.tools_dir/("sing-box.exe" if osname=="windows" else "sing-box"),
+    }
+    missing=[name for name,path in required_binaries.items() if not path.is_file()]
+    if missing:
+        details="; ".join(failures) if failures else "no additional download diagnostics"
+        raise SystemExit(
+            "Required official core binary/binaries missing: "+", ".join(missing)+
+            ". Stopping before parsing; both Xray and sing-box are required by the current pipeline. "+
+            details
+        )
     if failures: print("[WARN] Some cores were not updated: "+", ".join(failures),file=sys.stderr)
 
 if __name__=="__main__": main()
