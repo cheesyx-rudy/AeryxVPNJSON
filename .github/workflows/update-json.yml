@@ -52,7 +52,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: cheesyx-rudy/AeryxVPN-Core
-          ref: 796688c142f78c65107bcd9da46f89cb6da6b821
+          ref: c67ba94bd2d92c8dadca6a16b99a0cd64b244315
           token: ${{ secrets.AERYX_CORE_READ_TOKEN }}
           path: .aeryx-core
           persist-credentials: false
@@ -61,8 +61,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -Fq 'version = "0.9.0"' .aeryx-core/pyproject.toml
+          grep -Fq 'version = "0.10.0"' .aeryx-core/pyproject.toml
           test -f .aeryx-core/src/aeryx_core/validation/core_validators.py
+          test -f .aeryx-core/src/aeryx_core/cores/mihomo.py
 
       - name: Build and install pinned Core wheel
         shell: bash
@@ -71,7 +72,7 @@ jobs:
           wheel_dir="$RUNNER_TEMP/aeryx-core-wheel"
           mkdir -p "$wheel_dir"
           python -m pip wheel --no-deps --wheel-dir "$wheel_dir" ./.aeryx-core
-          wheel="$(find "$wheel_dir" -maxdepth 1 -name 'aeryxvpn_core-0.9.0-*.whl' -print -quit)"
+          wheel="$(find "$wheel_dir" -maxdepth 1 -name 'aeryxvpn_core-0.10.0-*.whl' -print -quit)"
           test -n "$wheel"
           python -m pip install --no-cache-dir --force-reinstall "$wheel"
 
@@ -85,15 +86,21 @@ jobs:
           env -u PYTHONPATH python -I - <<'PY'
           from importlib import metadata
           import aeryx_core
-          from aeryx_core import ShareURIAdapter, create_validation_engine
+          from aeryx_core import (
+              MihomoConfigBuilder,
+              MihomoProtocolValidator,
+              ShareURIAdapter,
+              create_validation_engine,
+          )
 
-          assert metadata.version("aeryxvpn-core") == "0.9.0"
-          assert aeryx_core.__version__ == "0.9.0"
+          assert metadata.version("aeryxvpn-core") == "0.10.0"
+          assert aeryx_core.__version__ == "0.10.0"
           assert ShareURIAdapter and callable(create_validation_engine)
-          print("AeryxVPN Core 0.9.0: OK")
+          assert MihomoConfigBuilder and MihomoProtocolValidator
+          print("AeryxVPN Core 0.10.0: OK")
           PY
 
-      - name: Verify parser runtime resolves AeryxVPN Core 0.9.0
+      - name: Verify parser runtime resolves AeryxVPN Core 0.10.0
         shell: bash
         run: |
           set -euo pipefail
@@ -103,7 +110,7 @@ jobs:
           import aeryx_core
           import aeryx_json_parser.core_validation as adapter
 
-          expected = "0.9.0"
+          expected = "0.10.0"
           actual = metadata.version("aeryxvpn-core")
           if actual != expected or aeryx_core.__version__ != expected:
               raise SystemExit(
@@ -135,7 +142,7 @@ jobs:
         if: steps.source_check.outputs.has_sources == 'true'
         run: python tools/download_geoip.py --output output/dbip-country-lite.mmdb
 
-      - name: Install official stable Xray and sing-box cores
+      - name: Install official stable Xray, sing-box, and Mihomo cores
         if: steps.source_check.outputs.has_sources == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
