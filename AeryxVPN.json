@@ -236,6 +236,42 @@
         "settings": {
           "vnext": [
             {
+              "address": "212.233.90.78",
+              "port": 443,
+              "users": [
+                {
+                  "id": "9548ef84-b54d-41dc-b17c-9da21d52ba82",
+                  "encryption": "none",
+                  "level": 8,
+                  "flow": "xtls-rprx-vision"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "birch-ledger.justext.space",
+            "fingerprint": "firefox",
+            "publicKey": "FwPphm8xGAKY6u74WDRVrcVye3A7GdLDfJoNSDWFsFQ",
+            "shortId": "2c6df23e"
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-5",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
               "address": "168.113.187.116",
               "port": 443,
               "users": [
@@ -265,7 +301,7 @@
         }
       },
       {
-        "tag": "proxy-5",
+        "tag": "proxy-6",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -299,7 +335,41 @@
         }
       },
       {
-        "tag": "proxy-6",
+        "tag": "proxy-7",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "159.194.210.102",
+              "port": 443,
+              "users": [
+                {
+                  "id": "ecf65acd-ea72-0002-be5f-cd23afb2722f",
+                  "encryption": "none",
+                  "level": 8,
+                  "flow": "xtls-rprx-vision"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "box.vpvi.store",
+            "fingerprint": "firefox"
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-8",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -337,7 +407,7 @@
         }
       },
       {
-        "tag": "proxy-7",
+        "tag": "proxy-9",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -375,7 +445,7 @@
         }
       },
       {
-        "tag": "proxy-8",
+        "tag": "proxy-10",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -416,7 +486,59 @@
         }
       },
       {
-        "tag": "proxy-9",
+        "tag": "proxy-11",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "earlytrain.net",
+              "port": 8443,
+              "users": [
+                {
+                  "id": "37af0181-5598-4aad-a040-d926bcb65757",
+                  "encryption": "none",
+                  "level": 8
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "xhttp",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "earlytrain.net",
+            "fingerprint": "firefox",
+            "alpn": [
+              "h2",
+              "http/1.1"
+            ]
+          },
+          "xhttpSettings": {
+            "path": "/api/v1/upload",
+            "mode": "auto",
+            "host": "earlytrain.net",
+            "extra": {
+              "scMaxEachPostBytes": 1000000,
+              "scMinPostsIntervalMs": 30,
+              "xmux": {
+                "cMaxReuseTimes": "64-128",
+                "maxConcurrency": "16-32",
+                "maxConnections": 0
+              },
+              "xPaddingBytes": "100-1000"
+            }
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-12",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -457,59 +579,7 @@
         }
       },
       {
-        "tag": "proxy-10",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "earlytrain.net",
-              "port": 8443,
-              "users": [
-                {
-                  "id": "37af0181-5598-4aad-a040-d926bcb65757",
-                  "encryption": "none",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "xhttp",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "earlytrain.net",
-            "fingerprint": "chrome",
-            "alpn": [
-              "h2",
-              "http/1.1"
-            ]
-          },
-          "xhttpSettings": {
-            "path": "/api/v1/upload",
-            "mode": "auto",
-            "host": "earlytrain.net",
-            "extra": {
-              "xPaddingBytes": "100-1000",
-              "scMaxEachPostBytes": 1000000,
-              "scMinPostsIntervalMs": 30,
-              "xmux": {
-                "maxConnections": "0",
-                "maxConcurrency": "16-32",
-                "cMaxReuseTimes": "64-128"
-              }
-            }
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-11",
+        "tag": "proxy-13",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -531,7 +601,7 @@
           "security": "tls",
           "tlsSettings": {
             "serverName": "hazel-beacon.cdn.cachefleet.com",
-            "fingerprint": "chrome",
+            "fingerprint": "firefox",
             "alpn": [
               "h2"
             ]
@@ -550,7 +620,7 @@
         }
       },
       {
-        "tag": "proxy-12",
+        "tag": "proxy-14",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -591,42 +661,7 @@
         }
       },
       {
-        "tag": "proxy-13",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "83.171.241.180",
-              "port": 443,
-              "users": [
-                {
-                  "id": "cda0862a-0f87-4be9-8ed8-1d0c9e382839",
-                  "encryption": "none",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "reality",
-          "realitySettings": {
-            "serverName": "f0d7aft.nl17.h1clayd.click",
-            "fingerprint": "edge",
-            "publicKey": "kkCGiCQCKnkozJR1KKCRNtmdBECmThCgI9VSv7iDcWI",
-            "shortId": "8956c57cb4c4f8d2"
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-14",
+        "tag": "proxy-15",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -667,7 +702,45 @@
         }
       },
       {
-        "tag": "proxy-15",
+        "tag": "proxy-16",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "151.101.36.88",
+              "port": 443,
+              "users": [
+                {
+                  "id": "ad9a885d-93bb-48e3-9937-57f1116b64e3",
+                  "encryption": "none",
+                  "level": 8
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "xhttp",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "accounts.fastly.com",
+            "fingerprint": "chrome"
+          },
+          "xhttpSettings": {
+            "path": "/",
+            "mode": "auto",
+            "host": "ovd5.global.ssl.fastly.net"
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-17",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -705,7 +778,7 @@
         }
       },
       {
-        "tag": "proxy-16",
+        "tag": "proxy-18",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -743,7 +816,7 @@
         }
       },
       {
-        "tag": "proxy-17",
+        "tag": "proxy-19",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -781,7 +854,7 @@
         }
       },
       {
-        "tag": "proxy-18",
+        "tag": "proxy-20",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -833,59 +906,7 @@
         }
       },
       {
-        "tag": "proxy-19",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "151.101.36.88",
-              "port": 443,
-              "users": [
-                {
-                  "id": "ad9a885d-93bb-48e3-9937-57f1116b64e3",
-                  "encryption": "none",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "xhttp",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "accounts.fastly.com",
-            "fingerprint": "chrome"
-          },
-          "xhttpSettings": {
-            "path": "/",
-            "mode": "auto",
-            "host": "ovd5.global.ssl.fastly.net",
-            "extra": {
-              "scMaxEachPostBytes": "500000",
-              "scMaxConcurrentPosts": 100,
-              "scMinPostsIntervalMs": "60",
-              "xPaddingBytes": "100-1000",
-              "noGRPCHeader": true,
-              "xmux": {
-                "maxConnections": 16,
-                "cMaxReuseTimes": 0,
-                "hMaxRequestTimes": "600-900",
-                "hMaxReusableSecs": "1800-3000",
-                "hKeepAlivePeriod": 0
-              }
-            }
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-20",
+        "tag": "proxy-21",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -937,7 +958,7 @@
         }
       },
       {
-        "tag": "proxy-21",
+        "tag": "proxy-22",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -989,7 +1010,7 @@
         }
       },
       {
-        "tag": "proxy-22",
+        "tag": "proxy-23",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1041,7 +1062,7 @@
         }
       },
       {
-        "tag": "proxy-23",
+        "tag": "proxy-24",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1076,7 +1097,7 @@
         }
       },
       {
-        "tag": "proxy-24",
+        "tag": "proxy-25",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1111,7 +1132,7 @@
         }
       },
       {
-        "tag": "proxy-25",
+        "tag": "proxy-26",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1153,7 +1174,7 @@
         }
       },
       {
-        "tag": "proxy-26",
+        "tag": "proxy-27",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1195,7 +1216,7 @@
         }
       },
       {
-        "tag": "proxy-27",
+        "tag": "proxy-28",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1234,7 +1255,7 @@
         }
       },
       {
-        "tag": "proxy-28",
+        "tag": "proxy-29",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1276,7 +1297,7 @@
         }
       },
       {
-        "tag": "proxy-29",
+        "tag": "proxy-30",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1312,7 +1333,7 @@
         }
       },
       {
-        "tag": "proxy-30",
+        "tag": "proxy-31",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1347,7 +1368,7 @@
         }
       },
       {
-        "tag": "proxy-31",
+        "tag": "proxy-32",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1386,7 +1407,7 @@
         }
       },
       {
-        "tag": "proxy-32",
+        "tag": "proxy-33",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1421,7 +1442,44 @@
         }
       },
       {
-        "tag": "proxy-33",
+        "tag": "proxy-34",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "4935e4t.de25.h1clayd.click",
+              "port": 443,
+              "users": [
+                {
+                  "id": "4201786b-d99b-4147-a5f0-20d47acddb81",
+                  "encryption": "none",
+                  "level": 8,
+                  "flow": "xtls-rprx-vision"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "4935e4t.de25.h1clayd.click",
+            "fingerprint": "chrome",
+            "publicKey": "MzgB17ZFbKqs8pbC3EscTzHid_ENc-k_Cp6nXl-2knw",
+            "shortId": "6976d670818644cc",
+            "spiderX": "/"
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-35",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1457,7 +1515,7 @@
         }
       },
       {
-        "tag": "proxy-34",
+        "tag": "proxy-36",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1493,7 +1551,7 @@
         }
       },
       {
-        "tag": "proxy-35",
+        "tag": "proxy-37",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1529,7 +1587,7 @@
         }
       },
       {
-        "tag": "proxy-36",
+        "tag": "proxy-38",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1565,7 +1623,7 @@
         }
       },
       {
-        "tag": "proxy-37",
+        "tag": "proxy-39",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1604,7 +1662,7 @@
         }
       },
       {
-        "tag": "proxy-38",
+        "tag": "proxy-40",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1640,7 +1698,7 @@
         }
       },
       {
-        "tag": "proxy-39",
+        "tag": "proxy-41",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -1676,7 +1734,7 @@
         }
       },
       {
-        "tag": "proxy-40",
+        "tag": "proxy-42",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -2186,6 +2244,42 @@
         "settings": {
           "vnext": [
             {
+              "address": "212.233.90.78",
+              "port": 443,
+              "users": [
+                {
+                  "id": "9548ef84-b54d-41dc-b17c-9da21d52ba82",
+                  "encryption": "none",
+                  "level": 8,
+                  "flow": "xtls-rprx-vision"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "birch-ledger.justext.space",
+            "fingerprint": "firefox",
+            "publicKey": "FwPphm8xGAKY6u74WDRVrcVye3A7GdLDfJoNSDWFsFQ",
+            "shortId": "2c6df23e"
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-5",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
               "address": "168.113.187.116",
               "port": 443,
               "users": [
@@ -2215,7 +2309,7 @@
         }
       },
       {
-        "tag": "proxy-5",
+        "tag": "proxy-6",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -2249,7 +2343,41 @@
         }
       },
       {
-        "tag": "proxy-6",
+        "tag": "proxy-7",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "159.194.210.102",
+              "port": 443,
+              "users": [
+                {
+                  "id": "ecf65acd-ea72-0002-be5f-cd23afb2722f",
+                  "encryption": "none",
+                  "level": 8,
+                  "flow": "xtls-rprx-vision"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "box.vpvi.store",
+            "fingerprint": "firefox"
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-8",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -2287,7 +2415,7 @@
         }
       },
       {
-        "tag": "proxy-7",
+        "tag": "proxy-9",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -2325,7 +2453,7 @@
         }
       },
       {
-        "tag": "proxy-8",
+        "tag": "proxy-10",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -2366,7 +2494,59 @@
         }
       },
       {
-        "tag": "proxy-9",
+        "tag": "proxy-11",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "earlytrain.net",
+              "port": 8443,
+              "users": [
+                {
+                  "id": "37af0181-5598-4aad-a040-d926bcb65757",
+                  "encryption": "none",
+                  "level": 8
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "xhttp",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "earlytrain.net",
+            "fingerprint": "firefox",
+            "alpn": [
+              "h2",
+              "http/1.1"
+            ]
+          },
+          "xhttpSettings": {
+            "path": "/api/v1/upload",
+            "mode": "auto",
+            "host": "earlytrain.net",
+            "extra": {
+              "scMaxEachPostBytes": 1000000,
+              "scMinPostsIntervalMs": 30,
+              "xmux": {
+                "cMaxReuseTimes": "64-128",
+                "maxConcurrency": "16-32",
+                "maxConnections": 0
+              },
+              "xPaddingBytes": "100-1000"
+            }
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-12",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -2407,59 +2587,7 @@
         }
       },
       {
-        "tag": "proxy-10",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "earlytrain.net",
-              "port": 8443,
-              "users": [
-                {
-                  "id": "37af0181-5598-4aad-a040-d926bcb65757",
-                  "encryption": "none",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "xhttp",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "earlytrain.net",
-            "fingerprint": "chrome",
-            "alpn": [
-              "h2",
-              "http/1.1"
-            ]
-          },
-          "xhttpSettings": {
-            "path": "/api/v1/upload",
-            "mode": "auto",
-            "host": "earlytrain.net",
-            "extra": {
-              "xPaddingBytes": "100-1000",
-              "scMaxEachPostBytes": 1000000,
-              "scMinPostsIntervalMs": 30,
-              "xmux": {
-                "maxConnections": "0",
-                "maxConcurrency": "16-32",
-                "cMaxReuseTimes": "64-128"
-              }
-            }
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-11",
+        "tag": "proxy-13",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -2481,7 +2609,7 @@
           "security": "tls",
           "tlsSettings": {
             "serverName": "hazel-beacon.cdn.cachefleet.com",
-            "fingerprint": "chrome",
+            "fingerprint": "firefox",
             "alpn": [
               "h2"
             ]
@@ -2500,7 +2628,7 @@
         }
       },
       {
-        "tag": "proxy-12",
+        "tag": "proxy-14",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -2531,41 +2659,6 @@
             "path": "/ccxf5snr06b8xxb6",
             "mode": "auto",
             "host": "fafeqdhlett2p5la6d.cdn.cachefleet.com"
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-13",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "83.171.241.180",
-              "port": 443,
-              "users": [
-                {
-                  "id": "cda0862a-0f87-4be9-8ed8-1d0c9e382839",
-                  "encryption": "none",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "reality",
-          "realitySettings": {
-            "serverName": "f0d7aft.nl17.h1clayd.click",
-            "fingerprint": "edge",
-            "publicKey": "kkCGiCQCKnkozJR1KKCRNtmdBECmThCgI9VSv7iDcWI",
-            "shortId": "8956c57cb4c4f8d2"
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
@@ -2981,6 +3074,44 @@
         "settings": {
           "vnext": [
             {
+              "address": "151.101.36.88",
+              "port": 443,
+              "users": [
+                {
+                  "id": "ad9a885d-93bb-48e3-9937-57f1116b64e3",
+                  "encryption": "none",
+                  "level": 8
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "xhttp",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "accounts.fastly.com",
+            "fingerprint": "chrome"
+          },
+          "xhttpSettings": {
+            "path": "/",
+            "mode": "auto",
+            "host": "ovd5.global.ssl.fastly.net"
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-3",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
               "address": "151.101.36.201",
               "port": 443,
               "users": [
@@ -3014,7 +3145,7 @@
         }
       },
       {
-        "tag": "proxy-3",
+        "tag": "proxy-4",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -3052,7 +3183,7 @@
         }
       },
       {
-        "tag": "proxy-4",
+        "tag": "proxy-5",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -3090,7 +3221,7 @@
         }
       },
       {
-        "tag": "proxy-5",
+        "tag": "proxy-6",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -3118,58 +3249,6 @@
             "path": "/",
             "mode": "auto",
             "host": "oh1.global.ssl.fastly.net",
-            "extra": {
-              "scMaxEachPostBytes": "500000",
-              "scMaxConcurrentPosts": 100,
-              "scMinPostsIntervalMs": "60",
-              "xPaddingBytes": "100-1000",
-              "noGRPCHeader": true,
-              "xmux": {
-                "maxConnections": 16,
-                "cMaxReuseTimes": 0,
-                "hMaxRequestTimes": "600-900",
-                "hMaxReusableSecs": "1800-3000",
-                "hKeepAlivePeriod": 0
-              }
-            }
-          },
-          "sockopt": {
-            "domainStrategy": "UseIPv4",
-            "tcpKeepAliveIdle": 60,
-            "tcpKeepAliveInterval": 15,
-            "tcpNoDelay": true
-          }
-        }
-      },
-      {
-        "tag": "proxy-6",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "151.101.36.88",
-              "port": 443,
-              "users": [
-                {
-                  "id": "ad9a885d-93bb-48e3-9937-57f1116b64e3",
-                  "encryption": "none",
-                  "level": 8
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "xhttp",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "accounts.fastly.com",
-            "fingerprint": "chrome"
-          },
-          "xhttpSettings": {
-            "path": "/",
-            "mode": "auto",
-            "host": "ovd5.global.ssl.fastly.net",
             "extra": {
               "scMaxEachPostBytes": "500000",
               "scMaxConcurrentPosts": 100,
@@ -4438,6 +4517,43 @@
             "fingerprint": "chrome",
             "publicKey": "hFee7zTreqlv_wccK_8zxN5v23hj9u-DshByvGf-KAA",
             "shortId": "23732d14a527990d"
+          },
+          "sockopt": {
+            "domainStrategy": "UseIPv4",
+            "tcpKeepAliveIdle": 60,
+            "tcpKeepAliveInterval": 15,
+            "tcpNoDelay": true
+          }
+        }
+      },
+      {
+        "tag": "proxy-5",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "4935e4t.de25.h1clayd.click",
+              "port": 443,
+              "users": [
+                {
+                  "id": "4201786b-d99b-4147-a5f0-20d47acddb81",
+                  "encryption": "none",
+                  "level": 8,
+                  "flow": "xtls-rprx-vision"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "4935e4t.de25.h1clayd.click",
+            "fingerprint": "chrome",
+            "publicKey": "MzgB17ZFbKqs8pbC3EscTzHid_ENc-k_Cp6nXl-2knw",
+            "shortId": "6976d670818644cc",
+            "spiderX": "/"
           },
           "sockopt": {
             "domainStrategy": "UseIPv4",
