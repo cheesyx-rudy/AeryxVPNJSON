@@ -53,7 +53,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: cheesyx-rudy/AeryxVPN-Core
-          ref: 1c8dd073654cd96598154ba94d5439ab6782bd2c
+          ref: bf1f5640c697715853f90015d4700cf391febd4d
           token: ${{ secrets.AERYX_CORE_READ_TOKEN }}
           path: .aeryx-core
           persist-credentials: false
@@ -62,7 +62,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -Fq 'version = "0.10.0"' .aeryx-core/pyproject.toml
+          grep -Fq 'version = "1.0.0"' .aeryx-core/pyproject.toml
           test -f .aeryx-core/src/aeryx_core/validation/core_validators.py
           test -f .aeryx-core/src/aeryx_core/cores/mihomo.py
 
@@ -73,7 +73,7 @@ jobs:
           wheel_dir="$RUNNER_TEMP/aeryx-core-wheel"
           mkdir -p "$wheel_dir"
           python -m pip wheel --no-deps --wheel-dir "$wheel_dir" ./.aeryx-core
-          wheel="$(find "$wheel_dir" -maxdepth 1 -name 'aeryxvpn_core-0.10.0-*.whl' -print -quit)"
+          wheel="$(find "$wheel_dir" -maxdepth 1 -name 'aeryxvpn_core-1.0.0-*.whl' -print -quit)"
           test -n "$wheel"
           python -m pip install --no-cache-dir --force-reinstall "$wheel"
 
@@ -94,14 +94,14 @@ jobs:
               create_validation_engine,
           )
 
-          assert metadata.version("aeryxvpn-core") == "0.10.0"
-          assert aeryx_core.__version__ == "0.10.0"
+          assert metadata.version("aeryxvpn-core") == "1.0.0"
+          assert aeryx_core.__version__ == "1.0.0"
           assert ShareURIAdapter and callable(create_validation_engine)
           assert MihomoConfigBuilder and MihomoProtocolValidator
-          print("AeryxVPN Core 0.10.0: OK")
+          print("AeryxVPN Core 1.0.0: OK")
           PY
 
-      - name: Verify parser runtime resolves AeryxVPN Core 0.10.0
+      - name: Verify parser runtime resolves AeryxVPN Core 1.0.0
         shell: bash
         run: |
           set -euo pipefail
@@ -111,7 +111,7 @@ jobs:
           import aeryx_core
           import aeryx_json_parser.core_validation as adapter
 
-          expected = "0.10.0"
+          expected = "1.0.0"
           actual = metadata.version("aeryxvpn-core")
           if actual != expected or aeryx_core.__version__ != expected:
               raise SystemExit(
