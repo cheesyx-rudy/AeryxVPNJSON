@@ -328,14 +328,15 @@ jobs:
               ;;
           esac
 
-          encoded_content="$(base64 -w 0 "${source_file}")"
+          encoded_file="$RUNNER_TEMP/moshub-content.base64"
+          base64 -w 0 "${source_file}" > "${encoded_file}"
           payload="$RUNNER_TEMP/moshub-commit.json"
           jq -n \
             --arg branch "main" \
             --arg message "Update ${target_file} mirror" \
             --arg action "${action}" \
             --arg path "${target_file}" \
-            --arg content "${encoded_content}" \
+            --rawfile content "${encoded_file}" \
             '{branch: $branch, commit_message: $message, actions: [{action: $action, file_path: $path, content: $content, encoding: "base64"}]}' \
             > "${payload}"
 
