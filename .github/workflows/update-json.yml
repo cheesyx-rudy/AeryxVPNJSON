@@ -29,6 +29,16 @@ jobs:
       WEP_SOURCE_URL: ${{ secrets.WEP_SOURCE_URL }}
 
     steps:
+      - name: Verify MosHub mirror credential
+        env:
+          MOSHUB_TOKEN: ${{ secrets.MOSHUB_TOKEN }}
+        shell: bash
+        run: |
+          if [[ -z "${MOSHUB_TOKEN:-}" ]]; then
+            echo '::error::MOSHUB_TOKEN is missing. Add a MosHub/GitLab token with api scope and write access to cheesyx/aeryx-mirror.'
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v7
 
@@ -279,3 +289,63 @@ jobs:
             echo '::error::Could not publish JSON subscription after three attempts.'
             exit 1
           fi
+
+      - name: Publish JSON MosHub mirror
+        if: success() && steps.source_check.outputs.has_sources == 'true' && github.ref == 'refs/heads/main'
+        env:
+          MOSHUB_TOKEN: ${{ secrets.MOSHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_file="output/publish/AeryxVPN.json"
+          target_file="mirror.json"
+          project="cheesyx%2Faeryx-mirror"
+          api="https://hub.mos.ru/api/v4/projects/${project}"
+          test -s "${source_file}"
+
+          local_sha="$(sha256sum "${source_file}" | awk '{print $1}')"
+          response_file="$RUNNER_TEMP/moshub-file-response.json"
+          status="$(curl --silent --show-error --output "${response_file}" --write-out '%{http_code}' \
+            --header "PRIVATE-TOKEN: ${MOSHUB_TOKEN}" \
+            "${api}/repository/files/${target_file}?ref=main")"
+
+          case "${status}" in
+            200)
+              remote_sha="$(jq -r '.content_sha256 // empty' "${response_file}")"
+              if [[ "${remote_sha}" == "${local_sha}" ]]; then
+                echo "MosHub mirror ${target_file} is already up to date."
+                exit 0
+              fi
+              action="update"
+              ;;
+            404)
+              action="create"
+              ;;
+            *)
+              cat "${response_file}"
+              echo "::error::MosHub file lookup failed with HTTP ${status}."
+              exit 1
+              ;;
+          esac
+
+          encoded_content="$(base64 -w 0 "${source_file}")"
+          payload="$RUNNER_TEMP/moshub-commit.json"
+          jq -n \
+            --arg branch "main" \
+            --arg message "Update ${target_file} mirror" \
+            --arg action "${action}" \
+            --arg path "${target_file}" \
+            --arg content "${encoded_content}" \
+            '{branch: $branch, commit_message: $message, actions: [{action: $action, file_path: $path, content: $content, encoding: "base64"}]}' \
+            > "${payload}"
+
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "PRIVATE-TOKEN: ${MOSHUB_TOKEN}" \
+            --header "Content-Type: application/json" \
+            --data-binary "@${payload}" \
+            "${api}/repository/commits" \
+            --output "$RUNNER_TEMP/moshub-commit-response.json"
+
+          commit_id="$(jq -r '.short_id // .id // "created"' "$RUNNER_TEMP/moshub-commit-response.json")"
+          echo "MosHub mirror ${target_file} updated (commit ${commit_id})."
