@@ -9,13 +9,13 @@
     "subscription_url": "https://raw.githubusercontent.com/cheesyx-rudy/AeryxVPNJSON/main/AeryxVPN.json",
     "support_url": "https://t.me/cheesyx",
     "website_url": "https://t.me/AeryxVPN",
-    "generated_at": "2026-11-16T22:05:16Z",
-    "updated_at_local": "16.11.2026 23:05",
+    "generated_at": "2026-11-16T23:35:20Z",
+    "updated_at_local": "17.11.2026 00:35",
     "timezone": "Europe/Berlin",
     "update_interval_hours": 6,
-    "country_count": 13,
-    "validated_config_count": 57,
-    "profile_count": 14,
+    "country_count": 12,
+    "validated_config_count": 58,
+    "profile_count": 13,
     "auto_profile_included": true,
     "auto_profile_name": "🇪🇺 Автовыбор",
     "balancing": {
@@ -29,7 +29,7 @@
       "timeout": "2s",
       "method": "client-side; each profile measures its own nodes"
     },
-    "profile_sha256": "ae37a344d6c20b483036e8e523685e11382173278d3be80e31e2fa39da192e34",
+    "profile_sha256": "e5c423f98cb4da6fffce9e2967fa31ec57d7fcfd3f5d1c94a9bc40acd86bee58",
     "countries": [
       {
         "code": "RU",
@@ -46,6 +46,15 @@
         "flag": "🇺🇸",
         "profile_name": "🇺🇸 США",
         "node_count": 12,
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
+      },
+      {
+        "code": "NL",
+        "name": "The Netherlands",
+        "flag": "🇳🇱",
+        "profile_name": "🇳🇱 Нидерланды",
+        "node_count": 6,
         "balancer_tag": "balancer",
         "balancing": "burstObservatory+leastPing"
       },
@@ -72,34 +81,7 @@
         "name": "Japan",
         "flag": "🇯🇵",
         "profile_name": "🇯🇵 Япония",
-        "node_count": 4,
-        "balancer_tag": "balancer",
-        "balancing": "burstObservatory+leastPing"
-      },
-      {
-        "code": "NL",
-        "name": "The Netherlands",
-        "flag": "🇳🇱",
-        "profile_name": "🇳🇱 Нидерланды",
-        "node_count": 4,
-        "balancer_tag": "balancer",
-        "balancing": "burstObservatory+leastPing"
-      },
-      {
-        "code": "EE",
-        "name": "Estonia",
-        "flag": "🇪🇪",
-        "profile_name": "🇪🇪 Эстония",
-        "node_count": 3,
-        "balancer_tag": "balancer",
-        "balancing": "burstObservatory+leastPing"
-      },
-      {
-        "code": "BY",
-        "name": "Belarus",
-        "flag": "🇧🇾",
-        "profile_name": "🇧🇾 Беларусь",
-        "node_count": 1,
+        "node_count": 5,
         "balancer_tag": "balancer",
         "balancing": "burstObservatory+leastPing"
       },
@@ -108,6 +90,15 @@
         "name": "Finland",
         "flag": "🇫🇮",
         "profile_name": "🇫🇮 Финляндия",
+        "node_count": 2,
+        "balancer_tag": "balancer",
+        "balancing": "burstObservatory+leastPing"
+      },
+      {
+        "code": "EE",
+        "name": "Estonia",
+        "flag": "🇪🇪",
+        "profile_name": "🇪🇪 Эстония",
         "node_count": 1,
         "balancer_tag": "balancer",
         "balancing": "burstObservatory+leastPing"
@@ -150,6 +141,6 @@
       }
     ],
     "profile_template_revision": "1.5.0",
-    "note": "Metadata sidecar only. Import AeryxVPN.json; it is a JSON array of complete Xray profiles, one per country plus optional global Auto. Every candidate outbound was prevalidated with official Xray-core before grouping. Routing is embedded in each JSON profile: IP-check domains are blocked, push-service domains are direct, Roblox and Telegram use the least-ping balancer, Russian suffixes and the expanded Russian service whitelist are direct, and all remaining TCP/UDP traffic uses the least-ping balancer. Routing is self-contained and does not require external GeoSite/GeoIP files."
+    "note": "Metadata sidecar only. Import AeryxVPN.json; it is a JSON array of complete Xray profiles, one per country plus optional global Auto. Every candidate outbound was prevalidated with official Xray-core before grouping. The shared profile shell follows config/xray-profile-template.json. IP-check domains are blocked; push-service domains are routed directly; Roblox and Telegram use the least-ping balancer; Russian suffixes and the expanded Russian service whitelist are routed directly; all remaining TCP/UDP traffic uses the least-ping balancer. Routing is self-contained and does not require external GeoSite/GeoIP files."
   }
 }
