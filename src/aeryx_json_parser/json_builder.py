@@ -423,7 +423,7 @@ def _build_country_outputs_in_place(
             "note": (
                 "Metadata sidecar only. Import AeryxVPN.json; it is a JSON array of complete Xray profiles, one per country plus optional global Auto. "
                 + ("Every candidate outbound was prevalidated with official Xray-core before grouping. " if xray_binary is not None else "Nodes passed source-pipeline checks and Xray JSON conversion; core prevalidation was not requested. ")
-                + "The shared profile shell follows config/xray-profile-template.json. Russian domain traffic uses geosite:located-in-ru plus the .ru/.su/.рф suffixes, and Russian destination IPs use geoip:ru with IPIfNonMatch. Explicit Telegram proxy rules precede the Russian direct rules; all remaining traffic uses the least-ping balancer. These are standard Xray GeoSite/GeoIP datasets; no custom geo database is required."
+                + "The shared profile shell follows config/xray-profile-template.json. Russian domain traffic uses geosite:located-in-ru plus the .ru/.su/.рф suffixes, and Russian destination IPs use geoip:ru with IPIfNonMatch. Explicit Telegram proxy rules precede the Russian direct rules; all remaining traffic uses the least-ping balancer. These are standard Xray GeoSite/GeoIP datasets; no additional custom geo databases are required."
             ),
         },
     }
