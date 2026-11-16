@@ -175,7 +175,7 @@
         "tag": "balancer"
       }
     ],
-    "domainStrategy": "AsIs",
+    "domainStrategy": "IPIfNonMatch",
     "rules": [
       {
         "inboundTag": [
@@ -348,6 +348,21 @@
           "domain:tgram.org",
           "domain:torg.org"
         ]
+      },
+      {
+        "domain": [
+          "geosite:located-in-ru",
+          "domain:ru",
+          "domain:su",
+          "domain:xn--p1ai"
+        ],
+        "outboundTag": "direct"
+      },
+      {
+        "ip": [
+          "geoip:ru"
+        ],
+        "outboundTag": "direct"
       },
       {
         "balancerTag": "balancer",
