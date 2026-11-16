@@ -175,7 +175,7 @@
         "tag": "balancer"
       }
     ],
-    "domainStrategy": "IPIfNonMatch",
+    "domainStrategy": "AsIs",
     "rules": [
       {
         "inboundTag": [
@@ -351,16 +351,47 @@
       },
       {
         "domain": [
-          "geosite:located-in-ru",
           "domain:ru",
           "domain:su",
-          "domain:xn--p1ai"
-        ],
-        "outboundTag": "direct"
-      },
-      {
-        "ip": [
-          "geoip:ru"
+          "domain:xn--p1ai",
+          "domain:yandex.ru",
+          "domain:yandex.net",
+          "domain:yastatic.net",
+          "domain:yandex.com",
+          "domain:vk.com",
+          "domain:vk.ru",
+          "domain:vk.me",
+          "domain:userapi.com",
+          "domain:vkuseraudio.net",
+          "domain:vk-cdn.net",
+          "domain:vk-portal.net",
+          "domain:ok.ru",
+          "domain:mail.ru",
+          "domain:my.mail.ru",
+          "domain:avito.ru",
+          "domain:ozon.ru",
+          "domain:wildberries.ru",
+          "domain:sberbank.ru",
+          "domain:online.sberbank.ru",
+          "domain:alfabank.ru",
+          "domain:alfa-bank.ru",
+          "domain:tbank.ru",
+          "domain:tinkoff.ru",
+          "domain:vtb.ru",
+          "domain:gazprombank.ru",
+          "domain:gosuslugi.ru",
+          "domain:nalog.ru",
+          "domain:mos.ru",
+          "domain:mosreg.ru",
+          "domain:rzd.ru",
+          "domain:pochta.ru",
+          "domain:aeroflot.ru",
+          "domain:2gis.ru",
+          "domain:hh.ru",
+          "domain:kinopoisk.ru",
+          "domain:ivi.ru",
+          "domain:rutube.ru",
+          "domain:vkvideo.ru"
         ],
         "outboundTag": "direct"
       },
