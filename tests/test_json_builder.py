@@ -97,7 +97,7 @@ class UnifiedJSONBuilderTests(unittest.TestCase):
             self.assertEqual(metadata["country_count"], 2)
             self.assertEqual(metadata["profile_count"], 3)
             self.assertEqual(metadata["profile_template_revision"], "1.4.4")
-            self.assertIn("no additional custom geo databases", metadata["note"])
+            self.assertIn("does not require external GeoSite/GeoIP files", metadata["note"])
             self.assertEqual(metadata["generated_at"], "2026-10-27T12:00:00Z")
             self.assertIn("https://raw.githubusercontent.com/cheesyx-rudy/aeryx-json-parser/main/AeryxVPN.json", metadata["subscription_url"])
 
