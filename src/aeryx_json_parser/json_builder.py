@@ -419,11 +419,11 @@ def _build_country_outputs_in_place(
             "balancing": balancing,
             "profile_sha256": profile_hash,
             "countries": sorted(country_rows, key=lambda row: (-row["node_count"], _country_sort(row["code"]))),
-            "profile_template_revision": "1.4.4",
+            "profile_template_revision": "1.5.0",
             "note": (
                 "Metadata sidecar only. Import AeryxVPN.json; it is a JSON array of complete Xray profiles, one per country plus optional global Auto. "
                 + ("Every candidate outbound was prevalidated with official Xray-core before grouping. " if xray_binary is not None else "Nodes passed source-pipeline checks and Xray JSON conversion; core prevalidation was not requested. ")
-                + "The shared profile shell follows config/xray-profile-template.json. Russian destinations are routed directly using explicit domain suffixes (.ru, .su, .рф) and embedded domains for major Russian services. Telegram proxy rules precede Russian direct rules; all remaining TCP/UDP traffic uses the least-ping balancer. Routing is self-contained and does not require external GeoSite/GeoIP files."
+                + "The shared profile shell follows config/xray-profile-template.json. IP-check domains are blocked; push-service domains are routed directly; Roblox and Telegram use the least-ping balancer; Russian suffixes and the expanded Russian service whitelist are routed directly; all remaining TCP/UDP traffic uses the least-ping balancer. Routing is self-contained and does not require external GeoSite/GeoIP files."
             ),
         },
     }

@@ -29,7 +29,7 @@
       "timeout": "2s",
       "method": "client-side; each profile measures its own nodes"
     },
-    "profile_sha256": "1950dbc23915abdc0f4879f7ca015e34778ecca75f10210e91dc9299699bdb17",
+    "profile_sha256": "ae37a344d6c20b483036e8e523685e11382173278d3be80e31e2fa39da192e34",
     "countries": [
       {
         "code": "RU",
@@ -149,7 +149,7 @@
         "balancing": "burstObservatory+leastPing"
       }
     ],
-    "profile_template_revision": "1.4.4",
-    "note": "Metadata sidecar only. Import AeryxVPN.json; it is a JSON array of complete Xray profiles, one per country plus optional global Auto. Every candidate outbound was prevalidated with official Xray-core before grouping. The shared profile shell follows config/xray-profile-template.json. Russian traffic is routed directly using embedded domain suffixes and service domains. No external GeoSite/GeoIP files are required."
+    "profile_template_revision": "1.5.0",
+    "note": "Metadata sidecar only. Import AeryxVPN.json; it is a JSON array of complete Xray profiles, one per country plus optional global Auto. Every candidate outbound was prevalidated with official Xray-core before grouping. Routing is embedded in each JSON profile: IP-check domains are blocked, push-service domains are direct, Roblox and Telegram use the least-ping balancer, Russian suffixes and the expanded Russian service whitelist are direct, and all remaining TCP/UDP traffic uses the least-ping balancer. Routing is self-contained and does not require external GeoSite/GeoIP files."
   }
 }
