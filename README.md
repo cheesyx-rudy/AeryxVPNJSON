@@ -1,52 +1,56 @@
-# AeryxVPN Core
+# AeryxVPN JSON Subscription
 
-Shared Python library for the AeryxVPN URI and JSON subscription parsers.
+Automated AeryxVPN subscription published in the Happ-compatible Xray JSON-array format.
 
-> **Status: `0.2.0` — shared input adapters are ready; validation migration is in progress.**
-> Core extracts share-URI subscriptions and parses Xray JSON, sing-box JSON, Clash JSON/YAML, and
-> SIP008. Shared country resolution and Happ routing utilities are also included. Production Xray/sing-box checks have not yet been migrated, so do not replace the
-> existing parser validation pipelines with this release.
+[English](README.md) · [Русский](README_RU.md)
 
-## Architecture
+## Subscription
 
-- **Input adapters** convert share URI, Xray JSON, sing-box JSON, Clash JSON/YAML, and SIP008
-  into `ProxyCandidate` objects.
-- **Validation Engine** dispatches candidates to protocol-aware validators.
-- **Output adapters** preserve each parser's output contract: ordinary share links for
-  the URI parser and the existing Happ-compatible JSON schema for the JSON parser.
-- **SourcePayload** retains original input data so unknown JSON fields are not silently
-  discarded during conversion.
+- **JSON subscription:** [AeryxVPN.json](https://raw.githubusercontent.com/cheesyx-rudy/AeryxVPNJSON/main/AeryxVPN.json)
+- **Metadata:** [AeryxVPN.metadata.json](https://raw.githubusercontent.com/cheesyx-rudy/AeryxVPNJSON/main/AeryxVPN.metadata.json)
 
-The Core is a library executed inside GitHub-hosted Actions runners. It is not a daemon,
-web service, or always-on server.
+The subscription is intended for clients that support Happ-compatible Xray JSON arrays. The metadata file contains generation details, profile and country information, and the configured update interval.
 
-## Development
+## Included features
 
-```bash
-python -m pip install -e '.[dev]'
-python -m pytest -q
-python -m ruff check .
-```
+- Separate profiles grouped by country.
+- An automatic profile for selecting a node based on measured latency.
+- Client-side Xray balancing using `burstObservatory` and `leastPing`.
+- Subscription metadata with the generation time and current output statistics.
 
-## Versioning
+The number of available nodes and countries changes as the subscription is regenerated. Actual connectivity and performance depend on the network, the destination service, and the client being used.
 
-Parser workflows should pin a Core release tag (for example `v0.2.0`) rather than track
-`main`. Breaking public API changes require a major version once the integration API is
-stable.
+## Processing and validation
 
-## Private repository access
+The automated pipeline collects configured sources, extracts supported proxy entries, applies filtering and duplicate reduction, validates candidates through the private **AeryxVPN Core 1.0.0**, and builds the JSON subscription.
 
-The JSON parser repository is public, so its workflow must retrieve this private repository
-using a narrowly scoped read-only credential stored as a GitHub Actions secret. Never put
-a token in source code, workflow literals, URLs committed to Git, artifacts, or logs.
-Do not expose the secret to workflows triggered by untrusted pull requests.
+The generated profiles are additionally checked with the official Xray-core binary before publication.
 
+Publication has safety thresholds. When the run does not produce enough acceptable candidates or validation requirements are not met, the workflow keeps the previously published subscription instead of replacing it with an incomplete result.
 
-## Release 1.0.0
+The workflow can be started by the connected automation through `repository_dispatch`. It also supports manual runs in GitHub Actions and runs triggered by changes to `sources.enc`.
 
-The JSON parser uses AeryxVPN Core 0.8.0 for protocol-aware tunnel validation. The
-existing Happ-compatible JSON-array builder remains the output authority; validation
-results do not reconstruct or rewrite source profile fields. The workflow pins the exact immutable AeryxVPN Core 0.8.0 commit by SHA and checks the installed wheel before running tests and generation.
+## Source data
 
-The Core repository is private. Configure `AERYX_CORE_READ_TOKEN` as a read-only
-Actions secret with access to `cheesyx-rudy/AeryxVPN-Core`.
+The configured source list is stored in this repository as encrypted `sources.enc`. The workflow decrypts it at runtime using a GitHub Actions secret. The decryption key and other credentials must not be committed to the repository.
+
+The parser's full production workflow depends on the separate private AeryxVPN Core repository and its read-only Actions credential. A public clone of this repository alone is therefore not a self-contained copy of the production environment.
+
+## Repository contents
+
+| Path | Purpose |
+| --- | --- |
+| `AeryxVPN.json` | Published JSON-array subscription |
+| `AeryxVPN.metadata.json` | Metadata for the published subscription |
+| `src/aeryx_json_parser/` | JSON parser and subscription-generation code |
+| `config/` | Parser and output settings |
+| `schemas/` | JSON schemas for generated data |
+| `tools/` | Source decryption and validation utilities |
+| `.github/workflows/` | Automation and CI workflows |
+| `LICENSE`, `LICENSE-SCOPE.md` | Software license and its scope |
+
+## License
+
+The original software code listed in [LICENSE-SCOPE.md](LICENSE-SCOPE.md) is covered by PolyForm Strict License 1.0.0 ([LICENSE](LICENSE)).
+
+The license scope does **not** include the published VPN subscription, configuration and source-list data, documentation, or third-party materials. This project does not claim ownership of third-party configurations or grant rights the project does not hold.
