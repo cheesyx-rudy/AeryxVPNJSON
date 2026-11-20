@@ -1,6 +1,9 @@
 name: AeryxVPN Happ Xray JSON-array subscription
 
 on:
+  push:
+    branches: [main]
+    paths: [sources.enc]
   workflow_dispatch:
   # Cloudflare Worker starts the JSON parser through GitHub repository_dispatch.
   repository_dispatch:
@@ -137,6 +140,15 @@ jobs:
 
       - name: Run offline tests
         run: python -m pytest -q -ra
+
+      - name: Decrypt private source list
+        env:
+          SOURCE_DECRYPTION_KEY: ${{ secrets.SOURCE_DECRYPTION_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check "cryptography>=44,<47"
+          python tools/decrypt_sources.py --input sources.enc --output sources.txt
 
       - name: Check whether sources.txt has active URLs
         id: source_check
