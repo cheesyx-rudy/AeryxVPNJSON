@@ -142,6 +142,7 @@ jobs:
         run: python -m pytest -q -ra
 
       - name: Decrypt private source list
+        if: hashFiles('sources.enc') != ''
         env:
           SOURCE_DECRYPTION_KEY: ${{ secrets.SOURCE_DECRYPTION_KEY }}
         shell: bash
@@ -149,6 +150,8 @@ jobs:
           set -euo pipefail
           python -m pip install --disable-pip-version-check "cryptography>=44,<47"
           python tools/decrypt_sources.py --input sources.enc --output sources.txt
+          # Keep the decrypted working copy out of every later git add/commit.
+          git rm --cached --ignore-unmatch sources.txt
 
       - name: Check whether sources.txt has active URLs
         id: source_check
