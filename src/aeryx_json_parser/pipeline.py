@@ -42,6 +42,18 @@ def _source_name(url: str, index: int) -> str:
         return f"source-{index}"
 
 
+def _source_display_name(source: dict[str,Any], index: int) -> str:
+    """Return only a safe hostname or a neutral label; never print full URLs or paths."""
+    raw_url = str(source.get("url") or "").strip()
+    if re.fullmatch(r"\\$\\{[A-Za-z_][A-Za-z0-9_]*\\}", raw_url):
+        return f"secret-source-{index}"
+    if raw_url:
+        return _source_name(raw_url, index)
+    if source.get("file") or source.get("path"):
+        return f"local-file-{index}"
+    return f"source-{index}"
+
+
 def _parse_txt_source(line: str, index: int) -> dict[str, Any]:
     """TXT line format: URL [| Header: value | Header: value]."""
     parts = [part.strip() for part in line.split("|")]
@@ -69,28 +81,78 @@ def _parse_txt_source(line: str, index: int) -> dict[str, Any]:
     return item
 
 
-def load_sources(path: Path) -> list[dict[str,Any]]:
-    if not path.exists(): raise FileNotFoundError(f"Source list not found: {path}")
-    if path.suffix.lower()==".txt":
-        out=[]; seen=set()
+def _load_sources_with_stats(path: Path) -> tuple[list[dict[str,Any]], dict[str,int]]:
+    if not path.exists():
+        raise FileNotFoundError(f"Source list not found: {path}")
+
+    out: list[dict[str,Any]] = []
+    seen: set[str] = set()
+    source_entries = 0
+    configured_sources = 0
+    duplicates_skipped = 0
+
+    if path.suffix.lower() == ".txt":
         for line_no, raw_line in enumerate(path.read_text(encoding="utf-8-sig").splitlines(), 1):
-            line=raw_line.strip()
-            if not line or line.startswith(("#",";")): continue
-            entry=_parse_txt_source(line, line_no)
-            key=(entry["url"], tuple(sorted((entry.get("headers") or {}).items())))
-            if key not in seen:
-                seen.add(key); out.append(entry)
-        return out
-    # YAML remains supported for tests and migrations, but the project default is sources.txt.
-    cfg=_load_yaml(path); raw=cfg.get("sources",[])
-    if not isinstance(raw,list): raise ValueError("source YAML: 'sources' must be a list")
-    out=[]
-    for i,item in enumerate(raw):
-        if isinstance(item,str): item={"url":item}
-        if not isinstance(item,dict) or not (item.get("url") or item.get("file") or item.get("path")) or not item.get("enabled",True): continue
-        entry=dict(item); entry.setdefault("name",f"source-{i+1}"); entry["url"]=str(entry.get("url") or "").strip()
-        if (entry["url"] or entry.get("file") or entry.get("path")) and entry not in out: out.append(entry)
-    return out
+            line = raw_line.strip()
+            if not line or line.startswith(("#", ";")):
+                continue
+            source_entries += 1
+            entry = _parse_txt_source(line, line_no)
+            configured_sources += 1
+            # Identity includes the complete source URL and headers. Hostname is
+            # deliberately NOT used: several distinct subscriptions may share a domain.
+            key = json.dumps(
+                {"url": entry["url"], "headers": entry.get("headers", {})},
+                sort_keys=True,
+                ensure_ascii=False,
+                default=str,
+            )
+            if key in seen:
+                duplicates_skipped += 1
+                continue
+            seen.add(key)
+            out.append(entry)
+    else:
+        # YAML remains supported for tests and migrations, but the project default is sources.txt.
+        cfg = _load_yaml(path)
+        raw = cfg.get("sources", [])
+        if not isinstance(raw, list):
+            raise ValueError("source YAML: 'sources' must be a list")
+        source_entries = len(raw)
+        for i, item in enumerate(raw):
+            if isinstance(item, str):
+                item = {"url": item}
+            if (
+                not isinstance(item, dict)
+                or not (item.get("url") or item.get("file") or item.get("path"))
+                or not item.get("enabled", True)
+            ):
+                continue
+            entry = dict(item)
+            entry.setdefault("name", f"source-{i+1}")
+            entry["url"] = str(entry.get("url") or "").strip()
+            if not (entry["url"] or entry.get("file") or entry.get("path")):
+                continue
+            configured_sources += 1
+            key = json.dumps(entry, sort_keys=True, ensure_ascii=False, default=str)
+            if key in seen:
+                duplicates_skipped += 1
+                continue
+            seen.add(key)
+            out.append(entry)
+
+    stats = {
+        "source_entries": source_entries,
+        "configured_sources": configured_sources,
+        "unique_sources": len(out),
+        "duplicates_skipped": duplicates_skipped,
+    }
+    return out, stats
+
+
+def load_sources(path: Path) -> list[dict[str,Any]]:
+    """Backward-compatible source loader; exact duplicates are removed, not shared domains."""
+    return _load_sources_with_stats(path)[0]
 
 
 def _source_key(source: dict[str,Any]) -> str:
@@ -248,29 +310,76 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
     progress=ProgressReporter(out_dir/"progress.jsonl", str((cfg.get("subscription", {}) or {}).get("timezone", "Europe/Berlin")))
     report={"schema_version":1,"parser":"AeryxJSON-Parser","version":"1.0.0","started_at":datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "check_mode":mode,"runtime_budget_seconds":runtime,"sources":[],"stages":[],"counts":{},"warnings":[]}
-    fetcher=Fetcher(fcfg); initial=load_sources(sources_path)
-    progress.emit("start", "Запуск обработки подписки", {"sources":len(initial),"budget_seconds":runtime,"mode":mode})
+    fetcher=Fetcher(fcfg)
+    initial, source_inventory = _load_sources_with_stats(sources_path)
+    configured_unique = len(initial)
+    progress.emit(
+        "sources_loaded",
+        "Список источников загружен",
+        source_inventory,
+        console_message=(
+            "[SOURCES] entries={source_entries} | configured={configured_sources} | "
+            "unique={unique_sources} | exact_duplicates_skipped={duplicates_skipped}"
+        ).format(**source_inventory),
+    )
+    # Print every configured entry upfront. The numbered identity keeps two different
+    # subscriptions on the same hostname visibly separate in the Actions log.
+    for source_index, source in enumerate(initial, 1):
+        progress.emit_source_queued(
+            source_index,
+            configured_unique,
+            _source_display_name(source, source_index),
+        )
+    progress.emit(
+        "start",
+        "Запуск обработки подписки",
+        {
+            "configured_sources": source_inventory["configured_sources"],
+            "unique_sources": configured_unique,
+            "budget_seconds": runtime,
+            "mode": mode,
+        },
+    )
 
     # Stage 1: parallel source download and bounded expansion of web panels/provider URLs.
     max_sources=max(1,min(int(fcfg.get("max_total_sources",50)),300)); max_depth=max(0,min(int(fcfg.get("follow_depth",2)),4))
-    pending=[(s,0) for s in initial]; submitted=set(); source_results=[]; raw_links=[]; invalid={}; fetch_errors=0
+    pending=[(s,0) for s in initial]; submitted=set(); source_numbers={}; source_results=[]; raw_links=[]; invalid={}; fetch_errors=0
     while pending and len(submitted)<max_sources and time.monotonic()<deadline:
         batch=[]
         for source,depth in pending:
             key=_source_key(source)
             if key in submitted: continue
-            submitted.add(key); batch.append((source,depth))
+            source_index = len(submitted) + 1
+            submitted.add(key)
+            source_numbers[key] = source_index
+            batch.append((source,depth,source_index))
+            progress.emit_source_started(
+                source_index,
+                configured_unique if source_index <= configured_unique else None,
+                _source_display_name(source, source_index),
+            )
             if len(submitted)>=max_sources: break
         pending=[]
         if not batch: break
         with ThreadPoolExecutor(max_workers=max(4,min(16,int(fcfg.get("workers",12))))) as pool:
-            futures={pool.submit(fetcher.fetch,s,deadline):(s,d) for s,d in batch}
+            futures={
+                pool.submit(fetcher.fetch, source, deadline): (source, depth, source_index)
+                for source, depth, source_index in batch
+            }
             for future in as_completed(futures):
-                source,depth=futures[future]
+                source,depth,source_index=futures[future]
                 try: fr=future.result()
                 except Exception as exc: fr=FetchResult(url=redact_url(str(source.get("url",""))),source_name=str(source.get("name","")),error=f"{type(exc).__name__}: source processing failed")
                 source_parse_started = time.monotonic()
-                record={"name":fr.source_name,"url":fr.url,"final_url":fr.final_url,"status":fr.status,"status_code":fr.status_code,
+                source_domain = urlsplit(fr.url).hostname or _source_display_name(source, source_index)
+                source_total = configured_unique if source_index <= configured_unique else None
+                source_label = (
+                    f"#{source_index:02d}/{source_total}"
+                    if source_total is not None
+                    else f"#{source_index:02d}"
+                )
+                record={"source_index":source_index,"source_label":source_label,"domain":source_domain,
+                        "name":fr.source_name,"url":fr.url,"final_url":fr.final_url,"status":fr.status,"status_code":fr.status_code,
                         "content_type":fr.content_type,"bytes_downloaded":fr.bytes_downloaded,"elapsed_ms":fr.elapsed_ms}
                 if getattr(fr, "client_profile", "default") != "default":
                     record["client_profile"] = fr.client_profile
@@ -352,7 +461,6 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
                     record["parse_error_code"] = source_error_code
                 source_results.append(record)
 
-                source_domain = urlsplit(fr.url).hostname or fr.source_name or "unknown-source"
                 source_elapsed_ms = fr.elapsed_ms + round((time.monotonic() - source_parse_started) * 1000)
                 progress.emit_source(
                     source_domain,
@@ -361,6 +469,8 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
                     error_code=source_error_code or None,
                     invalid=source_invalid,
                     providers=len(providers),
+                    source_index=source_index,
+                    source_total=source_total,
                 )
                 if depth<max_depth and time.monotonic()<deadline:
                     for child in fr.discovered_urls+providers:
@@ -368,10 +478,16 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
                         if child_url: pending.append((dict(child),depth+1))
         progress.emit("fetch_batch", "Завершён пакет источников", {"sources_done":len(source_results),"unique_nodes_so_far":len(raw_links),"fetch_errors":fetch_errors})
         if len(submitted)>=max_sources and pending: report["warnings"].append(f"Nested source discovery capped at {max_sources} URLs")
+    source_results.sort(key=lambda item: int(item.get("source_index", 0)))
     report["sources"]=source_results
-    report["stages"].append({"name":"fetch_and_parse","configured_sources":len(initial),"fetched_sources":len(source_results),"fetch_errors":fetch_errors,
+    report["stages"].append({"name":"fetch_and_parse","configured_sources":len(initial),"source_entries":source_inventory["source_entries"],
+                             "duplicates_skipped":source_inventory["duplicates_skipped"],"submitted_sources":len(submitted),
+                             "fetched_sources":len(source_results),"fetch_errors":fetch_errors,
                              "raw_links":len(raw_links),"invalid_links":len(invalid),"elapsed_seconds":round(time.monotonic()-started,2)})
-    progress.emit("fetch_and_parse", "Источники разобраны", {"fetched":len(source_results),"links":len(raw_links),"invalid":len(invalid),"errors":fetch_errors})
+    progress.emit("fetch_and_parse", "Источники разобраны", {
+        "configured":len(initial),"submitted":len(submitted),"processed":len(source_results),
+        "links":len(raw_links),"invalid":len(invalid),"errors":fetch_errors
+    })
     # Exact dedupe (only remove remarks); auth and transport options remain part of identity.
     nodes=[]; seen=set()
     for node in raw_links:
@@ -379,7 +495,25 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
     report["stages"].append({"name":"deduplicate","input":len(raw_links),"output":len(nodes),"removed":len(raw_links)-len(nodes),"elapsed_seconds":round(time.monotonic()-started,2)})
     progress.emit("deduplicate", "Дубликаты удалены", {"input":len(raw_links),"unique":len(nodes),"duplicates":len(raw_links)-len(nodes)})
     if not nodes:
-        report["counts"]={"configured_sources":len(initial),"fetched_sources":len(source_results),"unique_nodes":0,"accepted":0}
+        report["counts"]={
+            "source_entries":source_inventory["source_entries"],
+            "configured_sources":source_inventory["configured_sources"],
+            "unique_configured_sources":configured_unique,
+            "exact_duplicate_sources_skipped":source_inventory["duplicates_skipped"],
+            "submitted_sources":len(submitted),
+            "fetched_sources":len(source_results),
+            "source_errors":fetch_errors,
+            "raw_links":len(raw_links),
+            "unique_nodes":0,
+            "accepted":0,
+        }
+        report["source_summary"] = progress.emit_source_summary(
+            source_results,
+            source_inventory,
+            submitted_total=len(submitted),
+            parsed_configs=len(raw_links),
+            unique_configs=0,
+        )
         report["warnings"].append("No valid proxy nodes were extracted; the previous final subscription was left unchanged.")
         progress.emit("stop", "Остановка: не найдено ни одной валидной конфигурации", {"accepted":0})
         _write_report(out_dir,report,invalid,[]); return report
@@ -762,12 +896,24 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
         report["warnings"].append("Safety stop: " + "; ".join(details) + ". Final subscription unchanged.")
     (out_dir/str(ocfg.get("structured_file","parsed_proxies.json"))).write_text(json.dumps([n.to_dict() for n in candidate],ensure_ascii=False,indent=2),encoding="utf-8")
     (out_dir/str(ocfg.get("rejected_file","rejected_proxies.txt"))).write_text("\n".join(str(x["uri"]) for x in rejected)+("\n" if rejected else ""),encoding="utf-8")
-    report["counts"]={"configured_sources":len(initial),"fetched_sources":len(source_results),"source_errors":fetch_errors,"raw_links":len(raw_links),"unique_nodes":len(nodes),
+    report["counts"]={"source_entries":source_inventory["source_entries"],
+                       "configured_sources":source_inventory["configured_sources"],
+                       "unique_configured_sources":configured_unique,
+                       "exact_duplicate_sources_skipped":source_inventory["duplicates_skipped"],
+                       "submitted_sources":len(submitted),"fetched_sources":len(source_results),
+                       "source_errors":fetch_errors,"raw_links":len(raw_links),"unique_nodes":len(nodes),
                        "blocked":sum(1 for x in rejected if x["stage"]=="blocklist"),"probe_rejected":sum(1 for x in rejected if x["stage"]=="probe"),
                        "location_rejected":sum(1 for x in rejected if x["stage"]=="location"),
                        "candidate_nodes":len(candidate),"previous_subscription_nodes":previous_count,"total_elapsed_seconds":round(time.monotonic()-started,2)}
     publish.update({"previous_count":previous_count,"candidate_count":len(candidate),"ratio":round(ratio,4),"force_publish":force_publish})
     report["publish"]=publish
+    report["source_summary"] = progress.emit_source_summary(
+        source_results,
+        source_inventory,
+        submitted_total=len(submitted),
+        parsed_configs=len(raw_links),
+        unique_configs=len(nodes),
+    )
     progress.emit("publication", "Решение по публикации", {"status":publish.get("status"),"candidate_count":len(candidate),"previous_count":previous_count,"confidence":confidence_counts})
     report["progress_file"]="output/progress.jsonl (runner artifact; not committed to the public subscription repository)"
     _write_report(out_dir,report,invalid,rejected)
