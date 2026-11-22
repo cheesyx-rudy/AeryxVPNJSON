@@ -230,6 +230,7 @@ class ProgressReporter:
         source_results: list[dict[str, Any]],
         source_inventory: dict[str, int],
         *,
+        configured_manifest: list[dict[str, Any]] | None = None,
         submitted_total: int,
         parsed_configs: int,
         unique_configs: int,
@@ -240,6 +241,31 @@ class ProgressReporter:
             key=lambda item: int(item.get("source_index", 0)),
         )
         initial_count = int(source_inventory.get("unique_sources", 0))
+        processed_indexes = {
+            int(item.get("source_index", 0))
+            for item in ordered
+        }
+        # Always render every configured entry in the final report. If the global
+        # runtime/source cap prevented a fetch, show it explicitly instead of making
+        # the report appear to begin at an arbitrary later source number.
+        missing_configured = [
+            {
+                "source_index": int(item["source_index"]),
+                "domain": str(item.get("domain") or "unknown-source"),
+                "parse_status": "not_processed",
+                "parse_error_code": "NOT_PROCESSED",
+                "parsed_nodes": 0,
+                "protocol_counts": {},
+                "invalid_links": 0,
+                "providers_discovered": 0,
+            }
+            for item in (configured_manifest or [])
+            if int(item["source_index"]) not in processed_indexes
+        ]
+        ordered = sorted(
+            [*ordered, *missing_configured],
+            key=lambda item: int(item.get("source_index", 0)),
+        )
         initial_processed = sum(
             1 for item in ordered
             if int(item.get("source_index", 0)) <= initial_count
@@ -252,10 +278,10 @@ class ProgressReporter:
         result = {
             **source_inventory,
             "submitted_total": int(submitted_total),
-            "processed_total": len(ordered),
+            "processed_total": len(source_results),
             "initial_processed": initial_processed,
             "initial_not_processed": max(0, initial_count - initial_processed),
-            "source_errors": sum(1 for item in ordered if item.get("parse_status") == "error"),
+            "source_errors": sum(1 for item in source_results if item.get("parse_status") == "error"),
             "parsed_configs": int(parsed_configs),
             "unique_configs_after_deduplication": int(unique_configs),
             "protocol_totals": dict(sorted(protocol_totals.items())),
@@ -268,7 +294,7 @@ class ProgressReporter:
                 f"unique={result['unique_sources']} | "
                 f"exact_duplicates_skipped={result['duplicates_skipped']} | "
                 f"initial_processed={initial_processed}/{initial_count} | "
-                f"all_processed={len(ordered)}/{submitted_total} | "
+                f"all_processed={len(source_results)}/{submitted_total} | "
                 f"errors={result['source_errors']}",
                 "96",
             ),
