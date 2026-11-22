@@ -196,9 +196,13 @@ class PipelineIntegrationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             sources = Path(temporary) / "sources.txt"
             sources.write_text(
-                "https://same.example/subscription-a\\n"
-                "https://same.example/subscription-b\\n"
-                "https://same.example/subscription-a\\n",
+                "\n".join(
+                    [
+                        "https://same.example/subscription-a",
+                        "https://same.example/subscription-b",
+                        "https://same.example/subscription-a",
+                    ]
+                ) + "\n",
                 encoding="utf-8",
             )
             loaded, stats = pipeline._load_sources_with_stats(sources)
