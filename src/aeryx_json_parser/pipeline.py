@@ -45,7 +45,7 @@ def _source_name(url: str, index: int) -> str:
 def _source_display_name(source: dict[str,Any], index: int) -> str:
     """Return only a safe hostname or a neutral label; never print full URLs or paths."""
     raw_url = str(source.get("url") or "").strip()
-    if re.fullmatch(r"\\$\\{[A-Za-z_][A-Za-z0-9_]*\\}", raw_url):
+    if re.fullmatch(r"\$\{[A-Za-z_][A-Za-z0-9_]*\}", raw_url):
         return f"secret-source-{index}"
     if raw_url:
         return _source_name(raw_url, index)
