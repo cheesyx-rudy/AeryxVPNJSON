@@ -267,7 +267,7 @@ class ProgressReporter:
             key=lambda item: int(item.get("source_index", 0)),
         )
         initial_processed = sum(
-            1 for item in ordered
+            1 for item in source_results
             if int(item.get("source_index", 0)) <= initial_count
         )
         protocol_totals: dict[str, int] = {}
