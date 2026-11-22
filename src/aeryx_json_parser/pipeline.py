@@ -245,7 +245,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
     worker_count=max(1,min(int(workers or ccfg.get("workers",32)),96)); runtime=max(20,int(max_runtime or pcfg.get("max_runtime_seconds",240)))
     deadline=started+runtime; out_dir=Path(ocfg.get("directory","output")); out_dir=out_dir if out_dir.is_absolute() else ROOT/out_dir; out_dir.mkdir(parents=True,exist_ok=True)
     cache=Path(bcfg.get("cache_path","output/blocklist_cache.json")); cache=cache if cache.is_absolute() else ROOT/cache
-    progress=ProgressReporter(out_dir/"progress.jsonl")
+    progress=ProgressReporter(out_dir/"progress.jsonl", str((cfg.get("subscription", {}) or {}).get("timezone", "Europe/Berlin")))
     report={"schema_version":1,"parser":"AeryxJSON-Parser","version":"1.0.0","started_at":datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "check_mode":mode,"runtime_budget_seconds":runtime,"sources":[],"stages":[],"counts":{},"warnings":[]}
     fetcher=Fetcher(fcfg); initial=load_sources(sources_path)
@@ -269,19 +269,99 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
                 source,depth=futures[future]
                 try: fr=future.result()
                 except Exception as exc: fr=FetchResult(url=redact_url(str(source.get("url",""))),source_name=str(source.get("name","")),error=f"{type(exc).__name__}: source processing failed")
+                source_parse_started = time.monotonic()
                 record={"name":fr.source_name,"url":fr.url,"final_url":fr.final_url,"status":fr.status,"status_code":fr.status_code,
                         "content_type":fr.content_type,"bytes_downloaded":fr.bytes_downloaded,"elapsed_ms":fr.elapsed_ms}
                 if getattr(fr, "client_profile", "default") != "default":
                     record["client_profile"] = fr.client_profile
                 if getattr(fr, "compatibility_note", ""):
                     record["compatibility_note"] = fr.compatibility_note[:240]
-                if fr.error: record["error"]=fr.error[:300]; fetch_errors+=1
-                links,providers=_parse_document(fr.content) if fr.status=="ok" and fr.content else ([],[])
-                record["links_extracted"]=len(links); record["providers_discovered"]=len(providers)
-                source_results.append(record)
+                if fr.error:
+                    record["error"]=fr.error[:300]
+                    fetch_errors+=1
+
+                parse_error = ""
+                links: list[str] = []
+                providers: list[dict[str, Any]] = []
+                if fr.status == "ok" and fr.content:
+                    try:
+                        links, providers = _parse_document(fr.content)
+                    except Exception as exc:
+                        parse_error = type(exc).__name__
+
+                source_nodes: list[ProxyNode] = []
+                source_invalid = 0
                 for link in links:
-                    try: raw_links.append(_parse_link(link,fr.source_name))
-                    except Exception as exc: invalid.setdefault(link,{"source":fr.source_name,"error":str(exc)[:180]})
+                    try:
+                        node = _parse_link(link, fr.source_name)
+                        raw_links.append(node)
+                        source_nodes.append(node)
+                    except Exception as exc:
+                        source_invalid += 1
+                        invalid.setdefault(link, {"source": fr.source_name, "error": str(exc)[:180]})
+
+                protocol_counts = dict(sorted(Counter(node.scheme for node in source_nodes).items()))
+                record["links_extracted"] = len(links)
+                record["parsed_nodes"] = len(source_nodes)
+                record["protocol_counts"] = protocol_counts
+                record["invalid_links"] = source_invalid
+                record["providers_discovered"] = len(providers)
+
+                source_error_code = ""
+                if fr.status != "ok":
+                    if fr.status_code is not None and fr.status_code >= 400:
+                        source_error_code = f"HTTP_{fr.status_code}"
+                    else:
+                        error_text = str(fr.error or "").strip()
+                        error_name = error_text.split(":", 1)[0].strip().split(" ", 1)[0]
+                        aliases = {
+                            "Timeout": "TIMEOUT",
+                            "ConnectTimeout": "CONNECT_TIMEOUT",
+                            "ReadTimeout": "READ_TIMEOUT",
+                            "ConnectionError": "CONNECTION_ERROR",
+                            "SSLError": "TLS_ERROR",
+                            "FileNotFoundError": "FILE_NOT_FOUND",
+                            "ValueError": "INVALID_SOURCE",
+                        }
+                        if error_text.startswith("source URL"):
+                            source_error_code = "INVALID_SOURCE_URL"
+                        elif error_text.startswith("source headers"):
+                            source_error_code = "INVALID_SOURCE_HEADERS"
+                        elif error_text.startswith("global runtime budget"):
+                            source_error_code = "RUNTIME_BUDGET_EXCEEDED"
+                        else:
+                            source_error_code = aliases.get(
+                                error_name,
+                                re.sub(r"[^A-Za-z0-9]+", "_", error_name).strip("_").upper()
+                                or "FETCH_ERROR",
+                            )
+                elif parse_error:
+                    source_error_code = f"PARSE_ERROR_{parse_error.upper()}"
+                elif not source_nodes and not providers:
+                    if links:
+                        source_error_code = "INVALID_CONFIGS"
+                    elif not fr.content.strip():
+                        source_error_code = "EMPTY_RESPONSE"
+                    else:
+                        source_error_code = "NO_SUPPORTED_CONFIGS"
+
+                record["parse_status"] = (
+                    "error" if source_error_code else ("discovered" if providers and not source_nodes else "ok")
+                )
+                if source_error_code:
+                    record["parse_error_code"] = source_error_code
+                source_results.append(record)
+
+                source_domain = urlsplit(fr.url).hostname or fr.source_name or "unknown-source"
+                source_elapsed_ms = fr.elapsed_ms + round((time.monotonic() - source_parse_started) * 1000)
+                progress.emit_source(
+                    source_domain,
+                    protocol_counts,
+                    source_elapsed_ms,
+                    error_code=source_error_code or None,
+                    invalid=source_invalid,
+                    providers=len(providers),
+                )
                 if depth<max_depth and time.monotonic()<deadline:
                     for child in fr.discovered_urls+providers:
                         child_url=str(child.get("url","")).strip()
