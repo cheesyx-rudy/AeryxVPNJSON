@@ -221,4 +221,80 @@ class PipelineIntegrationTests(unittest.TestCase):
             )
 
 
+    def test_parallel_source_results_are_logged_in_source_order(self):
+        import io
+        import time
+        from contextlib import redirect_stdout
+
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            sources = root / "sources.txt"
+            sources.write_text(
+                "\\n".join(
+                    [
+                        "https://one.example/sub",
+                        "https://two.example/sub",
+                        "https://three.example/sub",
+                    ]
+                ) + "\\n",
+                encoding="utf-8",
+            )
+            config = root / "settings.yaml"
+            config.write_text(yaml.safe_dump({
+                "pipeline": {"max_runtime_seconds": 20},
+                "fetch": {"max_total_sources": 10, "follow_depth": 0, "workers": 3},
+                "check": {"mode": "none", "workers": 2},
+                "blocklists": {"enabled": False},
+                "routing": {"happ_enabled": False},
+                "outputs": {
+                    "directory": str(root / "out"),
+                    "subscription_file": "sub.txt",
+                    "candidate_file": "candidate.txt",
+                    "structured_file": "parsed.json",
+                    "rejected_file": "rejected.txt",
+                },
+            }), encoding="utf-8")
+
+            delays = {
+                "https://one.example/sub": 0.15,
+                "https://two.example/sub": 0.08,
+                "https://three.example/sub": 0.01,
+            }
+
+            def fake_fetch(source, deadline=None):
+                time.sleep(delays[source["url"]])
+                return FetchResult(
+                    url=source["url"],
+                    final_url=source["url"],
+                    status="ok",
+                    status_code=200,
+                    content_type="text/plain",
+                    content="no supported proxy links here",
+                    source_name=source["name"],
+                )
+
+            output = io.StringIO()
+            with patch.object(pipeline.Fetcher, "fetch", side_effect=fake_fetch), redirect_stdout(output):
+                report = pipeline.run_pipeline(
+                    config,
+                    sources,
+                    check_mode="none",
+                    skip_blocklist=True,
+                    refresh_routing=False,
+                )
+
+            source_lines = [
+                line for line in output.getvalue().splitlines()
+                if "[SOURCE]" in line
+            ]
+            self.assertEqual(len(source_lines), 3)
+            self.assertIn("[SOURCE] #01/3 one.example", source_lines[0])
+            self.assertIn("[SOURCE] #02/3 two.example", source_lines[1])
+            self.assertIn("[SOURCE] #03/3 three.example", source_lines[2])
+            self.assertEqual(
+                [item["source_index"] for item in report["sources"]],
+                [1, 2, 3],
+            )
+
+
 if __name__=='__main__': unittest.main()
