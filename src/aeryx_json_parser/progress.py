@@ -144,7 +144,7 @@ class ProgressReporter:
             label.lower().replace(" ", "_"),
             f"Всего конфигураций: {int(total)}",
             {"total": int(total), "protocols": dict(sorted(clean_protocols.items()))},
-            console_message="\\n".join(lines),
+            console_message="\n".join(lines),
         )
 
     def emit_count_stage(
@@ -181,7 +181,7 @@ class ProgressReporter:
                 "protocols_before": dict(sorted(protocols_before.items())),
                 "protocols_after": dict(sorted(protocols_after.items())),
             },
-            console_message="\\n".join(lines),
+            console_message="\n".join(lines),
         )
 
     @staticmethod
