@@ -123,7 +123,12 @@ class ProgressReporter:
             for name, count in protocols.items()
             if int(count) > 0
         }
-        first = f"{timestamp} {self._paint(f'[{label}]', '96')} Total nodes: {int(total)}"
+        total_text = (
+            f"{int(total)} nodes queued for checking"
+            if label == "VALIDATION QUEUE"
+            else f"Total nodes: {int(total)}"
+        )
+        first = f"{timestamp} {self._paint(f'[{label}]', '96')} {total_text}"
         lines = [first]
         if clean_protocols:
             lines.append(
