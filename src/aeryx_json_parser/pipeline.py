@@ -343,7 +343,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
 
     # Stage 1: parallel source download and bounded expansion of web panels/provider URLs.
     max_sources=max(1,min(int(fcfg.get("max_total_sources",50)),300)); max_depth=max(0,min(int(fcfg.get("follow_depth",2)),4))
-    pending=[(s,0) for s in initial]; submitted=set(); source_numbers={}; source_results=[]; raw_links=[]; invalid={}; fetch_errors=0
+    pending=[(s,0) for s in initial]; submitted=set(); source_results=[]; raw_links=[]; invalid={}; fetch_errors=0
     while pending and len(submitted)<max_sources and time.monotonic()<deadline:
         batch=[]
         for source,depth in pending:
@@ -351,7 +351,6 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
             if key in submitted: continue
             source_index = len(submitted) + 1
             submitted.add(key)
-            source_numbers[key] = source_index
             batch.append((source,depth,source_index))
             progress.emit_source_started(
                 source_index,
