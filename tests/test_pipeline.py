@@ -285,7 +285,7 @@ class PipelineIntegrationTests(unittest.TestCase):
 
             import re
             source_lines = [
-                re.sub(r"\\x1b\\[[0-9;]*m", "", line)
+                re.sub(r"\x1b\[[0-9;]*m", "", line)
                 for line in output.getvalue().splitlines()
                 if "[SOURCE]" in line
             ]
