@@ -361,6 +361,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
         pending=[]
         if not batch: break
         with ThreadPoolExecutor(max_workers=max(4,min(16,int(fcfg.get("workers",12))))) as pool:
+            batch_progress_events=[]
             futures={
                 pool.submit(fetcher.fetch, source, deadline): (source, depth, source_index)
                 for source, depth, source_index in batch
@@ -461,20 +462,33 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
                 source_results.append(record)
 
                 source_elapsed_ms = fr.elapsed_ms + round((time.monotonic() - source_parse_started) * 1000)
-                progress.emit_source(
-                    source_domain,
-                    protocol_counts,
-                    source_elapsed_ms,
-                    error_code=source_error_code or None,
-                    invalid=source_invalid,
-                    providers=len(providers),
-                    source_index=source_index,
-                    source_total=source_total,
-                )
+                # Save completion telemetry now, but print it after the batch in source order.
+                # as_completed() deliberately returns whichever request finishes first.
+                batch_progress_events.append({
+                    "source_index": source_index,
+                    "source_total": source_total,
+                    "domain": source_domain,
+                    "protocols": protocol_counts,
+                    "elapsed_ms": source_elapsed_ms,
+                    "error_code": source_error_code or None,
+                    "invalid": source_invalid,
+                    "providers": len(providers),
+                })
                 if depth<max_depth and time.monotonic()<deadline:
                     for child in fr.discovered_urls+providers:
                         child_url=str(child.get("url","")).strip()
                         if child_url: pending.append((dict(child),depth+1))
+            for event in sorted(batch_progress_events, key=lambda item: item["source_index"]):
+                progress.emit_source(
+                    event["domain"],
+                    event["protocols"],
+                    event["elapsed_ms"],
+                    error_code=event["error_code"],
+                    invalid=event["invalid"],
+                    providers=event["providers"],
+                    source_index=event["source_index"],
+                    source_total=event["source_total"],
+                )
         progress.emit("fetch_batch", "Завершён пакет источников", {"sources_done":len(source_results),"unique_nodes_so_far":len(raw_links),"fetch_errors":fetch_errors})
         if len(submitted)>=max_sources and pending: report["warnings"].append(f"Nested source discovery capped at {max_sources} URLs")
     source_results.sort(key=lambda item: int(item.get("source_index", 0)))
