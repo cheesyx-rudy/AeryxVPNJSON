@@ -180,6 +180,26 @@ class SourceProgressTests(unittest.TestCase):
             self.assertEqual(summary["initial_not_processed"], 1)
             self.assertEqual(summary["processed_total"], 1)
 
+    def test_stage_count_reports_before_after_and_protocol_breakdown(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            reporter = ProgressReporter(Path(temporary) / "progress.jsonl", "Europe/Berlin")
+            reporter._use_color = False
+            output = io.StringIO()
+            with redirect_stdout(output):
+                reporter.emit_total_report("REPORT", 12, {"vless": 8, "trojan": 4})
+                reporter.emit_count_stage(
+                    "DEDUPLICATION", 12, 7,
+                    {"vless": 8, "trojan": 4},
+                    {"vless": 5, "trojan": 2},
+                )
+            rendered = output.getvalue()
+            self.assertIn("[REPORT] Total nodes: 12", rendered)
+            self.assertIn("VLESS 8", rendered)
+            self.assertIn("TROJAN 4", rendered)
+            self.assertIn("[DEDUPLICATION] 12 -> 7 | Removed: 5", rendered)
+            self.assertIn("VLESS 8 -> 5", rendered)
+            self.assertIn("TROJAN 4 -> 2", rendered)
+
     def test_provider_discovery_is_not_reported_as_a_fetch_failure(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "progress.jsonl"
