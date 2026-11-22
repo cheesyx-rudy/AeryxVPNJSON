@@ -547,7 +547,6 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
     for node in raw_links:
         if node.identity not in seen: seen.add(node.identity); nodes.append(node)
     report["stages"].append({"name":"deduplicate","input":len(raw_links),"output":len(nodes),"removed":len(raw_links)-len(nodes),"elapsed_seconds":round(time.monotonic()-started,2)})
-    progress.emit("deduplicate", "Дубликаты удалены", {"input":len(raw_links),"unique":len(nodes),"duplicates":len(raw_links)-len(nodes)})
     progress.emit_count_stage(
         "DEDUPLICATION",
         len(raw_links),
@@ -606,7 +605,6 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
         else: kept.append(node)
     report["blocklist"]={**bdetails,"network_count":len(networks),"filtered":len(nodes)-len(kept),"unresolved_hosts":unresolved}
     report["stages"].append({"name":"ip_cidr_filter","input":len(nodes),"output":len(kept),"removed":len(nodes)-len(kept),"unresolved_hosts":unresolved,"elapsed_seconds":round(time.monotonic()-bstart,2)})
-    progress.emit("ip_cidr_filter", "Проверены DNS и IP/CIDR-блок-листы", {"input":len(nodes),"eligible":len(kept),"blocked":len(nodes)-len(kept),"unresolved_hosts":unresolved})
     progress.emit_count_stage(
         "DNS/IP-CIDR FILTER",
         len(nodes),
@@ -718,7 +716,6 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
         len(kept),
         dict(Counter(node.scheme for node in kept)),
     )
-    progress.emit("tunnel_validation", "Запущена проверка через Mihomo/sing-box/Xray", {"nodes":len(kept),"workers":check_workers,"targets":len(probe_targets),"timeout_per_node":float(ccfg.get("per_node_timeout_seconds",10))})
     if mode == "proxy":
         status_counts = validate_nodes_with_core(
             kept,
