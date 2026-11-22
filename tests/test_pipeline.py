@@ -192,4 +192,29 @@ class PipelineIntegrationTests(unittest.TestCase):
             self.assertEqual(report['counts']['unique_nodes'],0)
             self.assertEqual(final.read_text(encoding='utf-8'),'vless://old@old.example:443\n')
 
+    def test_source_inventory_keeps_distinct_urls_on_same_domain(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            sources = Path(temporary) / "sources.txt"
+            sources.write_text(
+                "https://same.example/subscription-a\\n"
+                "https://same.example/subscription-b\\n"
+                "https://same.example/subscription-a\\n",
+                encoding="utf-8",
+            )
+            loaded, stats = pipeline._load_sources_with_stats(sources)
+
+            self.assertEqual(len(loaded), 2)
+            self.assertEqual(stats["source_entries"], 3)
+            self.assertEqual(stats["configured_sources"], 3)
+            self.assertEqual(stats["unique_sources"], 2)
+            self.assertEqual(stats["duplicates_skipped"], 1)
+            self.assertEqual(
+                {item["url"] for item in loaded},
+                {
+                    "https://same.example/subscription-a",
+                    "https://same.example/subscription-b",
+                },
+            )
+
+
 if __name__=='__main__': unittest.main()
