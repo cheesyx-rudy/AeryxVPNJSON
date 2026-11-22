@@ -324,11 +324,23 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
     )
     # Print every configured entry upfront. The numbered identity keeps two different
     # subscriptions on the same hostname visibly separate in the Actions log.
-    for source_index, source in enumerate(initial, 1):
+    configured_manifest = [
+        {
+            "source_index": source_index,
+            "domain": _source_display_name(source, source_index),
+        }
+        for source_index, source in enumerate(initial, 1)
+    ]
+    source_index_by_key = {
+        _source_key(source): source_index
+        for source_index, source in enumerate(initial, 1)
+    }
+    next_source_index = configured_unique + 1
+    for source in configured_manifest:
         progress.emit_source_queued(
-            source_index,
+            source["source_index"],
             configured_unique,
-            _source_display_name(source, source_index),
+            source["domain"],
         )
     progress.emit(
         "start",
@@ -349,7 +361,11 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
         for source,depth in pending:
             key=_source_key(source)
             if key in submitted: continue
-            source_index = len(submitted) + 1
+            source_index = source_index_by_key.get(key)
+            if source_index is None:
+                source_index = next_source_index
+                next_source_index += 1
+                source_index_by_key[key] = source_index
             submitted.add(key)
             batch.append((source,depth,source_index))
             progress.emit_source_started(
@@ -523,6 +539,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
         report["source_summary"] = progress.emit_source_summary(
             source_results,
             source_inventory,
+            configured_manifest=configured_manifest,
             submitted_total=len(submitted),
             parsed_configs=len(raw_links),
             unique_configs=0,
