@@ -88,9 +88,9 @@ jobs:
           jq -n \
             --arg message "Update V2Keys subscription mirror" \
             --arg branch "$branch" \
-            --arg content "$(cat "$encoded_file")" \
+            --rawfile content "$encoded_file" \
             --arg sha "$remote_sha" \
-            '{message: $message, branch: $branch, content: $content} + (if $sha == "" then {} else {sha: $sha} end)' \
+            '{message: $message, branch: $branch, content: ($content | gsub("\\n"; ""))} + (if $sha == "" then {} else {sha: $sha} end)' \
             > "$payload"
 
           commit_response="$RUNNER_TEMP/v2keys-commit-response.json"
