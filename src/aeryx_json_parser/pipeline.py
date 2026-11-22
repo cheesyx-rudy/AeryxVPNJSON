@@ -508,7 +508,30 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
         progress.emit("fetch_batch", "Завершён пакет источников", {"sources_done":len(source_results),"unique_nodes_so_far":len(raw_links),"fetch_errors":fetch_errors})
         if len(submitted)>=max_sources and pending: report["warnings"].append(f"Nested source discovery capped at {max_sources} URLs")
     source_results.sort(key=lambda item: int(item.get("source_index", 0)))
-    report["sources"]=source_results
+    processed_source_indexes = {
+        int(item.get("source_index", 0))
+        for item in source_results
+    }
+    unprocessed_source_records = [
+        {
+            "source_index": int(item["source_index"]),
+            "source_label": f"#{int(item['source_index']):02d}/{configured_unique}",
+            "domain": str(item.get("domain") or "unknown-source"),
+            "status": "not_processed",
+            "parse_status": "not_processed",
+            "parse_error_code": "NOT_PROCESSED",
+            "parsed_nodes": 0,
+            "protocol_counts": {},
+            "invalid_links": 0,
+            "providers_discovered": 0,
+        }
+        for item in configured_manifest
+        if int(item["source_index"]) not in processed_source_indexes
+    ]
+    report["sources"] = sorted(
+        [*source_results, *unprocessed_source_records],
+        key=lambda item: int(item.get("source_index", 0)),
+    )
     report["stages"].append({"name":"fetch_and_parse","configured_sources":len(initial),"source_entries":source_inventory["source_entries"],
                              "duplicates_skipped":source_inventory["duplicates_skipped"],"submitted_sources":len(submitted),
                              "fetched_sources":len(source_results),"fetch_errors":fetch_errors,
