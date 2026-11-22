@@ -230,13 +230,13 @@ class PipelineIntegrationTests(unittest.TestCase):
             root = Path(td)
             sources = root / "sources.txt"
             sources.write_text(
-                "\\n".join(
+                "\n".join(
                     [
                         "https://one.example/sub",
                         "https://two.example/sub",
                         "https://three.example/sub",
                     ]
-                ) + "\\n",
+                ) + "\n",
                 encoding="utf-8",
             )
             config = root / "settings.yaml"
