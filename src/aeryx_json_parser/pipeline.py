@@ -940,6 +940,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
     report["source_summary"] = progress.emit_source_summary(
         source_results,
         source_inventory,
+        configured_manifest=configured_manifest,
         submitted_total=len(submitted),
         parsed_configs=len(raw_links),
         unique_configs=len(nodes),
