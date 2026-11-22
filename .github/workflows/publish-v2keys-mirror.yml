@@ -17,15 +17,19 @@ concurrency:
 jobs:
   publish:
     name: Publish extensionless V2Keys file
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.head_branch == 'main'
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
-      - name: Checkout source subscription
-        uses: actions/checkout@v7
-        with:
-          persist-credentials: false
+      - name: Download source subscription
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            "https://raw.githubusercontent.com/cheesyx-rudy/AeryxVPNJSON/main/AeryxVPN.json" \
+            --output AeryxVPN.json
+          test -s AeryxVPN.json
 
       - name: Validate source subscription
         shell: bash
