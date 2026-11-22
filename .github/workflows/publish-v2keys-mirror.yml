@@ -1,10 +1,10 @@
 name: Publish V2Keys subscription mirror
 
 on:
-  push:
+  workflow_run:
+    workflows: ["AeryxVPN Happ Xray JSON-array subscription"]
+    types: [completed]
     branches: [main]
-    paths:
-      - AeryxVPN.json
   workflow_dispatch:
 
 permissions:
@@ -17,6 +17,7 @@ concurrency:
 jobs:
   publish:
     name: Publish extensionless V2Keys file
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
