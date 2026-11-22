@@ -139,6 +139,47 @@ class SourceProgressTests(unittest.TestCase):
             self.assertIn("#02/2 same.example", output.getvalue())
             self.assertIn("unique_after_dedup=4", output.getvalue())
 
+    def test_summary_keeps_unprocessed_configured_sources_in_original_order(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            reporter = ProgressReporter(Path(temporary) / "progress.jsonl", "Europe/Berlin")
+            reporter._use_color = False
+            output = io.StringIO()
+            inventory = {
+                "source_entries": 2,
+                "configured_sources": 2,
+                "unique_sources": 2,
+                "duplicates_skipped": 0,
+            }
+            records = [
+                {
+                    "source_index": 2, "domain": "second.example",
+                    "parse_status": "ok", "parsed_nodes": 3,
+                    "protocol_counts": {"vless": 3}, "invalid_links": 0,
+                },
+            ]
+            manifest = [
+                {"source_index": 1, "domain": "first.example"},
+                {"source_index": 2, "domain": "second.example"},
+            ]
+            with redirect_stdout(output):
+                summary = reporter.emit_source_summary(
+                    records,
+                    inventory,
+                    configured_manifest=manifest,
+                    submitted_total=1,
+                    parsed_configs=3,
+                    unique_configs=3,
+                )
+            rendered = output.getvalue()
+            self.assertLess(
+                rendered.index("#01/2 first.example"),
+                rendered.index("#02/2 second.example"),
+            )
+            self.assertIn("NOT_PROCESSED", rendered)
+            self.assertEqual(summary["initial_processed"], 1)
+            self.assertEqual(summary["initial_not_processed"], 1)
+            self.assertEqual(summary["processed_total"], 1)
+
     def test_provider_discovery_is_not_reported_as_a_fetch_failure(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "progress.jsonl"
