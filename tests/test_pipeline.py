@@ -283,8 +283,10 @@ class PipelineIntegrationTests(unittest.TestCase):
                     refresh_routing=False,
                 )
 
+            import re
             source_lines = [
-                line for line in output.getvalue().splitlines()
+                re.sub(r"\\x1b\\[[0-9;]*m", "", line)
+                for line in output.getvalue().splitlines()
                 if "[SOURCE]" in line
             ]
             self.assertEqual(len(source_lines), 3)
