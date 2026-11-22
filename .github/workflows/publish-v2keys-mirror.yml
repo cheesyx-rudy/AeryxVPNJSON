@@ -1,0 +1,119 @@
+name: Publish V2Keys subscription mirror
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - AeryxVPN.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v2keys-subscription-mirror
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish extensionless V2Keys file
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout source subscription
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Validate source subscription
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s AeryxVPN.json
+          jq -e 'type == "array" and length > 0' AeryxVPN.json >/dev/null
+          echo "Source subscription is valid JSON array."
+
+      - name: Publish V2Keys mirror
+        env:
+          V2KEYS_PUSH_TOKEN: ${{ secrets.V2KEYS_PUSH_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${V2KEYS_PUSH_TOKEN:-}" ]]; then
+            echo "::error::Missing V2KEYS_PUSH_TOKEN. Add a token with Contents: Read and write access to cheesyx-rudy/V2Keys."
+            exit 1
+          fi
+
+          repository="cheesyx-rudy/V2Keys"
+          branch="main"
+          target_path="V2Keys"
+          api="https://api.github.com/repos/${repository}/contents/${target_path}"
+          source_file="AeryxVPN.json"
+
+          response_file="$RUNNER_TEMP/v2keys-file-response.json"
+          status="$(curl --silent --show-error \
+            --output "$response_file" \
+            --write-out '%{http_code}' \
+            --header "Authorization: Bearer ${V2KEYS_PUSH_TOKEN}" \
+            --header "Accept: application/vnd.github+json" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            "${api}?ref=${branch}")"
+
+          remote_sha=""
+          case "$status" in
+            200)
+              remote_sha="$(jq -r '.sha // empty' "$response_file")"
+              if [[ -z "$remote_sha" ]]; then
+                echo "::error::GitHub returned file metadata without a blob SHA."
+                cat "$response_file"
+                exit 1
+              fi
+              ;;
+            404)
+              echo "V2Keys does not exist yet; creating it."
+              ;;
+            *)
+              echo "::error::Could not inspect target file (HTTP $status)."
+              cat "$response_file"
+              exit 1
+              ;;
+          esac
+
+          encoded_file="$RUNNER_TEMP/v2keys-content.base64"
+          base64 -w 0 "$source_file" > "$encoded_file"
+
+          payload="$RUNNER_TEMP/v2keys-update.json"
+          jq -n \
+            --arg message "Update V2Keys subscription mirror" \
+            --arg branch "$branch" \
+            --arg content "$(cat "$encoded_file")" \
+            --arg sha "$remote_sha" \
+            '{message: $message, branch: $branch, content: $content} + (if $sha == "" then {} else {sha: $sha} end)' \
+            > "$payload"
+
+          commit_response="$RUNNER_TEMP/v2keys-commit-response.json"
+          status="$(curl --silent --show-error \
+            --output "$commit_response" \
+            --write-out '%{http_code}' \
+            --request PUT \
+            --header "Authorization: Bearer ${V2KEYS_PUSH_TOKEN}" \
+            --header "Accept: application/vnd.github+json" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            --header "Content-Type: application/json" \
+            --data-binary "@$payload" \
+            "$api")"
+
+          case "$status" in
+            200|201)
+              commit_sha="$(jq -r '.commit.sha // "unknown"' "$commit_response")"
+              echo "V2Keys mirror published successfully (commit $commit_sha)."
+              echo "Public raw URL: https://raw.githubusercontent.com/${repository}/${branch}/${target_path}"
+              ;;
+            *)
+              echo "::error::GitHub rejected V2Keys mirror update (HTTP $status)."
+              cat "$commit_response"
+              exit 1
+              ;;
+          esac
