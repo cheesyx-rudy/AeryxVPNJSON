@@ -115,6 +115,70 @@ class ProgressReporter:
             # Log/JSON progress remains available if GitHub's summary file cannot be written.
             pass
 
+    def emit_total_report(self, label: str, total: int, protocols: dict[str, int]) -> None:
+        """Print the aggregate number of parsed/queued nodes and protocol breakdown."""
+        timestamp = datetime.now(self._timezone).strftime("%H:%M:%S")
+        clean_protocols = {
+            str(name).lower(): max(0, int(count))
+            for name, count in protocols.items()
+            if int(count) > 0
+        }
+        first = f"{timestamp} {self._paint(f'[{label}]', '96')} Total nodes: {int(total)}"
+        lines = [first]
+        if clean_protocols:
+            lines.append(
+                "    " + " | ".join(
+                    self._paint(
+                        f"{name.upper()} {count}",
+                        _PROTOCOL_COLORS.get(name, "97"),
+                    )
+                    for name, count in sorted(clean_protocols.items())
+                )
+            )
+        self.emit(
+            label.lower().replace(" ", "_"),
+            f"Всего конфигураций: {int(total)}",
+            {"total": int(total), "protocols": dict(sorted(clean_protocols.items()))},
+            console_message="\\n".join(lines),
+        )
+
+    def emit_count_stage(
+        self,
+        label: str,
+        before: int,
+        after: int,
+        protocols_before: dict[str, int],
+        protocols_after: dict[str, int],
+    ) -> None:
+        """Print before/after totals and protocol counts for a filtering stage."""
+        timestamp = datetime.now(self._timezone).strftime("%H:%M:%S")
+        removed = max(0, int(before) - int(after))
+        lines = [
+            f"{timestamp} {self._paint(f'[{label}]', '96')} "
+            f"{int(before)} -> {int(after)} | Removed: {removed}"
+        ]
+        if protocols_before or protocols_after:
+            names = sorted(set(protocols_before) | set(protocols_after))
+            lines.append(
+                "    " + " | ".join(
+                    f"{name.upper()} {int(protocols_before.get(name, 0))} -> "
+                    f"{int(protocols_after.get(name, 0))}"
+                    for name in names
+                )
+            )
+        self.emit(
+            label.lower().replace(" ", "_").replace("/", "_"),
+            f"Количество до и после этапа: {int(before)} -> {int(after)}",
+            {
+                "before": int(before),
+                "after": int(after),
+                "removed": removed,
+                "protocols_before": dict(sorted(protocols_before.items())),
+                "protocols_after": dict(sorted(protocols_after.items())),
+            },
+            console_message="\\n".join(lines),
+        )
+
     @staticmethod
     def _source_ref(source_index: int, source_total: int | None = None) -> str:
         if source_total:
