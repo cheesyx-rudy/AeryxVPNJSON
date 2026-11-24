@@ -11,7 +11,6 @@ from aeryx_core import (
     ShareURIAdapter,
     StabilityPolicy,
     ValidationContext,
-    ValidationStatus,
     create_validation_engine,
 )
 from aeryx_core.validation.redundancy import (
