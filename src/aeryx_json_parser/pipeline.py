@@ -308,7 +308,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
     deadline=started+runtime; out_dir=Path(ocfg.get("directory","output")); out_dir=out_dir if out_dir.is_absolute() else ROOT/out_dir; out_dir.mkdir(parents=True,exist_ok=True)
     cache=Path(bcfg.get("cache_path","output/blocklist_cache.json")); cache=cache if cache.is_absolute() else ROOT/cache
     progress=ProgressReporter(out_dir/"progress.jsonl", str((cfg.get("subscription", {}) or {}).get("timezone", "Europe/Berlin")))
-    report={"schema_version":1,"parser":"AeryxJSON-Parser","version":"1.0.0","started_at":datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    report={"schema_version":1,"parser":"AeryxJSON-Parser","version":"1.2.0","started_at":datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "check_mode":mode,"runtime_budget_seconds":runtime,"sources":[],"stages":[],"counts":{},"warnings":[]}
     fetcher=Fetcher(fcfg)
     initial, source_inventory = _load_sources_with_stats(sources_path)
@@ -622,14 +622,14 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
     if mode == "proxy":
         import aeryx_core
         core_version=metadata.version("aeryxvpn-core")
-        if core_version != "1.0.0" or getattr(aeryx_core, "__version__", None) != core_version:
+        if core_version != "1.2.0" or getattr(aeryx_core, "__version__", None) != core_version:
             raise RuntimeError(
-                f"Expected AeryxVPN Core 1.0.0 at runtime; "
+                f"Expected AeryxVPN Core 1.2.0 at runtime; "
                 f"distribution={core_version}, module={getattr(aeryx_core, '__version__', 'unknown')}"
             )
         if not cores:
             report["warnings"].append(
-                "AeryxVPN Core 1.0.0 is loaded, but no Xray, sing-box, or Mihomo binary is available. "
+                "AeryxVPN Core 1.2.0 is loaded, but no Xray, sing-box, or Mihomo binary is available. "
                 "Candidates cannot be tunnel-validated and will not be published."
             )
     report["endpoint_diagnostics"]={
@@ -665,7 +665,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
         moshub_payload = {
             "schema_version": 1,
             "parser_kind": "json",
-            "core_version": "1.0.0",
+            "core_version": "1.2.0",
             "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "validation": {
                 "per_node_timeout_seconds": float(ccfg.get("per_node_timeout_seconds", 10)),
@@ -699,7 +699,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
         progress.emit(
             "moshub_export",
             "Подготовлен пакет для независимой проверки Mos.Hub",
-            {"candidates": len(moshub_nodes), "core_version": "1.0.0"},
+            {"candidates": len(moshub_nodes), "core_version": "1.2.0"},
         )
     if len(probe_targets) < minimum_successes:
         report["warnings"].append(
@@ -767,6 +767,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
             "validation_score": n.validation_score, "validation_votes": n.validation_votes,
             "successful_probes": n.successful_probe_count, "probe_targets": n.probe_target_count,
             "reason_code": ((n.check_reason or n.check_status).split(";")[0])[:120],
+            "core_report": n.validation_report or None,
         }
         for n in kept
     ]
