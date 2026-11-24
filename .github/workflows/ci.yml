@@ -16,7 +16,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
 
     steps:
       - name: Checkout JSON parser
@@ -80,7 +80,7 @@ jobs:
         run: python -m compileall -q src
 
       - name: Live smoke-test official Xray, sing-box, and Mihomo downloads
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
@@ -92,7 +92,7 @@ jobs:
           ./tools/xray version
           ./tools/sing-box version
       - name: Validate generated Mihomo YAML with the official binary
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         shell: bash
         run: |
           set -euo pipefail
