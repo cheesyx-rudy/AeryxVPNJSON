@@ -39,6 +39,7 @@ class PipelineIntegrationTests(unittest.TestCase):
             # JSON report has no raw subscription URI in invalid/rejected diagnostics.
             report_disk=json.loads((out/'validation_report.json').read_text(encoding='utf-8'))
             self.assertEqual(report_disk['counts']['unique_nodes'],1)
+            self.assertEqual(report_disk['version'],'1.0.0')
 
     def test_proxy_mode_publishes_only_tunnel_verified_nodes(self):
         with tempfile.TemporaryDirectory() as td:
@@ -70,7 +71,7 @@ class PipelineIntegrationTests(unittest.TestCase):
             self.assertEqual(report['publish']['status'],'published')
             self.assertIs(captured_validation_kwargs.get('retry_single_success'), False)
             self.assertFalse(report['endpoint_diagnostics']['separate_tcp_precheck'])
-            self.assertEqual(report['validation']['core_version'], '1.0.0')
+            self.assertEqual(report['validation']['core_version'], '2.0.0')
             published=(out/'AeryxVPN').read_text(encoding='utf-8')
             self.assertIn('good.example',published)
             self.assertNotIn('unknown.example',published)

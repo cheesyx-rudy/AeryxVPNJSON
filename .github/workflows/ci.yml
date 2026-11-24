@@ -16,7 +16,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
 
     steps:
       - name: Checkout JSON parser
@@ -29,11 +29,11 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Checkout pinned AeryxVPN Core 1.0.0
+      - name: Checkout pinned AeryxVPN Core 2.0.0 integration branch
         uses: actions/checkout@v5
         with:
           repository: cheesyx-rudy/AeryxVPN-Core
-          ref: fbb31021269a03c01c4a610499f12214b28c859a
+          ref: f0a570e0b400e66c5266be1ceee8e218d8639d37
           token: ${{ secrets.AERYX_CORE_READ_TOKEN }}
           path: .aeryx-core
           persist-credentials: false
@@ -45,7 +45,7 @@ jobs:
           wheel_dir="$RUNNER_TEMP/aeryx-core-wheel"
           mkdir -p "$wheel_dir"
           python -m pip wheel --no-deps --wheel-dir "$wheel_dir" ./.aeryx-core
-          wheel="$(find "$wheel_dir" -maxdepth 1 -name 'aeryxvpn_core-1.0.0-*.whl' -print -quit)"
+          wheel="$(find "$wheel_dir" -maxdepth 1 -name 'aeryxvpn_core-2.0.0-*.whl' -print -quit)"
           test -n "$wheel"
           python -m pip install --no-cache-dir "$wheel"
 
@@ -66,11 +66,11 @@ jobs:
               create_validation_engine,
           )
 
-          assert metadata.version("aeryxvpn-core") == "1.0.0"
-          assert aeryx_core.__version__ == "1.0.0"
+          assert metadata.version("aeryxvpn-core") == "2.0.0"
+          assert aeryx_core.__version__ == "2.0.0"
           assert ShareURIAdapter and callable(create_validation_engine)
           assert MihomoConfigBuilder and MihomoProtocolValidator
-          print("AeryxVPN Core 1.0.0 import check passed")
+          print("AeryxVPN Core 2.0.0 import check passed")
           PY
 
       - name: Run complete offline test suite
@@ -80,7 +80,7 @@ jobs:
         run: python -m compileall -q src
 
       - name: Live smoke-test official Xray, sing-box, and Mihomo downloads
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
@@ -92,7 +92,7 @@ jobs:
           ./tools/xray version
           ./tools/sing-box version
       - name: Validate generated Mihomo YAML with the official binary
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         shell: bash
         run: |
           set -euo pipefail

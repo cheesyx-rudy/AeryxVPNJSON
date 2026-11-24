@@ -66,7 +66,15 @@ def _core_status(result: object) -> tuple[str, str, str, int | None, int]:
         return "not_checkable", reason, confidence, elapsed_ms, result.score or 0
     if status is ValidationStatus.NOT_CHECKED:
         return "not_checked", reason, confidence, elapsed_ms, result.score or 0
-    return "proxy_failed", reason, confidence, elapsed_ms, result.score or 0
+    if status is ValidationStatus.INDETERMINATE:
+        return "proxy_indeterminate", reason, confidence, elapsed_ms, result.score or 0
+    if status is ValidationStatus.UNSTABLE:
+        return "proxy_unstable", reason, confidence, elapsed_ms, result.score or 0
+    if status is ValidationStatus.INVALID:
+        return "proxy_invalid", reason, confidence, elapsed_ms, result.score or 0
+    if status is ValidationStatus.FAILED:
+        return "proxy_failed", reason, confidence, elapsed_ms, result.score or 0
+    return "not_checkable", reason, confidence, elapsed_ms, result.score or 0
 
 
 def validate_nodes_with_core(
@@ -157,9 +165,18 @@ def validate_nodes_with_core(
                     node.validation_confidence = confidence
                     node.elapsed_ms = elapsed
                     node.validation_score = score
-                    node.validation_votes = {
-                        "core_tunnel_validation": 1 if status.startswith("proxy_ok") else -1,
-                    }
+                    vote = (
+                        1
+                        if status.startswith("proxy_ok")
+                        else -1
+                        if status in {"proxy_failed", "proxy_invalid"}
+                        else None
+                    )
+                    node.validation_votes = {"core_tunnel_validation": vote}
+                    core_report = getattr(result, "report", None)
+                    node.validation_report = (
+                        core_report.to_dict() if core_report is not None else {}
+                    )
                     checks = [
                         check for check in result.checks
                         if check.name in {"http_health_probes", "http_health_stability"}

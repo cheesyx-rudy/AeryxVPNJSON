@@ -29,6 +29,7 @@ class ProxyNode:
     probe_target_count: int = 0
     validation_votes: dict[str, int | None] = field(default_factory=dict)
     validation_score: int = 0
+    validation_report: dict[str, Any] = field(default_factory=dict)
 
     @property
     def identity(self) -> str:
