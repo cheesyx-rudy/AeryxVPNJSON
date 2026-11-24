@@ -767,7 +767,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
             "validation_score": n.validation_score, "validation_votes": n.validation_votes,
             "successful_probes": n.successful_probe_count, "probe_targets": n.probe_target_count,
             "reason_code": ((n.check_reason or n.check_status).split(";")[0])[:120],
-            "core_report": n.validation_report or None,
+            "core_validation_report": n.validation_report or None,
         }
         for n in kept
     ]
