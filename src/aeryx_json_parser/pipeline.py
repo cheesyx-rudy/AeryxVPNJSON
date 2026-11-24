@@ -308,7 +308,7 @@ def run_pipeline(config_path: Path=DEFAULT_CONFIG,sources_path: Path=DEFAULT_SOU
     deadline=started+runtime; out_dir=Path(ocfg.get("directory","output")); out_dir=out_dir if out_dir.is_absolute() else ROOT/out_dir; out_dir.mkdir(parents=True,exist_ok=True)
     cache=Path(bcfg.get("cache_path","output/blocklist_cache.json")); cache=cache if cache.is_absolute() else ROOT/cache
     progress=ProgressReporter(out_dir/"progress.jsonl", str((cfg.get("subscription", {}) or {}).get("timezone", "Europe/Berlin")))
-    report={"schema_version":1,"parser":"AeryxJSON-Parser","version":"1.2.0","started_at":datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    report={"schema_version":1,"parser":"AeryxJSON-Parser","version":"1.0.0","started_at":datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "check_mode":mode,"runtime_budget_seconds":runtime,"sources":[],"stages":[],"counts":{},"warnings":[]}
     fetcher=Fetcher(fcfg)
     initial, source_inventory = _load_sources_with_stats(sources_path)
