@@ -45,7 +45,7 @@ jobs:
           wheel_dir="$RUNNER_TEMP/aeryx-core-wheel"
           mkdir -p "$wheel_dir"
           python -m pip wheel --no-deps --wheel-dir "$wheel_dir" ./.aeryx-core
-          wheel="$(find "$wheel_dir" -maxdepth 1 -name 'aeryxvpn_core-1.2.0-*.whl' -print -quit)"
+          wheel="$(find "$wheel_dir" -maxdepth 1 -name 'aeryxvpn_core-2.0.0-*.whl' -print -quit)"
           test -n "$wheel"
           python -m pip install --no-cache-dir "$wheel"
 
@@ -66,11 +66,11 @@ jobs:
               create_validation_engine,
           )
 
-          assert metadata.version("aeryxvpn-core") == "1.2.0"
-          assert aeryx_core.__version__ == "1.2.0"
+          assert metadata.version("aeryxvpn-core") == "2.0.0"
+          assert aeryx_core.__version__ == "2.0.0"
           assert ShareURIAdapter and callable(create_validation_engine)
           assert MihomoConfigBuilder and MihomoProtocolValidator
-          print("AeryxVPN Core 1.2.0 import check passed")
+          print("AeryxVPN Core 2.0.0 import check passed")
           PY
 
       - name: Run complete offline test suite
