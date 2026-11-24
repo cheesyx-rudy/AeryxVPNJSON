@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - release/1.0.0
+      - release/1.2.0
   pull_request:
     branches:
       - main
@@ -29,11 +29,11 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Checkout pinned AeryxVPN Core 1.0.0
+      - name: Checkout pinned AeryxVPN Core 2.0.0 integration branch
         uses: actions/checkout@v5
         with:
           repository: cheesyx-rudy/AeryxVPN-Core
-          ref: fbb31021269a03c01c4a610499f12214b28c859a
+          ref: 7e0d8d7d3b98dd87a0b48923ecfe0477817ea3d0
           token: ${{ secrets.AERYX_CORE_READ_TOKEN }}
           path: .aeryx-core
           persist-credentials: false
@@ -45,7 +45,7 @@ jobs:
           wheel_dir="$RUNNER_TEMP/aeryx-core-wheel"
           mkdir -p "$wheel_dir"
           python -m pip wheel --no-deps --wheel-dir "$wheel_dir" ./.aeryx-core
-          wheel="$(find "$wheel_dir" -maxdepth 1 -name 'aeryxvpn_core-1.0.0-*.whl' -print -quit)"
+          wheel="$(find "$wheel_dir" -maxdepth 1 -name 'aeryxvpn_core-1.2.0-*.whl' -print -quit)"
           test -n "$wheel"
           python -m pip install --no-cache-dir "$wheel"
 
@@ -66,11 +66,11 @@ jobs:
               create_validation_engine,
           )
 
-          assert metadata.version("aeryxvpn-core") == "1.0.0"
-          assert aeryx_core.__version__ == "1.0.0"
+          assert metadata.version("aeryxvpn-core") == "1.2.0"
+          assert aeryx_core.__version__ == "1.2.0"
           assert ShareURIAdapter and callable(create_validation_engine)
           assert MihomoConfigBuilder and MihomoProtocolValidator
-          print("AeryxVPN Core 1.0.0 import check passed")
+          print("AeryxVPN Core 1.2.0 import check passed")
           PY
 
       - name: Run complete offline test suite
