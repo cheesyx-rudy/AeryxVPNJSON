@@ -53,20 +53,26 @@ def _probe_targets(configured: list[tuple[str, set[int]]]) -> tuple[ProbeTarget,
 
 def _core_status(result: object) -> tuple[str, str, str, int | None, int]:
     status = result.status
-    reason_code = result.reason_code or status.value
+    status_value = getattr(status, "value", str(status))
+    reason_code = result.reason_code or status_value
     reason = reason_code
     confidence = result.confidence.value
     elapsed_ms = result.elapsed_ms
+    score = result.score or 0
 
-    if status is ValidationStatus.WORKING:
-        return f"proxy_ok_{confidence}", reason, confidence, elapsed_ms, result.score or 0
-    if status is ValidationStatus.DEGRADED:
-        return "proxy_degraded", reason, confidence, elapsed_ms, result.score or 0
-    if status is ValidationStatus.UNSUPPORTED:
-        return "not_checkable", reason, confidence, elapsed_ms, result.score or 0
-    if status is ValidationStatus.NOT_CHECKED:
-        return "not_checked", reason, confidence, elapsed_ms, result.score or 0
-    return "proxy_failed", reason, confidence, elapsed_ms, result.score or 0
+    if status_value == "working":
+        return f"proxy_ok_{confidence}", reason, confidence, elapsed_ms, score
+    if status_value == "degraded":
+        return "proxy_degraded", reason, confidence, elapsed_ms, score
+    if status_value in {"unsupported", "not_checked", "indeterminate"}:
+        return "not_checkable", reason, confidence, elapsed_ms, score
+    if status_value == "invalid":
+        return "invalid_config", reason, confidence, elapsed_ms, score
+    if status_value == "unstable":
+        return "proxy_unstable", reason, confidence, elapsed_ms, score
+    if status_value == "failed":
+        return "proxy_failed", reason, confidence, elapsed_ms, score
+    return "not_checkable", reason, confidence, elapsed_ms, score
 
 
 def validate_nodes_with_core(
