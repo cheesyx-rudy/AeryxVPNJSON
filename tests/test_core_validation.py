@@ -5,7 +5,7 @@ import unittest
 
 from aeryx_core import Confidence, ValidationResult, ValidationStatus
 
-from aeryx_json_parser.core_validation import validate_nodes_with_core
+from aeryx_json_parser.core_validation import _core_status, validate_nodes_with_core
 from aeryx_json_parser.models import ProxyNode
 
 
@@ -156,6 +156,27 @@ class CoreValidationAdapterTests(unittest.TestCase):
         self.assertEqual(counts, {"proxy_degraded": 1})
         self.assertEqual(node.check_status, "proxy_degraded")
         self.assertFalse(node.check_status.startswith("proxy_ok"))
+
+
+
+    def test_core_2_statuses_are_not_collapsed_into_proxy_failed(self):
+        from types import SimpleNamespace
+
+        cases = {
+            "indeterminate": "not_checkable",
+            "invalid": "invalid_config",
+            "unstable": "proxy_unstable",
+            "failed": "proxy_failed",
+        }
+        for core_status, expected in cases.items():
+            result = SimpleNamespace(
+                status=SimpleNamespace(value=core_status),
+                reason_code=f"test_{core_status}",
+                confidence=SimpleNamespace(value="low"),
+                elapsed_ms=10,
+                score=25,
+            )
+            self.assertEqual(_core_status(result)[0], expected)
 
 
 if __name__ == "__main__":
